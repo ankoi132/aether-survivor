@@ -211,7 +211,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     // 1. Applica le statistiche permanenti della meta-progressione all'eroe
     player.applyPermanentStats(currentProfile.calculatedStats);
     player.x = 0;
-    player.y = 0;
+    player.y = 50;
     camera.snapTo(player.x, player.y);
 
     // 2. Reset combattimento e progressione di run
@@ -230,17 +230,25 @@ window.addEventListener('DOMContentLoaded', async () => {
     progression.nextLevelXp = 25;
     progression.isPausedForLevelUp = false;
 
-    // 3. Popola i mostri randagi nei territori della grande mappa finita
-    for (let i = 0; i < 18; i++) {
-      const pt = world.findValidSpawn(260, 1250);
+    // 3. Popola i mostri randagi nei rispettivi biomi della grande mappa finita
+    for (let i = 0; i < 10; i++) {
+      const pt = world.findValidSpawn(300, 1300, 'forest');
       combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_forest'));
     }
-    for (let i = 0; i < 12; i++) {
-      const pt = world.findValidSpawn(280, 1300);
-      combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_water'));
+    for (let i = 0; i < 10; i++) {
+      const pt = world.findValidSpawn(300, 1300, 'snow');
+      combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_ice'));
+    }
+    for (let i = 0; i < 10; i++) {
+      const pt = world.findValidSpawn(300, 1300, 'desert');
+      combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_sand'));
+    }
+    for (let i = 0; i < 10; i++) {
+      const pt = world.findValidSpawn(300, 1300, 'volcano');
+      combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_magma'));
     }
     for (let i = 0; i < 14; i++) {
-      const pt = world.findValidSpawn(320, 1380);
+      const pt = world.findValidSpawn(350, 1400);
       combat.enemies.push(new Enemy(pt.x, pt.y, 'skeleton'));
     }
 

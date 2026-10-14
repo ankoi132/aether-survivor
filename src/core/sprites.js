@@ -149,11 +149,16 @@ export const Sprites = (() => {
     const h = 20 * PX;
     const { canvas, ctx } = createOffscreen(w, h);
 
-    const isWater = type === 'water';
-    const cOutline = isWater ? '#082f49' : '#052e16';
-    const cBase = isWater ? '#0284c7' : '#16a34a';
-    const cLight = isWater ? '#38bdf8' : '#4ade80';
-    const cHighlight = isWater ? '#bae6fd' : '#bbf7d0';
+    let cOutline = '#052e16', cBase = '#16a34a', cLight = '#4ade80', cHighlight = '#bbf7d0';
+    if (type === 'water') {
+      cOutline = '#082f49'; cBase = '#0284c7'; cLight = '#38bdf8'; cHighlight = '#bae6fd';
+    } else if (type === 'ice') {
+      cOutline = '#1e293b'; cBase = '#93c5fd'; cLight = '#dbeafe'; cHighlight = '#ffffff';
+    } else if (type === 'sand') {
+      cOutline = '#78350f'; cBase = '#d97706'; cLight = '#fbbf24'; cHighlight = '#fef08a';
+    } else if (type === 'magma') {
+      cOutline = '#451a03'; cBase = '#dc2626'; cLight = '#f97316'; cHighlight = '#fde047';
+    }
 
     const cx = Math.floor(w / 2);
     // Animazione di squish/bounce (0: normale, 1: schiacciato a terra, 2: allungato in aria, 3: ritorno)

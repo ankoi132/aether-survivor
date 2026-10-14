@@ -1,8 +1,24 @@
 /**
- * world/world.js - Generazione procedurale del mondo con l'autotiler autentico di tiles.js
+ * world/world.js - Generatore procedurale del mondo a 5 biomi (Foresta, Neve, Deserto, Vulcano, Paesino)
+ * con autotiling 16-bit, props tematici ed edifici del villaggio ispirati al reverse engineering.
  */
 import { Tiles } from './tiles.js';
 import { Sprites } from '../core/sprites.js';
+
+const VILLAGE_BUILDINGS = [
+  { type: 'house_red', tx: -7, ty: -6, wTiles: 4, hTiles: 3, name: 'Taverna del Viandante' },
+  { type: 'house_blue', tx: 3, ty: -6, wTiles: 4, hTiles: 3, name: 'Torre dell\'Arcimago' },
+  { type: 'house_blue', tx: -7, ty: 3, wTiles: 4, hTiles: 3, name: 'Bottega delle Pozioni' },
+  { type: 'house_red', tx: 3, ty: 3, wTiles: 4, hTiles: 3, name: 'Fucina & Armeria' }
+];
+
+const VILLAGE_PROPS = [
+  { type: 'well', tx: 0, ty: -1 },
+  { type: 'lamppost', tx: -2, ty: -3 },
+  { type: 'lamppost', tx: 2, ty: -3 },
+  { type: 'lamppost', tx: -2, ty: 1 },
+  { type: 'lamppost', tx: 2, ty: 1 }
+];
 
 export class World {
   constructor(seed = 2026) {
@@ -13,11 +29,16 @@ export class World {
     this.N = 16;                    // 16 tile per chunk
     this.CW = this.N * this.TS;     // 512 px per chunk
 
+    // Tipi di tile
     this.TILE_FLOOR = 0;
     this.TILE_WALL = 1;
-    this.TILE_WATER = 2;
-    this.TILE_TREE = 3;
-    this.TILE_ROCK = 4;
+    this.TILE_WATER = 2;            // Acqua nei laghi / Lava incandescente nel vulcano
+    this.TILE_TREE = 3;             // Quercia verde (Bosco)
+    this.TILE_ROCK = 4;             // Roccia d'ardesia
+    this.TILE_PINE = 5;             // Abete innevato (Montagne / Neve)
+    this.TILE_CACTUS = 6;           // Cactus Saguaro (Deserto)
+    this.TILE_VOLCANO_ROCK = 7;     // Roccia magmatica con crepe incandescenti (Vulcano)
+    this.TILE_SAND_ROCK = 8;        // Roccia d'arenaria (Deserto)
 
     // Limiti della Grande Mappa Finita (101x101 tile = 3232x3232 px)
     this.MAP_RADIUS = 50;
@@ -42,65 +63,99 @@ export class World {
     return Math.floor(worldCoord / this.TS);
   }
 
+  /**
+   * Determina a quale dei 5 biomi appartiene una coordinata di mappa:
+   * 1. 'village': Paesino e Santuario centrale (|tx| <= 8, |ty| <= 8)
+   * 2. 'snow': Montagne Innevate a Nord (ty < -8)
+   * 3. 'desert': Deserto e Canyon di Sabbia a Sud-Ovest (tx < 0, ty > 8)
+   * 4. 'volcano': Caldera Vulcanica e Lava a Sud-Est / Est (tx >= 0, ty > 8 o tx > 8)
+   * 5. 'forest': Bosco e Radure Silvane a Ovest (tx < -8, -8 <= ty <= 8)
+   */
+  getBiome(tx, ty) {
+    if (Math.abs(tx) <= 8 && Math.abs(ty) <= 8) {
+      return 'village';
+    }
+    if (ty < -8) {
+      return 'snow';
+    }
+    if (tx < 0 && ty > 8) {
+      return 'desert';
+    }
+    if (tx > 8 || (tx >= 0 && ty > 8)) {
+      return 'volcano';
+    }
+    return 'forest';
+  }
+
+  isBuildingSolid(tx, ty) {
+    // 1. Edifici (pareti e basamento sono solidi, lasciando spazio sul tetto per l'effetto 2.5D)
+    for (const b of VILLAGE_BUILDINGS) {
+      if (tx >= b.tx && tx < b.tx + b.wTiles && ty >= b.ty + 1 && ty < b.ty + b.hTiles) {
+        return true;
+      }
+    }
+    // 2. Pozzo
+    for (const p of VILLAGE_PROPS) {
+      if (p.type === 'well' && p.tx === tx && p.ty === ty) {
+        return true;
+      }
+      if (p.type === 'lamppost' && p.tx === tx && p.ty === ty) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   getTileType(tx, ty) {
     // 1. Confini naturali invalicabili: catena montuosa e scogliere esterne
     if (Math.abs(tx) >= this.MAP_RADIUS - 3 || Math.abs(ty) >= this.MAP_RADIUS - 3) {
       return this.TILE_WALL;
     }
 
-    // 2. Santuario di Partenza (Centro): radura sicura senza ostacoli
-    if (Math.abs(tx) <= 5 && Math.abs(ty) <= 5) {
+    // 2. Paesino Centrale: pavimento lastricato sicuro senza ostacoli casuali
+    const biome = this.getBiome(tx, ty);
+    if (biome === 'village') {
       return this.TILE_FLOOR;
     }
 
-    // 3. Bioma Sud-Est: Baia e Laghi Mistici
-    const isWaterBiome = (tx > 0 && ty > 0);
-    const waterThreshold = isWaterBiome ? 0.65 : 0.82;
-    const waterNoise = this.hash2D(Math.floor(tx / 3), Math.floor(ty / 3), 101);
-    if (waterNoise > waterThreshold) {
-      return this.TILE_WATER;
-    }
-
-    // 4. Mura e Scogliere di Roccia (autotiled 3D)
-    const isRuinsBiome = (tx > 0 && ty < 0);
     const wallNoise = this.hash2D(tx, ty, 42);
-    if (wallNoise > (isRuinsBiome ? 0.84 : 0.91)) {
-      return this.TILE_WALL;
+    const waterNoise = this.hash2D(Math.floor(tx / 3), Math.floor(ty / 3), 101);
+    const propNoise = this.hash2D(tx, ty, 77);
+
+    // 3. Montagne Innevate (Nord)
+    if (biome === 'snow') {
+      if (wallNoise > 0.81) return this.TILE_WALL;
+      if (waterNoise > 0.82) return this.TILE_WATER; // Lago ghiacciato
+      if (propNoise > 0.77) return this.TILE_PINE;
+      if (propNoise > 0.73) return this.TILE_ROCK;
+      return this.TILE_FLOOR;
     }
 
-    // 5. Alberi e Rocce volumetriche Y-Sorted
-    const isForestBiome = (tx < 0 && ty < 0);
-    if (isForestBiome) {
-      if (wallNoise > 0.76) return this.TILE_TREE;
-      if (wallNoise > 0.72) return this.TILE_ROCK;
-    } else {
-      if (wallNoise > 0.85) return this.TILE_TREE;
-      if (wallNoise > 0.81) return this.TILE_ROCK;
+    // 4. Deserto e Canyon (Sud-Ovest)
+    if (biome === 'desert') {
+      if (wallNoise > 0.83) return this.TILE_WALL; // Pareti di arenaria
+      if (waterNoise > 0.90) return this.TILE_WATER; // Oasi rare
+      if (propNoise > 0.81) return this.TILE_CACTUS;
+      if (propNoise > 0.77) return this.TILE_SAND_ROCK;
+      return this.TILE_FLOOR;
     }
+
+    // 5. Vulcano e Caldera Ardente (Sud-Est / Est)
+    if (biome === 'volcano') {
+      if (wallNoise > 0.80) return this.TILE_WALL; // Scogliere di ossidiana
+      if (waterNoise > 0.74) return this.TILE_WATER; // Fiumi di lava fusa!
+      if (propNoise > 0.78) return this.TILE_VOLCANO_ROCK;
+      if (propNoise > 0.74) return this.TILE_ROCK;
+      return this.TILE_FLOOR;
+    }
+
+    // 6. Bosco (Ovest)
+    if (wallNoise > 0.86) return this.TILE_WALL;
+    if (waterNoise > 0.77) return this.TILE_WATER;
+    if (propNoise > 0.76) return this.TILE_TREE;
+    if (propNoise > 0.72) return this.TILE_ROCK;
 
     return this.TILE_FLOOR;
-  }
-
-  /**
-   * Trova una posizione valida e sicura (non solida, non in acqua) per lo spawn di entità
-   */
-  findValidSpawn(minDist = 250, maxDist = 1350) {
-    for (let attempts = 0; attempts < 50; attempts++) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist = minDist + Math.random() * (maxDist - minDist);
-      const px = Math.cos(angle) * dist;
-      const py = Math.sin(angle) * dist;
-
-      const tx = this.tileOf(px);
-      const ty = this.tileOf(py);
-
-      if (Math.abs(tx) < this.MAP_RADIUS - 5 && Math.abs(ty) < this.MAP_RADIUS - 5) {
-        if (!this.isSolid(tx, ty) && !this.isLiquid(px, py)) {
-          return { x: px, y: py };
-        }
-      }
-    }
-    return { x: 300, y: 300 };
   }
 
   getKind(tx, ty) {
@@ -112,13 +167,57 @@ export class World {
 
   isSolid(tx, ty) {
     const t = this.getTileType(tx, ty);
-    return t === this.TILE_WALL || t === this.TILE_TREE || t === this.TILE_ROCK;
+    return (
+      t === this.TILE_WALL ||
+      t === this.TILE_WATER ||
+      t === this.TILE_TREE ||
+      t === this.TILE_PINE ||
+      t === this.TILE_CACTUS ||
+      t === this.TILE_VOLCANO_ROCK ||
+      t === this.TILE_SAND_ROCK ||
+      t === this.TILE_ROCK ||
+      this.isBuildingSolid(tx, ty)
+    );
   }
 
   isLiquid(x, y) {
     const tx = this.tileOf(x);
     const ty = this.tileOf(y);
     return this.getTileType(tx, ty) === this.TILE_WATER;
+  }
+
+  /**
+   * Trova una posizione valida e sicura (non solida, non in acqua/lava)
+   * con supporto opzionale per bioma specifico.
+   */
+  findValidSpawn(minDist = 250, maxDist = 1350, targetBiome = null) {
+    for (let attempts = 0; attempts < 60; attempts++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = minDist + Math.random() * (maxDist - minDist);
+      const px = Math.cos(angle) * dist;
+      const py = Math.sin(angle) * dist;
+
+      const tx = this.tileOf(px);
+      const ty = this.tileOf(py);
+
+      if (Math.abs(tx) < this.MAP_RADIUS - 5 && Math.abs(ty) < this.MAP_RADIUS - 5) {
+        if (!this.isSolid(tx, ty) && !this.isLiquid(px, py)) {
+          const currentBiome = this.getBiome(tx, ty);
+          if (targetBiome) {
+            if (currentBiome === targetBiome) {
+              return { x: px, y: py };
+            }
+          } else {
+            // Se nessun bioma target è specificato, evita di spawnare nel santuario del villaggio
+            if (currentBiome !== 'village') {
+              return { x: px, y: py };
+            }
+          }
+        }
+      }
+    }
+    // Fallback sicuro se i tentativi non trovano il bioma esatto
+    return { x: 320, y: 320 };
   }
 
   /**
@@ -186,26 +285,63 @@ export class World {
       return this.chunkCanvases.get(key);
     }
 
-    // Usa l'autotiler di tiles.js per dipingere terra, scogliere e laghi con transizioni reali
-    const canvas = Tiles.paintChunk(cx, cy, this.N, (tx, ty) => this.getKind(tx, ty), this.seed);
+    // Dipinge il terreno e le pareti passando la funzione del bioma
+    const canvas = Tiles.paintChunk(
+      cx,
+      cy,
+      this.N,
+      (tx, ty) => this.getKind(tx, ty),
+      (tx, ty) => this.getBiome(tx, ty),
+      this.seed
+    );
     this.chunkCanvases.set(key, canvas);
 
-    // Registra i props (alberi e rocce) presenti nel chunk
+    // Registra i props procedurali presenti nel chunk
     const props = [];
     for (let lty = 0; lty < this.N; lty++) {
       for (let ltx = 0; ltx < this.N; ltx++) {
         const tx = cx * this.N + ltx;
         const ty = cy * this.N + lty;
         const t = this.getTileType(tx, ty);
+
         if (t === this.TILE_TREE) {
           props.push({ type: 'tree', x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
+        } else if (t === this.TILE_PINE) {
+          props.push({ type: 'pine', x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
+        } else if (t === this.TILE_CACTUS) {
+          props.push({ type: 'cactus', x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
+        } else if (t === this.TILE_VOLCANO_ROCK) {
+          props.push({ type: 'volcano_rock', x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS / 2 });
+        } else if (t === this.TILE_SAND_ROCK) {
+          props.push({ type: 'sand_rock', x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS / 2 });
         } else if (t === this.TILE_ROCK) {
           props.push({ type: 'rock', x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS / 2 });
         }
       }
     }
-    this.chunkProps.set(key, props);
 
+    // Inserisce gli edifici e i lampioni del Paesino nel chunk corrispondente
+    for (const b of VILLAGE_BUILDINGS) {
+      const anchorX = (b.tx + b.wTiles / 2) * this.TS;
+      const anchorY = (b.ty + b.hTiles) * this.TS;
+      const bChunkX = Math.floor(anchorX / this.CW);
+      const bChunkY = Math.floor(anchorY / this.CW);
+      if (bChunkX === cx && bChunkY === cy) {
+        props.push({ type: b.type, x: anchorX, y: anchorY });
+      }
+    }
+
+    for (const p of VILLAGE_PROPS) {
+      const anchorX = p.tx * this.TS + this.TS / 2;
+      const anchorY = p.ty * this.TS + this.TS;
+      const pChunkX = Math.floor(anchorX / this.CW);
+      const pChunkY = Math.floor(anchorY / this.CW);
+      if (pChunkX === cx && pChunkY === cy) {
+        props.push({ type: p.type, x: anchorX, y: anchorY });
+      }
+    }
+
+    this.chunkProps.set(key, props);
     return canvas;
   }
 
@@ -221,7 +357,6 @@ export class World {
     for (let cy = startCy; cy <= endCy; cy++) {
       for (let cx = startCx; cx <= endCx; cx++) {
         const chunkCanvas = this.getChunkCanvas(cx, cy);
-        // Il chunk nativo è N*T (256x256), viene disegnato a CW (512x512) per il pixel scale 2x
         ctx.drawImage(
           chunkCanvas,
           cx * this.CW,
@@ -234,13 +369,13 @@ export class World {
   }
 
   /**
-   * Disegna oggetti dello scenario ed entità con ordinamento Y (profondità visiva top-down)
+   * Disegna oggetti dello scenario ed entità con ordinamento Y (profondità visiva top-down 2.5D)
    */
   drawEntitiesAndProps(ctx, camera, entities = []) {
-    const startCx = Math.floor((camera.left() - 60) / this.CW);
-    const endCx = Math.floor((camera.left() + camera.w + 60) / this.CW);
-    const startCy = Math.floor((camera.top() - 60) / this.CW);
-    const endCy = Math.floor((camera.top() + camera.h + 60) / this.CW);
+    const startCx = Math.floor((camera.left() - 80) / this.CW);
+    const endCx = Math.floor((camera.left() + camera.w + 80) / this.CW);
+    const startCy = Math.floor((camera.top() - 80) / this.CW);
+    const endCy = Math.floor((camera.top() + camera.h + 80) / this.CW);
 
     const drawList = [];
 
@@ -251,7 +386,7 @@ export class World {
         this.getChunkCanvas(cx, cy);
         const props = this.chunkProps.get(key) || [];
         for (const p of props) {
-          if (camera.sees(p.x, p.y, 90)) {
+          if (camera.sees(p.x, p.y, 140)) {
             drawList.push({
               y: p.y,
               draw: () => {
@@ -259,14 +394,32 @@ export class World {
                 if (!sprite) return;
                 const sw = sprite.width * this.PX;
                 const sh = sprite.height * this.PX;
-                Sprites.drawShadow(ctx, p.x, p.y - 2, p.type === 'tree' ? 14 : 10);
-                ctx.drawImage(
-                  sprite,
-                  Math.round(p.x - sw / 2),
-                  Math.round(p.y - sh + (p.type === 'tree' ? 8 : 4)),
-                  sw,
-                  sh
-                );
+
+                if (p.type === 'house_red' || p.type === 'house_blue') {
+                  // Ombra morbida alla base della casa
+                  ctx.fillStyle = 'rgba(6, 8, 14, 0.45)';
+                  ctx.fillRect(Math.round(p.x - sw / 2 + 10), Math.round(p.y - 8), sw - 20, 14);
+                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 8), sw, sh);
+                } else if (p.type === 'well') {
+                  Sprites.drawShadow(ctx, p.x, p.y - 2, 14);
+                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
+                } else if (p.type === 'lamppost') {
+                  Sprites.drawShadow(ctx, p.x, p.y - 1, 7);
+                  // Alone di luce dorata sul terreno
+                  const glow = ctx.createRadialGradient(p.x, p.y - 28, 4, p.x, p.y - 28, 46);
+                  glow.addColorStop(0, 'rgba(253, 224, 71, 0.22)');
+                  glow.addColorStop(1, 'rgba(253, 224, 71, 0)');
+                  ctx.fillStyle = glow;
+                  ctx.beginPath();
+                  ctx.arc(p.x, p.y - 28, 46, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
+                } else {
+                  const rad = (p.type === 'tree' || p.type === 'pine') ? 14 : (p.type === 'cactus' ? 10 : 12);
+                  Sprites.drawShadow(ctx, p.x, p.y - 2, rad);
+                  const yOff = (p.type === 'tree' || p.type === 'pine') ? 8 : 4;
+                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + yOff), sw, sh);
+                }
               }
             });
           }
@@ -274,7 +427,7 @@ export class World {
       }
     }
 
-    // Aggiunge le entità (giocatore, e in futuro i nemici)
+    // Aggiunge le entità mobili (giocatore, nemici)
     for (const e of entities) {
       if (camera.sees(e.x, e.y, 80)) {
         drawList.push({

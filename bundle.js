@@ -172,12 +172,10 @@
     h = Math.imul(h ^ h >>> 13, 1274126177);
     return ((h ^ h >>> 16) >>> 0) / 4294967296;
   }
-  var Tiles = /* @__PURE__ */ (() => {
+  var Tiles = (() => {
     const T = 16;
-    const BIOMES = [
-      {
-        name: "Foresta Arcana",
-        liquid: "water",
+    const BIOME_DATA = {
+      forest: {
         floor: ["#4d7338", "#5b8543", "#436630"],
         dirt: ["#69563d", "#786245", "#5b4a34"],
         speck: "#354f26",
@@ -191,12 +189,88 @@
         liq: "#0284c7",
         liqDeep: "#0369a1",
         foam: "#bae6fd",
-        shore: "#3d4f2a",
-        leaf: ["#166534", "#15803d", "#22c55e", "#4ade80"],
-        trunk: ["#451a03", "#78350f"],
-        rock: ["#64748b", "#94a3b8", "#cbd5e1"]
+        shore: "#3d4f2a"
+      },
+      snow: {
+        floor: ["#e2e8f0", "#f1f5f9", "#cbd5e1"],
+        dirt: ["#94a3b8", "#a8b8cc", "#64748b"],
+        speck: "#94a3b8",
+        light: "#ffffff",
+        flowers: ["#bfdbfe", "#ffffff", "#93c5fd"],
+        wallTop: ["#cbd5e1", "#e2e8f0", "#94a3b8"],
+        wallLight: "#ffffff",
+        wallEdge: "#334155",
+        wallFace: ["#64748b", "#475569"],
+        wallFaceDark: "#1e293b",
+        liq: "#1d4ed8",
+        liqDeep: "#1e3a8a",
+        foam: "#bfdbfe",
+        shore: "#94a3b8"
+      },
+      desert: {
+        floor: ["#d97706", "#eab308", "#ca8a04"],
+        dirt: ["#b45309", "#92400e", "#78350f"],
+        speck: "#92400e",
+        light: "#fde047",
+        flowers: ["#ef4444", "#f97316", "#fbbf24"],
+        wallTop: ["#c2410c", "#ea580c", "#9a3412"],
+        wallLight: "#fb923c",
+        wallEdge: "#7c2d12",
+        wallFace: ["#9a3412", "#7c2d12"],
+        wallFaceDark: "#431407",
+        liq: "#0284c7",
+        liqDeep: "#0369a1",
+        foam: "#7dd3fc",
+        shore: "#b45309"
+      },
+      volcano: {
+        floor: ["#18181b", "#27272a", "#09090b"],
+        dirt: ["#451a03", "#78350f", "#27272a"],
+        speck: "#ea580c",
+        light: "#f97316",
+        flowers: ["#f97316", "#ef4444", "#facc15"],
+        wallTop: ["#0f172a", "#1e293b", "#090d16"],
+        wallLight: "#475569",
+        wallEdge: "#020617",
+        wallFace: ["#1e1b4b", "#0f172a"],
+        wallFaceDark: "#020617",
+        liq: "#dc2626",
+        liqDeep: "#991b1b",
+        foam: "#facc15",
+        // Schiuma incandescente di lava!
+        shore: "#78350f"
+      },
+      village: {
+        floor: ["#64748b", "#718096", "#526075"],
+        // Lastricato in pietra
+        dirt: ["#475569", "#334155", "#475569"],
+        // Sentieri di ciottoli
+        speck: "#334155",
+        light: "#94a3b8",
+        flowers: ["#fde047", "#f472b6", "#ffffff"],
+        wallTop: ["#475569", "#526075", "#334155"],
+        wallLight: "#94a3b8",
+        wallEdge: "#0f172a",
+        wallFace: ["#334155", "#1e293b"],
+        wallFaceDark: "#0f172a",
+        liq: "#0284c7",
+        liqDeep: "#0369a1",
+        foam: "#e0f2fe",
+        shore: "#475569"
       }
-    ];
+    };
+    const PALETTES = {};
+    for (const [name, B] of Object.entries(BIOME_DATA)) {
+      const C = {};
+      for (const k of ["floor", "dirt", "wallTop", "wallFace", "flowers"]) {
+        C[k] = B[k].map((h) => pack(h));
+      }
+      for (const k of ["speck", "light", "wallLight", "wallEdge", "wallFaceDark", "liq", "liqDeep", "foam", "shore"]) {
+        C[k] = pack(B[k]);
+      }
+      C.liqLight = mixPack(B.liq, B.foam, 0.35);
+      PALETTES[name] = C;
+    }
     function dirtMask(gx0, gy0, W, seed) {
       const S = 4, gw = Math.floor(W / S) + 3;
       const grid = new Float32Array(gw * gw);
@@ -220,8 +294,9 @@
       }
       return (x, y) => mask[(y + 1) * W + x] === 1;
     }
-    function paintFloor(P, C, ox, oy, tx, ty, dirtAt, at) {
+    function paintFloor(P, C, ox, oy, tx, ty, dirtAt, at, biome) {
       let dirtCount = 0;
+      const isVillage = biome === "village";
       for (let y = 0; y < T; y++) {
         for (let x = 0; x < T; x++) {
           const gx = tx * T + x, gy = ty * T + y;
@@ -234,6 +309,11 @@
           const r = hash(gx, gy, 13);
           if (r < 0.04) col = C.speck;
           else if (r > 0.98) col = C.light;
+          if (isVillage) {
+            if ((x % 8 === 0 || y % 8 === 0) && (x + y) % 2 === 0) {
+              col = C.speck;
+            }
+          }
           if (isDirt && !dirtAt(lx, ly - 1)) col = C.speck;
           else if (!isDirt && dirtAt(lx, ly - 1) && r < 0.5) col = C.light;
           P.set(ox + x, oy + y, col);
@@ -248,7 +328,7 @@
       const d = hash(tx, ty, 14);
       const fx = ox + 3 + Math.floor(hash(tx, ty, 15) * 10);
       const fy = oy + 4 + Math.floor(hash(tx, ty, 16) * 9);
-      if (dirtCount <= T * T / 2) {
+      if (dirtCount <= T * T / 2 && !isVillage) {
         if (d < 0.18) {
           P.set(fx, fy, C.light);
           P.set(fx - 1, fy - 1, C.light);
@@ -347,26 +427,16 @@
       for (const [x, y] of marks) P.set(x, y, col);
     }
     function paintTree() {
-      const B = BIOMES[0];
       const P = Pix(32, 42);
-      const L = B.leaf.map((h) => pack(h));
-      const Tr = B.trunk.map((h) => pack(h));
+      const L = ["#166534", "#15803d", "#22c55e", "#4ade80"].map((h) => pack(h));
+      const Tr = ["#451a03", "#78350f"].map((h) => pack(h));
       const edge = pack("#0f172a");
       for (let y = 26; y < 40; y++) {
-        for (let x = 14; x < 19; x++) {
-          P.set(x, y, Tr[x === 14 || x === 18 ? 0 : 1]);
-        }
+        for (let x = 14; x < 19; x++) P.set(x, y, Tr[x === 14 || x === 18 ? 0 : 1]);
       }
       P.set(13, 39, Tr[0]);
       P.set(19, 39, Tr[0]);
-      const foliage = [
-        [16, 20, 11],
-        [9, 17, 8],
-        [23, 17, 8],
-        [16, 11, 9],
-        [11, 23, 7],
-        [21, 23, 7]
-      ];
+      const foliage = [[16, 20, 11], [9, 17, 8], [23, 17, 8], [16, 11, 9], [11, 23, 7], [21, 23, 7]];
       for (const [bx, by, br] of foliage) {
         disc(P, bx, by, br, (x, y) => {
           const lit = ((x - bx) * -0.6 + (y - by) * -0.8) / br;
@@ -377,17 +447,88 @@
       outline(P, edge);
       return P.canvas();
     }
-    function paintRock() {
-      const B = BIOMES[0];
+    function paintPine() {
+      const P = Pix(32, 46);
+      const green = pack("#064e3b");
+      const snow = pack("#f8fafc");
+      const snowShadow = pack("#cbd5e1");
+      const trunk = pack("#451a03");
+      const edge = pack("#090d16");
+      for (let y = 36; y < 44; y++) {
+        for (let x = 14; x <= 17; x++) P.set(x, y, trunk);
+      }
+      const tiers = [
+        { yTop: 6, yBot: 18, wMax: 9 },
+        { yTop: 15, yBot: 28, wMax: 13 },
+        { yTop: 24, yBot: 38, wMax: 16 }
+      ];
+      for (const tier of tiers) {
+        for (let y = tier.yTop; y <= tier.yBot; y++) {
+          const span = Math.round((y - tier.yTop) / (tier.yBot - tier.yTop) * tier.wMax);
+          for (let x = 16 - span; x <= 16 + span; x++) {
+            const isSnow = y - tier.yTop < 3;
+            P.set(x, y, isSnow ? x % 2 === 0 ? snow : snowShadow : green);
+          }
+        }
+      }
+      outline(P, edge);
+      return P.canvas();
+    }
+    function paintCactus() {
+      const P = Pix(26, 38);
+      const cMain = pack("#15803d");
+      const cLight = pack("#22c55e");
+      const cDark = pack("#14532d");
+      const edge = pack("#052e16");
+      for (let y = 6; y < 36; y++) {
+        for (let x = 11; x <= 15; x++) {
+          P.set(x, y, x === 11 ? cLight : x === 15 ? cDark : cMain);
+        }
+      }
+      for (let x = 4; x <= 11; x++) P.set(x, 22, cMain);
+      for (let y = 14; y <= 22; y++) {
+        P.set(4, y, cLight);
+        P.set(5, y, cMain);
+      }
+      for (let x = 15; x <= 22; x++) P.set(x, 18, cMain);
+      for (let y = 10; y <= 18; y++) {
+        P.set(21, y, cMain);
+        P.set(22, y, cDark);
+      }
+      outline(P, edge);
+      return P.canvas();
+    }
+    function paintVolcanoRock() {
+      const P = Pix(26, 20);
+      const cDark = pack("#09090b");
+      const cMid = pack("#27272a");
+      const cFire = pack("#ea580c");
+      const cYellow = pack("#facc15");
+      const edge = pack("#000000");
+      for (let y = 2; y <= 17; y++) {
+        for (let x = 2; x <= 23; x++) {
+          const nx = (x - 12.5) / 10.5;
+          const ny = (y - 9.5) / 7.5;
+          if (nx * nx + ny * ny > 1) continue;
+          let c = hash(x, y, 91) > 0.4 ? cDark : cMid;
+          if (Math.abs(x - y + 2) <= 1 && y > 5 && y < 15) {
+            c = hash(x, y, 92) > 0.5 ? cFire : cYellow;
+          }
+          P.set(x, y, c);
+        }
+      }
+      outline(P, edge);
+      return P.canvas();
+    }
+    function paintRock(colorType = "slate") {
       const P = Pix(24, 18);
-      const R = B.rock.map((h) => pack(h));
+      const R = colorType === "sand" ? ["#7c2d12", "#c2410c", "#fb923c"].map((h) => pack(h)) : ["#475569", "#64748b", "#94a3b8"].map((h) => pack(h));
       const edge = pack("#0f172a");
       for (let y = 2; y <= 15; y++) {
         for (let x = 2; x <= 21; x++) {
           const nx = (x - 11.5) / 9.5;
           const ny = (y - 9.5) / 7;
-          const d = nx * nx + ny * ny;
-          if (d > 1) continue;
+          if (nx * nx + ny * ny > 1) continue;
           const lit = -nx * 0.55 - ny * 0.85;
           let c = R[lit > 0.35 ? 2 : lit > -0.1 ? 1 : 0];
           if (y >= 14) c = R[0];
@@ -397,20 +538,116 @@
       outline(P, edge);
       return P.canvas();
     }
+    function paintHouse(roofType = "red") {
+      const W = 64;
+      const H = 54;
+      const P = Pix(W, H);
+      const isRed = roofType === "red";
+      const cRoofDark = pack(isRed ? "#991b1b" : "#1e3a8a");
+      const cRoofMain = pack(isRed ? "#dc2626" : "#2563eb");
+      const cRoofLight = pack(isRed ? "#ef4444" : "#60a5fa");
+      const cWallStone = pack("#e2e8f0");
+      const cWallShadow = pack("#94a3b8");
+      const cBeamWood = pack("#451a03");
+      const cDoor = pack("#78350f");
+      const cWindowGlow = pack("#fde047");
+      const cWindowFrame = pack("#1e293b");
+      const cChimney = pack("#475569");
+      const cEdge = pack("#090d16");
+      for (let y = 4; y <= 16; y++) {
+        for (let x = 10; x <= 16; x++) P.set(x, y, cChimney);
+      }
+      for (let x = 9; x <= 17; x++) P.set(x, 4, cEdge);
+      for (let y = 26; y < 50; y++) {
+        for (let x = 8; x < 56; x++) {
+          const isStone = x % 6 === 0 || y % 6 === 0 ? cWallShadow : cWallStone;
+          P.set(x, y, isStone);
+        }
+      }
+      for (let y = 26; y < 50; y++) {
+        P.set(8, y, cBeamWood);
+        P.set(9, y, cBeamWood);
+        P.set(54, y, cBeamWood);
+        P.set(55, y, cBeamWood);
+        P.set(31, y, cBeamWood);
+        P.set(32, y, cBeamWood);
+      }
+      for (let x = 7; x <= 56; x++) {
+        P.set(x, 49, cBeamWood);
+        P.set(x, 50, cEdge);
+      }
+      for (let y = 35; y < 49; y++) {
+        for (let x = 28; x <= 35; x++) P.set(x, y, cDoor);
+      }
+      P.set(34, 42, pack("#facc15"));
+      const windows = [16, 42];
+      for (const wx of windows) {
+        for (let y = 33; y <= 41; y++) {
+          for (let x = wx; x <= wx + 7; x++) {
+            const isFrame = x === wx || x === wx + 7 || y === 33 || y === 41 || x === wx + 3 || y === 37;
+            P.set(x, y, isFrame ? cWindowFrame : cWindowGlow);
+          }
+        }
+      }
+      const roofTopY = 8;
+      const roofBotY = 27;
+      for (let y = roofTopY; y <= roofBotY; y++) {
+        const span = Math.round((y - roofTopY) / (roofBotY - roofTopY) * 28);
+        for (let x = 32 - span; x <= 32 + span; x++) {
+          const isBorder = x === 32 - span || x === 32 + span;
+          const shingle = y % 3 === 0 ? cRoofLight : isBorder ? cRoofDark : cRoofMain;
+          P.set(x, y, shingle);
+        }
+      }
+      for (let x = 3; x <= 61; x++) P.set(x, 27, cBeamWood);
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintWell() {
+      const P = Pix(28, 30);
+      const cStone = pack("#64748b");
+      const cStoneLight = pack("#94a3b8");
+      const cWood = pack("#5b4a34");
+      const cWater = pack("#0284c7");
+      const cEdge = pack("#0f172a");
+      for (let y = 2; y <= 9; y++) {
+        const span = Math.round((y - 2) / 7 * 11);
+        for (let x = 14 - span; x <= 14 + span; x++) P.set(x, y, cWood);
+      }
+      for (let y = 9; y <= 20; y++) {
+        P.set(5, y, cWood);
+        P.set(22, y, cWood);
+      }
+      for (let y = 18; y <= 26; y++) {
+        for (let x = 3; x <= 24; x++) {
+          P.set(x, y, y === 18 && x > 7 && x < 20 ? cWater : x % 3 === 0 ? cStoneLight : cStone);
+        }
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintLamppost() {
+      const P = Pix(16, 32);
+      const cIron = pack("#1e293b");
+      const cGlow = pack("#fde047");
+      const cEdge = pack("#020617");
+      for (let y = 8; y <= 29; y++) {
+        P.set(7, y, cIron);
+        P.set(8, y, cIron);
+      }
+      for (let y = 4; y <= 10; y++) {
+        for (let x = 5; x <= 10; x++) {
+          P.set(x, y, x === 5 || x === 10 || y === 4 || y === 10 ? cIron : cGlow);
+        }
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
     const propCache = /* @__PURE__ */ new Map();
     return {
       T,
-      paintChunk(cx, cy, n, at, seed = 0) {
-        const B = BIOMES[0];
+      paintChunk(cx, cy, n, at, getBiome, seed = 0) {
         const P = Pix(n * T, n * T);
-        const C = {};
-        for (const k of ["floor", "dirt", "wallTop", "wallFace", "flowers", "leaf"]) {
-          C[k] = B[k].map((h) => pack(h));
-        }
-        for (const k of ["speck", "light", "wallLight", "wallEdge", "wallFaceDark", "liq", "liqDeep", "foam", "shore"]) {
-          C[k] = pack(B[k]);
-        }
-        C.liqLight = mixPack(B.liq, B.foam, 0.35);
         const tx0 = cx * n, ty0 = cy * n;
         const dirtAt = dirtMask(tx0 * T, ty0 * T, n * T, seed);
         for (let j = 0; j < n; j++) {
@@ -418,7 +655,9 @@
             const tx = tx0 + i, ty = ty0 + j;
             const ox = i * T, oy = j * T;
             const kind = at(tx, ty);
-            paintFloor(P, C, ox, oy, tx, ty, dirtAt, at);
+            const biome = getBiome ? getBiome(tx, ty) : "forest";
+            const C = PALETTES[biome] || PALETTES.forest;
+            paintFloor(P, C, ox, oy, tx, ty, dirtAt, at, biome);
             if (kind === "wall") {
               paintWall(P, C, ox, oy, tx, ty, at);
             } else if (kind === "liquid") {
@@ -431,7 +670,15 @@
       getPropSprite(type) {
         if (!propCache.has(type)) {
           if (type === "tree") propCache.set(type, paintTree());
-          else if (type === "rock") propCache.set(type, paintRock());
+          else if (type === "pine") propCache.set(type, paintPine());
+          else if (type === "cactus") propCache.set(type, paintCactus());
+          else if (type === "volcano_rock") propCache.set(type, paintVolcanoRock());
+          else if (type === "sand_rock") propCache.set(type, paintRock("sand"));
+          else if (type === "rock") propCache.set(type, paintRock("slate"));
+          else if (type === "house_red") propCache.set(type, paintHouse("red"));
+          else if (type === "house_blue") propCache.set(type, paintHouse("blue"));
+          else if (type === "well") propCache.set(type, paintWell());
+          else if (type === "lamppost") propCache.set(type, paintLamppost());
         }
         return propCache.get(type);
       }
@@ -554,11 +801,28 @@
       const w = 22 * PX;
       const h = 20 * PX;
       const { canvas, ctx } = createOffscreen(w, h);
-      const isWater = type === "water";
-      const cOutline = isWater ? "#082f49" : "#052e16";
-      const cBase = isWater ? "#0284c7" : "#16a34a";
-      const cLight = isWater ? "#38bdf8" : "#4ade80";
-      const cHighlight = isWater ? "#bae6fd" : "#bbf7d0";
+      let cOutline = "#052e16", cBase = "#16a34a", cLight = "#4ade80", cHighlight = "#bbf7d0";
+      if (type === "water") {
+        cOutline = "#082f49";
+        cBase = "#0284c7";
+        cLight = "#38bdf8";
+        cHighlight = "#bae6fd";
+      } else if (type === "ice") {
+        cOutline = "#1e293b";
+        cBase = "#93c5fd";
+        cLight = "#dbeafe";
+        cHighlight = "#ffffff";
+      } else if (type === "sand") {
+        cOutline = "#78350f";
+        cBase = "#d97706";
+        cLight = "#fbbf24";
+        cHighlight = "#fef08a";
+      } else if (type === "magma") {
+        cOutline = "#451a03";
+        cBase = "#dc2626";
+        cLight = "#f97316";
+        cHighlight = "#fde047";
+      }
       const cx = Math.floor(w / 2);
       let sx = 0;
       let sy = 0;
@@ -731,6 +995,19 @@
   })();
 
   // src/world/world.js
+  var VILLAGE_BUILDINGS = [
+    { type: "house_red", tx: -7, ty: -6, wTiles: 4, hTiles: 3, name: "Taverna del Viandante" },
+    { type: "house_blue", tx: 3, ty: -6, wTiles: 4, hTiles: 3, name: "Torre dell'Arcimago" },
+    { type: "house_blue", tx: -7, ty: 3, wTiles: 4, hTiles: 3, name: "Bottega delle Pozioni" },
+    { type: "house_red", tx: 3, ty: 3, wTiles: 4, hTiles: 3, name: "Fucina & Armeria" }
+  ];
+  var VILLAGE_PROPS = [
+    { type: "well", tx: 0, ty: -1 },
+    { type: "lamppost", tx: -2, ty: -3 },
+    { type: "lamppost", tx: 2, ty: -3 },
+    { type: "lamppost", tx: -2, ty: 1 },
+    { type: "lamppost", tx: 2, ty: 1 }
+  ];
   var World = class {
     constructor(seed = 2026) {
       this.seed = seed;
@@ -744,6 +1021,10 @@
       this.TILE_WATER = 2;
       this.TILE_TREE = 3;
       this.TILE_ROCK = 4;
+      this.TILE_PINE = 5;
+      this.TILE_CACTUS = 6;
+      this.TILE_VOLCANO_ROCK = 7;
+      this.TILE_SAND_ROCK = 8;
       this.MAP_RADIUS = 50;
       this.minTile = -this.MAP_RADIUS;
       this.maxTile = this.MAP_RADIUS;
@@ -762,52 +1043,82 @@
     tileOf(worldCoord) {
       return Math.floor(worldCoord / this.TS);
     }
+    /**
+     * Determina a quale dei 5 biomi appartiene una coordinata di mappa:
+     * 1. 'village': Paesino e Santuario centrale (|tx| <= 8, |ty| <= 8)
+     * 2. 'snow': Montagne Innevate a Nord (ty < -8)
+     * 3. 'desert': Deserto e Canyon di Sabbia a Sud-Ovest (tx < 0, ty > 8)
+     * 4. 'volcano': Caldera Vulcanica e Lava a Sud-Est / Est (tx >= 0, ty > 8 o tx > 8)
+     * 5. 'forest': Bosco e Radure Silvane a Ovest (tx < -8, -8 <= ty <= 8)
+     */
+    getBiome(tx, ty) {
+      if (Math.abs(tx) <= 8 && Math.abs(ty) <= 8) {
+        return "village";
+      }
+      if (ty < -8) {
+        return "snow";
+      }
+      if (tx < 0 && ty > 8) {
+        return "desert";
+      }
+      if (tx > 8 || tx >= 0 && ty > 8) {
+        return "volcano";
+      }
+      return "forest";
+    }
+    isBuildingSolid(tx, ty) {
+      for (const b of VILLAGE_BUILDINGS) {
+        if (tx >= b.tx && tx < b.tx + b.wTiles && ty >= b.ty + 1 && ty < b.ty + b.hTiles) {
+          return true;
+        }
+      }
+      for (const p of VILLAGE_PROPS) {
+        if (p.type === "well" && p.tx === tx && p.ty === ty) {
+          return true;
+        }
+        if (p.type === "lamppost" && p.tx === tx && p.ty === ty) {
+          return true;
+        }
+      }
+      return false;
+    }
     getTileType(tx, ty) {
       if (Math.abs(tx) >= this.MAP_RADIUS - 3 || Math.abs(ty) >= this.MAP_RADIUS - 3) {
         return this.TILE_WALL;
       }
-      if (Math.abs(tx) <= 5 && Math.abs(ty) <= 5) {
+      const biome = this.getBiome(tx, ty);
+      if (biome === "village") {
         return this.TILE_FLOOR;
       }
-      const isWaterBiome = tx > 0 && ty > 0;
-      const waterThreshold = isWaterBiome ? 0.65 : 0.82;
-      const waterNoise = this.hash2D(Math.floor(tx / 3), Math.floor(ty / 3), 101);
-      if (waterNoise > waterThreshold) {
-        return this.TILE_WATER;
-      }
-      const isRuinsBiome = tx > 0 && ty < 0;
       const wallNoise = this.hash2D(tx, ty, 42);
-      if (wallNoise > (isRuinsBiome ? 0.84 : 0.91)) {
-        return this.TILE_WALL;
+      const waterNoise = this.hash2D(Math.floor(tx / 3), Math.floor(ty / 3), 101);
+      const propNoise = this.hash2D(tx, ty, 77);
+      if (biome === "snow") {
+        if (wallNoise > 0.81) return this.TILE_WALL;
+        if (waterNoise > 0.82) return this.TILE_WATER;
+        if (propNoise > 0.77) return this.TILE_PINE;
+        if (propNoise > 0.73) return this.TILE_ROCK;
+        return this.TILE_FLOOR;
       }
-      const isForestBiome = tx < 0 && ty < 0;
-      if (isForestBiome) {
-        if (wallNoise > 0.76) return this.TILE_TREE;
-        if (wallNoise > 0.72) return this.TILE_ROCK;
-      } else {
-        if (wallNoise > 0.85) return this.TILE_TREE;
-        if (wallNoise > 0.81) return this.TILE_ROCK;
+      if (biome === "desert") {
+        if (wallNoise > 0.83) return this.TILE_WALL;
+        if (waterNoise > 0.9) return this.TILE_WATER;
+        if (propNoise > 0.81) return this.TILE_CACTUS;
+        if (propNoise > 0.77) return this.TILE_SAND_ROCK;
+        return this.TILE_FLOOR;
       }
+      if (biome === "volcano") {
+        if (wallNoise > 0.8) return this.TILE_WALL;
+        if (waterNoise > 0.74) return this.TILE_WATER;
+        if (propNoise > 0.78) return this.TILE_VOLCANO_ROCK;
+        if (propNoise > 0.74) return this.TILE_ROCK;
+        return this.TILE_FLOOR;
+      }
+      if (wallNoise > 0.86) return this.TILE_WALL;
+      if (waterNoise > 0.77) return this.TILE_WATER;
+      if (propNoise > 0.76) return this.TILE_TREE;
+      if (propNoise > 0.72) return this.TILE_ROCK;
       return this.TILE_FLOOR;
-    }
-    /**
-     * Trova una posizione valida e sicura (non solida, non in acqua) per lo spawn di entità
-     */
-    findValidSpawn(minDist = 250, maxDist = 1350) {
-      for (let attempts = 0; attempts < 50; attempts++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = minDist + Math.random() * (maxDist - minDist);
-        const px = Math.cos(angle) * dist;
-        const py = Math.sin(angle) * dist;
-        const tx = this.tileOf(px);
-        const ty = this.tileOf(py);
-        if (Math.abs(tx) < this.MAP_RADIUS - 5 && Math.abs(ty) < this.MAP_RADIUS - 5) {
-          if (!this.isSolid(tx, ty) && !this.isLiquid(px, py)) {
-            return { x: px, y: py };
-          }
-        }
-      }
-      return { x: 300, y: 300 };
     }
     getKind(tx, ty) {
       const t = this.getTileType(tx, ty);
@@ -817,12 +1128,41 @@
     }
     isSolid(tx, ty) {
       const t = this.getTileType(tx, ty);
-      return t === this.TILE_WALL || t === this.TILE_TREE || t === this.TILE_ROCK;
+      return t === this.TILE_WALL || t === this.TILE_WATER || t === this.TILE_TREE || t === this.TILE_PINE || t === this.TILE_CACTUS || t === this.TILE_VOLCANO_ROCK || t === this.TILE_SAND_ROCK || t === this.TILE_ROCK || this.isBuildingSolid(tx, ty);
     }
     isLiquid(x, y) {
       const tx = this.tileOf(x);
       const ty = this.tileOf(y);
       return this.getTileType(tx, ty) === this.TILE_WATER;
+    }
+    /**
+     * Trova una posizione valida e sicura (non solida, non in acqua/lava)
+     * con supporto opzionale per bioma specifico.
+     */
+    findValidSpawn(minDist = 250, maxDist = 1350, targetBiome = null) {
+      for (let attempts = 0; attempts < 60; attempts++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = minDist + Math.random() * (maxDist - minDist);
+        const px = Math.cos(angle) * dist;
+        const py = Math.sin(angle) * dist;
+        const tx = this.tileOf(px);
+        const ty = this.tileOf(py);
+        if (Math.abs(tx) < this.MAP_RADIUS - 5 && Math.abs(ty) < this.MAP_RADIUS - 5) {
+          if (!this.isSolid(tx, ty) && !this.isLiquid(px, py)) {
+            const currentBiome = this.getBiome(tx, ty);
+            if (targetBiome) {
+              if (currentBiome === targetBiome) {
+                return { x: px, y: py };
+              }
+            } else {
+              if (currentBiome !== "village") {
+                return { x: px, y: py };
+              }
+            }
+          }
+        }
+      }
+      return { x: 320, y: 320 };
     }
     /**
      * Risolve le collisioni (cerchio vs AABB) in due passaggi per scivolamento continuo
@@ -879,7 +1219,14 @@
       if (this.chunkCanvases.has(key)) {
         return this.chunkCanvases.get(key);
       }
-      const canvas = Tiles.paintChunk(cx, cy, this.N, (tx, ty) => this.getKind(tx, ty), this.seed);
+      const canvas = Tiles.paintChunk(
+        cx,
+        cy,
+        this.N,
+        (tx, ty) => this.getKind(tx, ty),
+        (tx, ty) => this.getBiome(tx, ty),
+        this.seed
+      );
       this.chunkCanvases.set(key, canvas);
       const props = [];
       for (let lty = 0; lty < this.N; lty++) {
@@ -889,9 +1236,35 @@
           const t = this.getTileType(tx, ty);
           if (t === this.TILE_TREE) {
             props.push({ type: "tree", x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
+          } else if (t === this.TILE_PINE) {
+            props.push({ type: "pine", x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
+          } else if (t === this.TILE_CACTUS) {
+            props.push({ type: "cactus", x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
+          } else if (t === this.TILE_VOLCANO_ROCK) {
+            props.push({ type: "volcano_rock", x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS / 2 });
+          } else if (t === this.TILE_SAND_ROCK) {
+            props.push({ type: "sand_rock", x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS / 2 });
           } else if (t === this.TILE_ROCK) {
             props.push({ type: "rock", x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS / 2 });
           }
+        }
+      }
+      for (const b of VILLAGE_BUILDINGS) {
+        const anchorX = (b.tx + b.wTiles / 2) * this.TS;
+        const anchorY = (b.ty + b.hTiles) * this.TS;
+        const bChunkX = Math.floor(anchorX / this.CW);
+        const bChunkY = Math.floor(anchorY / this.CW);
+        if (bChunkX === cx && bChunkY === cy) {
+          props.push({ type: b.type, x: anchorX, y: anchorY });
+        }
+      }
+      for (const p of VILLAGE_PROPS) {
+        const anchorX = p.tx * this.TS + this.TS / 2;
+        const anchorY = p.ty * this.TS + this.TS;
+        const pChunkX = Math.floor(anchorX / this.CW);
+        const pChunkY = Math.floor(anchorY / this.CW);
+        if (pChunkX === cx && pChunkY === cy) {
+          props.push({ type: p.type, x: anchorX, y: anchorY });
         }
       }
       this.chunkProps.set(key, props);
@@ -919,13 +1292,13 @@
       }
     }
     /**
-     * Disegna oggetti dello scenario ed entità con ordinamento Y (profondità visiva top-down)
+     * Disegna oggetti dello scenario ed entità con ordinamento Y (profondità visiva top-down 2.5D)
      */
     drawEntitiesAndProps(ctx, camera, entities = []) {
-      const startCx = Math.floor((camera.left() - 60) / this.CW);
-      const endCx = Math.floor((camera.left() + camera.w + 60) / this.CW);
-      const startCy = Math.floor((camera.top() - 60) / this.CW);
-      const endCy = Math.floor((camera.top() + camera.h + 60) / this.CW);
+      const startCx = Math.floor((camera.left() - 80) / this.CW);
+      const endCx = Math.floor((camera.left() + camera.w + 80) / this.CW);
+      const startCy = Math.floor((camera.top() - 80) / this.CW);
+      const endCy = Math.floor((camera.top() + camera.h + 80) / this.CW);
       const drawList = [];
       for (let cy = startCy; cy <= endCy; cy++) {
         for (let cx = startCx; cx <= endCx; cx++) {
@@ -933,7 +1306,7 @@
           this.getChunkCanvas(cx, cy);
           const props = this.chunkProps.get(key) || [];
           for (const p of props) {
-            if (camera.sees(p.x, p.y, 90)) {
+            if (camera.sees(p.x, p.y, 140)) {
               drawList.push({
                 y: p.y,
                 draw: () => {
@@ -941,14 +1314,29 @@
                   if (!sprite) return;
                   const sw = sprite.width * this.PX;
                   const sh = sprite.height * this.PX;
-                  Sprites.drawShadow(ctx, p.x, p.y - 2, p.type === "tree" ? 14 : 10);
-                  ctx.drawImage(
-                    sprite,
-                    Math.round(p.x - sw / 2),
-                    Math.round(p.y - sh + (p.type === "tree" ? 8 : 4)),
-                    sw,
-                    sh
-                  );
+                  if (p.type === "house_red" || p.type === "house_blue") {
+                    ctx.fillStyle = "rgba(6, 8, 14, 0.45)";
+                    ctx.fillRect(Math.round(p.x - sw / 2 + 10), Math.round(p.y - 8), sw - 20, 14);
+                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 8), sw, sh);
+                  } else if (p.type === "well") {
+                    Sprites.drawShadow(ctx, p.x, p.y - 2, 14);
+                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
+                  } else if (p.type === "lamppost") {
+                    Sprites.drawShadow(ctx, p.x, p.y - 1, 7);
+                    const glow = ctx.createRadialGradient(p.x, p.y - 28, 4, p.x, p.y - 28, 46);
+                    glow.addColorStop(0, "rgba(253, 224, 71, 0.22)");
+                    glow.addColorStop(1, "rgba(253, 224, 71, 0)");
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y - 28, 46, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
+                  } else {
+                    const rad = p.type === "tree" || p.type === "pine" ? 14 : p.type === "cactus" ? 10 : 12;
+                    Sprites.drawShadow(ctx, p.x, p.y - 2, rad);
+                    const yOff = p.type === "tree" || p.type === "pine" ? 8 : 4;
+                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + yOff), sw, sh);
+                  }
                 }
               });
             }
@@ -1198,6 +1586,36 @@
         this.gemType = "cyan";
         this.contactDamage = 6;
         this.goldValue = 4;
+      } else if (kind === "slime_ice") {
+        this.name = "Slime dei Ghiacci";
+        this.maxHp = 42;
+        this.baseSpd = 54;
+        this.r = 13;
+        this.aggroRadius = 190;
+        this.xpValue = 15;
+        this.gemType = "cyan";
+        this.contactDamage = 7;
+        this.goldValue = 5;
+      } else if (kind === "slime_sand") {
+        this.name = "Slime delle Dune";
+        this.maxHp = 50;
+        this.baseSpd = 58;
+        this.r = 13;
+        this.aggroRadius = 200;
+        this.xpValue = 18;
+        this.gemType = "cyan";
+        this.contactDamage = 9;
+        this.goldValue = 7;
+      } else if (kind === "slime_magma") {
+        this.name = "Slime di Lava";
+        this.maxHp = 60;
+        this.baseSpd = 65;
+        this.r = 13;
+        this.aggroRadius = 210;
+        this.xpValue = 22;
+        this.gemType = "emerald";
+        this.contactDamage = 12;
+        this.goldValue = 9;
       } else if (kind === "slime_water") {
         this.name = "Slime delle Onde";
         this.maxHp = 45;
@@ -1210,7 +1628,7 @@
         this.goldValue = 6;
       } else {
         this.name = "Scheletro Guardiano";
-        this.maxHp = 70;
+        this.maxHp = 75;
         this.baseSpd = 72;
         this.r = 14;
         this.aggroRadius = 210;
@@ -1315,13 +1733,9 @@
       if (this.flashTimer > 0) {
         ctx.filter = "brightness(2.2)";
       }
-      if (this.kind === "slime_forest") {
-        const sprite = Sprites.getSlimeSprite("forest", this.frame);
-        const sw = sprite.width;
-        const sh = sprite.height;
-        ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 8));
-      } else if (this.kind === "slime_water") {
-        const sprite = Sprites.getSlimeSprite("water", this.frame);
+      if (this.kind.startsWith("slime_")) {
+        const slimeType = this.kind.replace("slime_", "");
+        const sprite = Sprites.getSlimeSprite(slimeType, this.frame);
         const sw = sprite.width;
         const sh = sprite.height;
         ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 8));
@@ -2240,7 +2654,7 @@
       runSurvivalSeconds = 0;
       player.applyPermanentStats(currentProfile.calculatedStats);
       player.x = 0;
-      player.y = 0;
+      player.y = 50;
       camera.snapTo(player.x, player.y);
       combat.kills = 0;
       combat.goldEarned = 0;
@@ -2255,16 +2669,24 @@
       progression.currentXp = 0;
       progression.nextLevelXp = 25;
       progression.isPausedForLevelUp = false;
-      for (let i = 0; i < 18; i++) {
-        const pt = world.findValidSpawn(260, 1250);
+      for (let i = 0; i < 10; i++) {
+        const pt = world.findValidSpawn(300, 1300, "forest");
         combat.enemies.push(new Enemy(pt.x, pt.y, "slime_forest"));
       }
-      for (let i = 0; i < 12; i++) {
-        const pt = world.findValidSpawn(280, 1300);
-        combat.enemies.push(new Enemy(pt.x, pt.y, "slime_water"));
+      for (let i = 0; i < 10; i++) {
+        const pt = world.findValidSpawn(300, 1300, "snow");
+        combat.enemies.push(new Enemy(pt.x, pt.y, "slime_ice"));
+      }
+      for (let i = 0; i < 10; i++) {
+        const pt = world.findValidSpawn(300, 1300, "desert");
+        combat.enemies.push(new Enemy(pt.x, pt.y, "slime_sand"));
+      }
+      for (let i = 0; i < 10; i++) {
+        const pt = world.findValidSpawn(300, 1300, "volcano");
+        combat.enemies.push(new Enemy(pt.x, pt.y, "slime_magma"));
       }
       for (let i = 0; i < 14; i++) {
-        const pt = world.findValidSpawn(320, 1380);
+        const pt = world.findValidSpawn(350, 1400);
         combat.enemies.push(new Enemy(pt.x, pt.y, "skeleton"));
       }
       menuScreen.classList.add("hidden");

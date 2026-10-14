@@ -23,6 +23,36 @@ export class Enemy {
       this.gemType = 'cyan';
       this.contactDamage = 6;
       this.goldValue = 4;
+    } else if (kind === 'slime_ice') {
+      this.name = 'Slime dei Ghiacci';
+      this.maxHp = 42;
+      this.baseSpd = 54;
+      this.r = 13;
+      this.aggroRadius = 190;
+      this.xpValue = 15;
+      this.gemType = 'cyan';
+      this.contactDamage = 7;
+      this.goldValue = 5;
+    } else if (kind === 'slime_sand') {
+      this.name = 'Slime delle Dune';
+      this.maxHp = 50;
+      this.baseSpd = 58;
+      this.r = 13;
+      this.aggroRadius = 200;
+      this.xpValue = 18;
+      this.gemType = 'cyan';
+      this.contactDamage = 9;
+      this.goldValue = 7;
+    } else if (kind === 'slime_magma') {
+      this.name = 'Slime di Lava';
+      this.maxHp = 60;
+      this.baseSpd = 65;
+      this.r = 13;
+      this.aggroRadius = 210;
+      this.xpValue = 22;
+      this.gemType = 'emerald';
+      this.contactDamage = 12;
+      this.goldValue = 9;
     } else if (kind === 'slime_water') {
       this.name = 'Slime delle Onde';
       this.maxHp = 45;
@@ -35,7 +65,7 @@ export class Enemy {
       this.goldValue = 6;
     } else {
       this.name = 'Scheletro Guardiano';
-      this.maxHp = 70;
+      this.maxHp = 75;
       this.baseSpd = 72;
       this.r = 14;
       this.aggroRadius = 210;
@@ -181,13 +211,9 @@ export class Enemy {
     }
 
     // Render dello sprite pixel-art
-    if (this.kind === 'slime_forest') {
-      const sprite = Sprites.getSlimeSprite('forest', this.frame);
-      const sw = sprite.width;
-      const sh = sprite.height;
-      ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 8));
-    } else if (this.kind === 'slime_water') {
-      const sprite = Sprites.getSlimeSprite('water', this.frame);
+    if (this.kind.startsWith('slime_')) {
+      const slimeType = this.kind.replace('slime_', '');
+      const sprite = Sprites.getSlimeSprite(slimeType, this.frame);
       const sw = sprite.width;
       const sh = sprite.height;
       ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 8));
