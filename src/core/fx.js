@@ -57,6 +57,18 @@ export const FX = (() => {
       });
     },
 
+    addFloatingText(x, y, text, color = '#22c55e') {
+      damageTexts.push({
+        x: x + (Math.random() * 8 - 4),
+        y: y - 10,
+        text,
+        vy: -38,
+        life: 0.85,
+        t: 0,
+        color
+      });
+    },
+
     number(x, y, amount, color = '#fde047') {
       damageTexts.push({
         x: x + (Math.random() * 12 - 6),
@@ -120,8 +132,8 @@ export const FX = (() => {
         ctx.fillText(d.text, Math.round(d.x) + 1, Math.round(d.y) + 1);
         ctx.fillText(d.text, Math.round(d.x) - 1, Math.round(d.y) - 1);
 
-        // Colore principale (dorato per critico, azzurro/bianco per dardo arcano)
-        ctx.fillStyle = d.isCrit ? '#fde047' : '#e0f2fe';
+        // Colore principale (colore personalizzato per oggetti, dorato per critico, azzurro per dardo)
+        ctx.fillStyle = d.color || (d.isCrit ? '#fde047' : '#e0f2fe');
         ctx.fillText(d.text, Math.round(d.x), Math.round(d.y));
       }
 

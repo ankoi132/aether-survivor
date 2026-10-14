@@ -9,6 +9,7 @@ import { Enemy } from './entities/enemy.js';
 import { CombatSystem } from './systems/combat.js';
 import { ProgressionSystem } from './systems/progression.js';
 import { API } from './core/api.js';
+import { MATERIALS_DEF, WEAPONS_DEF } from './core/crafting.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   const canvas = document.getElementById('gameCanvas');
@@ -31,10 +32,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   const elServerStatus = document.getElementById('server-status');
 
   const tabBtnTalents = document.getElementById('tab-btn-talents');
+  const tabBtnBlacksmith = document.getElementById('tab-btn-blacksmith');
+  const tabBtnInventory = document.getElementById('tab-btn-inventory');
   const tabBtnLeaderboard = document.getElementById('tab-btn-leaderboard');
+
   const tabTalents = document.getElementById('tab-talents');
+  const tabBlacksmith = document.getElementById('tab-blacksmith');
+  const tabInventory = document.getElementById('tab-inventory');
   const tabLeaderboard = document.getElementById('tab-leaderboard');
+
   const talentsContainer = document.getElementById('talents-container');
+  const weaponsContainer = document.getElementById('weapons-container');
+  const inventoryContainer = document.getElementById('inventory-container');
   const leaderboardRows = document.getElementById('leaderboard-rows');
   const btnStartRun = document.getElementById('btn-start-run');
 
@@ -48,6 +57,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   const elHpFill = document.getElementById('hp-fill');
   const elHpText = document.getElementById('hp-text');
   const elRunGold = document.getElementById('hud-run-gold');
+  const elRunItems = document.getElementById('hud-run-items');
+  const elWeaponIcon = document.getElementById('hud-weapon-icon');
+  const elWeaponName = document.getElementById('hud-weapon-name');
   const elDamage = document.getElementById('hud-damage');
   const elTarget = document.getElementById('hud-target');
   const elCdFill = document.getElementById('hud-cd-fill');
@@ -58,6 +70,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const elSumLevel = document.getElementById('sum-level');
   const elSumKills = document.getElementById('sum-kills');
   const elSumGold = document.getElementById('sum-gold');
+  const elSumItems = document.getElementById('sum-items');
   const elSumScore = document.getElementById('sum-score');
   const btnReturnSanctuary = document.getElementById('btn-return-sanctuary');
 
@@ -103,6 +116,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     renderTalentsGrid();
+    renderWeaponsGrid();
+    renderInventoryGrid();
   }
 
   function renderTalentsGrid() {
@@ -157,6 +172,150 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  function renderWeaponsGrid() {
+    if (!currentProfile || !weaponsContainer) return;
+    weaponsContainer.innerHTML = '';
+
+    currentProfile.weaponsCatalog.forEach(w => {
+      const card = document.createElement('div');
+      card.className = `weapon-card ${w.isEquipped ? 'equipped' : ''}`;
+
+      let statusHtml = '';
+      if (w.isEquipped) {
+        statusHtml = `<div class="weapon-badge-equipped">✓ In Uso</div>`;
+      }
+
+      let reqHtml = '';
+      let canAfford = false;
+
+      if (w.isMaxLevel) {
+        reqHtml = `<div class="weapon-req-box" style="color: #4ade80; text-align: center; font-weight: 700;">★ Maestria Massima (LV 5)</div>`;
+      } else if (w.nextCost) {
+        const goldHas = currentProfile.gold >= (w.nextCost.gold || 0);
+        let matsOk = true;
+        let matsRows = '';
+
+        if (w.nextCost.materials) {
+          for (const [matId, reqAmt] of Object.entries(w.nextCost.materials)) {
+            const owned = (currentProfile.inventory && currentProfile.inventory[matId]) || 0;
+            const hasEnough = owned >= reqAmt;
+            if (!hasEnough) matsOk = false;
+            const matDef = MATERIALS_DEF[matId] || { name: matId, icon: '📦' };
+            matsRows += `
+              <div class="req-item ${hasEnough ? 'has' : 'missing'}">
+                <span>${matDef.icon} ${matDef.name}:</span>
+                <span>${owned} / ${reqAmt}</span>
+              </div>
+            `;
+          }
+        }
+
+        canAfford = goldHas && matsOk;
+
+        reqHtml = `
+          <div class="weapon-req-box">
+            <div class="weapon-req-title">${w.isUnlocked ? 'Requisiti Potenziamento:' : 'Materiali per Forgiare:'}</div>
+            <div class="req-item ${goldHas ? 'has' : 'missing'}">
+              <span>🪙 Oro:</span>
+              <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
+            </div>
+            ${matsRows}
+            <div style="margin-top: 6px; font-size: 11px; color: #38bdf8; font-weight: 600;">✨ <b>Beneficio:</b> ${w.nextBenefit}</div>
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        ${statusHtml}
+        <div>
+          <div class="weapon-head">
+            <div class="weapon-icon">${w.icon}</div>
+            <div>
+              <div class="weapon-title">${w.name}</div>
+              <div class="weapon-type-tag">${w.typeName}</div>
+            </div>
+          </div>
+          <div class="weapon-desc">${w.desc}</div>
+        </div>
+
+        <div>
+          <div class="weapon-level-row">
+            <span>Grado Forgiatura:</span>
+            <span style="color: ${w.isUnlocked ? '#38bdf8' : '#94a3b8'};">
+              ${w.isUnlocked ? `Livello ${w.currentLevel} / ${w.maxLevel}` : 'Bloccata'}
+            </span>
+          </div>
+
+          <div style="margin: 8px 0;">
+            ${reqHtml}
+          </div>
+
+          <div class="weapon-actions">
+            ${!w.isMaxLevel ? `
+              <button class="btn-forge" ${!canAfford ? 'disabled' : ''}>
+                🔨 ${w.isUnlocked ? `Potenzia a LV ${w.currentLevel + 1}` : 'Forgia dal Fabbro'}
+              </button>
+            ` : ''}
+            ${w.isUnlocked && !w.isEquipped ? `
+              <button class="btn-equip">⚔️ Equipaggia</button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+
+      const btnForge = card.querySelector('.btn-forge');
+      if (btnForge && canAfford) {
+        btnForge.addEventListener('click', async () => {
+          try {
+            currentProfile = await API.craftOrUpgradeWeapon(w.id);
+            refreshProfile(currentProfile.nickname);
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+      }
+
+      const btnEquip = card.querySelector('.btn-equip');
+      if (btnEquip) {
+        btnEquip.addEventListener('click', async () => {
+          try {
+            currentProfile = await API.equipWeapon(w.id);
+            refreshProfile(currentProfile.nickname);
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+      }
+
+      weaponsContainer.appendChild(card);
+    });
+  }
+
+  function renderInventoryGrid() {
+    if (!currentProfile || !inventoryContainer) return;
+    inventoryContainer.innerHTML = '';
+
+    currentProfile.inventoryCatalog.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'inventory-item-card';
+
+      const count = item.count || 0;
+      card.innerHTML = `
+        <div class="item-top">
+          <div class="item-icon-box">${item.icon}</div>
+          <div class="item-count-badge" style="opacity: ${count > 0 ? 1 : 0.4};">x${count}</div>
+        </div>
+        <div>
+          <div class="item-name">${item.name}</div>
+          <div class="item-rarity" style="color: ${item.color};">${item.rarity}</div>
+        </div>
+        <div class="item-desc">${item.desc}</div>
+      `;
+
+      inventoryContainer.appendChild(card);
+    });
+  }
+
   async function renderLeaderboard() {
     leaderboardRows.innerHTML = '<tr><td colspan="6" style="text-align:center;">Caricamento classifica...</td></tr>';
     const list = await API.getLeaderboard();
@@ -181,21 +340,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Eventi Schede Menu
-  tabBtnTalents.addEventListener('click', () => {
-    tabBtnTalents.classList.add('active');
-    tabBtnLeaderboard.classList.remove('active');
-    tabTalents.classList.add('active');
-    tabLeaderboard.classList.remove('active');
-  });
+  // Gestione Navigazione a 4 Schede
+  function switchTab(btn, pane, callback) {
+    [tabBtnTalents, tabBtnBlacksmith, tabBtnInventory, tabBtnLeaderboard].forEach(b => b?.classList.remove('active'));
+    [tabTalents, tabBlacksmith, tabInventory, tabLeaderboard].forEach(p => p?.classList.remove('active'));
+    btn?.classList.add('active');
+    pane?.classList.add('active');
+    if (callback) callback();
+  }
 
-  tabBtnLeaderboard.addEventListener('click', () => {
-    tabBtnLeaderboard.classList.add('active');
-    tabBtnTalents.classList.remove('active');
-    tabLeaderboard.classList.add('active');
-    tabTalents.classList.remove('active');
-    renderLeaderboard();
-  });
+  tabBtnTalents.addEventListener('click', () => switchTab(tabBtnTalents, tabTalents, renderTalentsGrid));
+  tabBtnBlacksmith.addEventListener('click', () => switchTab(tabBtnBlacksmith, tabBlacksmith, renderWeaponsGrid));
+  tabBtnInventory.addEventListener('click', () => switchTab(tabBtnInventory, tabInventory, renderInventoryGrid));
+  tabBtnLeaderboard.addEventListener('click', () => switchTab(tabBtnLeaderboard, tabLeaderboard, renderLeaderboard));
 
   btnSaveNick.addEventListener('click', () => {
     refreshProfile(inputNick.value);
@@ -214,21 +371,32 @@ window.addEventListener('DOMContentLoaded', async () => {
     player.y = 50;
     camera.snapTo(player.x, player.y);
 
+    // Configura l'arma equipaggiata e le statistiche forgiate
+    const eqWeapon = currentProfile.equippedWeapon || 'staff';
+    const eqLevel = (currentProfile.weapons && currentProfile.weapons[eqWeapon]) || 1;
+    player.weapon = eqWeapon;
+    combat.setWeapon(eqWeapon, eqLevel, player.permanentBonusDamage || 0);
+
     // 2. Reset combattimento e progressione di run
     combat.kills = 0;
     combat.goldEarned = 0;
+    combat.collectedItems = {};
+    combat.itemPickups = [];
     combat.projectiles = [];
+    combat.slashes = [];
     combat.pickups = [];
     combat.enemies = [];
     combat.hasOrbitOrb = false;
-    combat.projectilesPerShot = 1;
     combat.damageMultiplier = 1.0;
-    combat.baseCooldown = 0.85;
 
     progression.level = 1;
     progression.currentXp = 0;
     progression.nextLevelXp = 25;
     progression.isPausedForLevelUp = false;
+
+    // Aggiorna indicatore arma nel HUD
+    if (elWeaponIcon) elWeaponIcon.textContent = combat.weaponId === 'sword' ? '🗡️' : (combat.weaponId === 'bow' ? '🏹' : '🪄');
+    if (elWeaponName) elWeaponName.textContent = combat.weaponName;
 
     // 3. Popola i mostri randagi nei rispettivi biomi della grande mappa finita
     for (let i = 0; i < 10; i++) {
@@ -267,12 +435,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (gameState === 'GAMEOVER') return;
     gameState = 'GAMEOVER';
 
-    // Invia i dati della spedizione al backend o salva in locale
+    const totalItems = Object.values(combat.collectedItems || {}).reduce((a, b) => a + b, 0);
+
+    // Invia i dati della spedizione al backend (inclusi i materiali raccolti) o salva in locale
     const runStats = {
       level: progression.level,
       kills: combat.kills,
       survivalSeconds: Math.floor(runSurvivalSeconds),
-      goldEarned: combat.goldEarned
+      goldEarned: combat.goldEarned,
+      collectedItems: combat.collectedItems
     };
 
     const res = await API.submitRun(runStats);
@@ -282,6 +453,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     elSumLevel.textContent = `${runStats.level}`;
     elSumKills.textContent = `${runStats.kills}`;
     elSumGold.textContent = `+${res.finalGold} 🪙`;
+    if (elSumItems) elSumItems.textContent = `+${totalItems} 🎒`;
     elSumScore.textContent = `${res.score}`;
 
     gameHud.classList.add('hidden');
@@ -433,7 +605,15 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (elHpText) elHpText.textContent = `${Math.max(0, Math.round(player.hp))} / ${player.maxHp} HP`;
 
         if (elRunGold) elRunGold.textContent = `${combat.goldEarned}`;
-        if (elDamage) elDamage.textContent = `${Math.round((18 + (player.permanentBonusDamage || 0)) * combat.damageMultiplier)}`;
+        const runItemsCount = Object.values(combat.collectedItems || {}).reduce((a, b) => a + b, 0);
+        if (elRunItems) elRunItems.textContent = `${runItemsCount}`;
+
+        let currentBaseDmg = 18;
+        if (combat.weaponId === 'sword') currentBaseDmg = combat.swordDamage || 28;
+        else if (combat.weaponId === 'bow') currentBaseDmg = combat.bowDamage || 22;
+        else currentBaseDmg = combat.staffDamage || 18;
+
+        if (elDamage) elDamage.textContent = `${Math.round(currentBaseDmg * combat.damageMultiplier)}`;
         if (elTarget) {
           elTarget.textContent = combat.currentTarget ? combat.currentTarget.name : 'Nessuno';
           elTarget.style.color = combat.currentTarget ? '#38bdf8' : '#94a3b8';

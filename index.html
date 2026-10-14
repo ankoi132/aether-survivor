@@ -44,16 +44,40 @@
         </div>
       </div>
 
-      <!-- Navigazione Schede (Grimorio Talenti / Classifica) -->
+      <!-- Navigazione Schede (Grimorio Talenti / Fucina Fabbro / Zaino / Classifica) -->
       <div class="menu-tabs">
-        <button id="tab-btn-talents" class="tab-btn active">🔮 Grimorio dei Talenti</button>
-        <button id="tab-btn-leaderboard" class="tab-btn">🏆 Classifica dei Campioni</button>
+        <button id="tab-btn-talents" class="tab-btn active">🔮 Grimorio Talenti</button>
+        <button id="tab-btn-blacksmith" class="tab-btn">🔨 Fucina del Fabbro</button>
+        <button id="tab-btn-inventory" class="tab-btn">🎒 Zaino & Artefatti</button>
+        <button id="tab-btn-leaderboard" class="tab-btn">🏆 Classifica</button>
       </div>
 
       <!-- Scheda 1: Grimorio dei Talenti Permanenti -->
       <div id="tab-talents" class="tab-content active">
         <div class="talents-grid" id="talents-container">
           <!-- Popolato dinamicamente da api.js -->
+        </div>
+      </div>
+
+      <!-- Scheda 2: Fucina del Fabbro (Crafting & Armi) -->
+      <div id="tab-blacksmith" class="tab-content">
+        <div class="blacksmith-intro">
+          <div class="blacksmith-title">🔨 Fucina di Mastro Bronzo</div>
+          <div class="blacksmith-desc">Usa i materiali e artefatti raccolti dai mostri nei biomi per forgiare e potenziare le 3 leggendarie armi: <b>Spada da Cavaliere</b> (mischia ad area), <b>Arco dei Guardaboschi</b> (frecce perforanti) e <b>Bastone dell'Arcimago</b> (magia a ricerca).</div>
+        </div>
+        <div class="weapons-grid" id="weapons-container">
+          <!-- Popolato dinamicamente -->
+        </div>
+      </div>
+
+      <!-- Scheda 3: Zaino & Inventario Artefatti -->
+      <div id="tab-inventory" class="tab-content">
+        <div class="inventory-intro">
+          <div class="inventory-title">🎒 Collezione di Risorse & Artefatti dei Biomi</div>
+          <div class="inventory-desc">Bottini rilasciati dai mostri sconfitti durante le tue esplorazioni. Usali alla Fucina per forgiare nuove armi.</div>
+        </div>
+        <div class="inventory-grid" id="inventory-container">
+          <!-- Popolato dinamicamente -->
         </div>
       </div>
 
@@ -103,6 +127,9 @@
       <div id="run-gold-badge">
         🪙 <span id="hud-run-gold">0</span>
       </div>
+      <div id="run-items-badge" title="Materiali e artefatti raccolti">
+        🎒 <span id="hud-run-items">0</span>
+      </div>
     </div>
 
     <!-- Mini-Badge Statistiche (In alto a destra) -->
@@ -110,11 +137,11 @@
       <span id="hud-fps">60</span> FPS · ⏱️ <span id="hud-timer">00:00</span> · Nemici: <span id="hud-enemies">0</span>
     </div>
 
-    <!-- Slot Magia Attiva (In basso a sinistra) -->
+    <!-- Slot Arma Attiva (In basso a sinistra) -->
     <div id="bottom-spell-slot">
-      <div class="spell-icon">✨</div>
+      <div class="spell-icon" id="hud-weapon-icon">🪄</div>
       <div class="spell-info">
-        <div class="spell-name" id="hud-spell-name">Dardo Arcano</div>
+        <div class="spell-name" id="hud-weapon-name">Bastone dell'Arcimago</div>
         <div class="spell-stat">Danno: <b id="hud-damage">18</b> · Bersaglio: <b id="hud-target">Nessuno</b></div>
         <div class="spell-cd-track">
           <div id="hud-cd-fill"></div>
@@ -174,6 +201,10 @@
         <div class="summary-card gold-card">
           <div class="sum-label">Oro Raccolto</div>
           <div class="sum-val" id="sum-gold">+0 🪙</div>
+        </div>
+        <div class="summary-card items-card">
+          <div class="sum-label">Artefatti & Materiali</div>
+          <div class="sum-val" id="sum-items">+0 🎒</div>
         </div>
       </div>
 

@@ -719,7 +719,7 @@
       gemGlow: "#38bdf8",
       gemCore: "#ffffff"
     };
-    function renderHeroFrame(dir, isWalking, frameIndex) {
+    function renderHeroFrame(dir, isWalking, frameIndex, weapon = "staff") {
       const w = 26 * PX;
       const h = 28 * PX;
       const { canvas, ctx } = createOffscreen(w, h);
@@ -773,20 +773,47 @@
       ctx.fillRect(cx - 5 * PX, cy - 13 * PX, 10 * PX, 3 * PX);
       ctx.fillStyle = PALETTE.cloakLight;
       ctx.fillRect(cx - 4 * PX, cy - 14 * PX, 8 * PX, 2 * PX);
-      const staffX = isFacingLeft ? cx - 8 * PX : cx + 6 * PX;
-      const staffY = cy - 9 * PX;
-      ctx.fillStyle = PALETTE.outline;
-      ctx.fillRect(staffX - 1, staffY - 1, 2 * PX + 2, 16 * PX + 2);
-      ctx.fillStyle = PALETTE.staffWood;
-      ctx.fillRect(staffX, staffY, 2 * PX, 16 * PX);
-      ctx.fillStyle = PALETTE.staffLight;
-      ctx.fillRect(staffX, staffY, 1 * PX, 16 * PX);
-      ctx.fillStyle = "rgba(56, 189, 248, 0.4)";
-      ctx.fillRect(staffX - 2 * PX, staffY - 3 * PX, 6 * PX, 6 * PX);
-      ctx.fillStyle = PALETTE.gemGlow;
-      ctx.fillRect(staffX - 1 * PX, staffY - 2 * PX, 4 * PX, 4 * PX);
-      ctx.fillStyle = PALETTE.gemCore;
-      ctx.fillRect(staffX, staffY - 1 * PX, 2 * PX, 2 * PX);
+      const wepX = isFacingLeft ? cx - 8 * PX : cx + 6 * PX;
+      const wepY = cy - 9 * PX;
+      if (weapon === "sword") {
+        ctx.fillStyle = PALETTE.outline;
+        ctx.fillRect(wepX - 1, wepY - 2 * PX, 2 * PX + 2, 13 * PX + 2);
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fillRect(wepX, wepY - 2 * PX, 2 * PX, 13 * PX);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(wepX, wepY - 2 * PX, 1 * PX, 13 * PX);
+        ctx.fillStyle = PALETTE.outline;
+        ctx.fillRect(wepX - 2 * PX - 1, wepY + 8 * PX - 1, 6 * PX + 2, 2 * PX + 2);
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillRect(wepX - 2 * PX, wepY + 8 * PX, 6 * PX, 2 * PX);
+        ctx.fillStyle = "#78350f";
+        ctx.fillRect(wepX, wepY + 10 * PX, 2 * PX, 3 * PX);
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillRect(wepX, wepY + 13 * PX, 2 * PX, 1 * PX);
+      } else if (weapon === "bow") {
+        ctx.fillStyle = PALETTE.outline;
+        ctx.fillRect(wepX - 1, wepY - 1 * PX, 3 * PX + 2, 16 * PX + 2);
+        ctx.fillStyle = "#92400e";
+        ctx.fillRect(wepX, wepY - 1 * PX, 3 * PX, 16 * PX);
+        ctx.fillStyle = "#d97706";
+        ctx.fillRect(wepX + 1 * PX, wepY + 1 * PX, 1 * PX, 12 * PX);
+        ctx.fillStyle = "#f8fafc";
+        const cordX = isFacingLeft ? wepX + 3 * PX : wepX - 1 * PX;
+        ctx.fillRect(cordX, wepY, 1 * PX, 14 * PX);
+      } else {
+        ctx.fillStyle = PALETTE.outline;
+        ctx.fillRect(wepX - 1, wepY - 1, 2 * PX + 2, 16 * PX + 2);
+        ctx.fillStyle = PALETTE.staffWood;
+        ctx.fillRect(wepX, wepY, 2 * PX, 16 * PX);
+        ctx.fillStyle = PALETTE.staffLight;
+        ctx.fillRect(wepX, wepY, 1 * PX, 16 * PX);
+        ctx.fillStyle = "rgba(56, 189, 248, 0.4)";
+        ctx.fillRect(wepX - 2 * PX, wepY - 3 * PX, 6 * PX, 6 * PX);
+        ctx.fillStyle = PALETTE.gemGlow;
+        ctx.fillRect(wepX - 1 * PX, wepY - 2 * PX, 4 * PX, 4 * PX);
+        ctx.fillStyle = PALETTE.gemCore;
+        ctx.fillRect(wepX, wepY - 1 * PX, 2 * PX, 2 * PX);
+      }
       return canvas;
     }
     function drawShadow(ctx, x, y, radius = 10) {
@@ -955,10 +982,10 @@
       ctx.fillRect(cx - 1 * PX, cy - 3 * PX, 2 * PX, 3 * PX);
       return canvas;
     }
-    function getHeroSprite(dir, isWalking, frame) {
-      const key = `hero_${dir}_${isWalking ? 1 : 0}_${frame}`;
+    function getHeroSprite(dir, isWalking, frame, weapon = "staff") {
+      const key = `hero_${weapon}_${dir}_${isWalking ? 1 : 0}_${frame}`;
       if (!cache.has(key)) {
-        cache.set(key, renderHeroFrame(dir, isWalking, frame));
+        cache.set(key, renderHeroFrame(dir, isWalking, frame, weapon));
       }
       return cache.get(key);
     }
@@ -1390,6 +1417,7 @@
       this.inLiquid = false;
       this.animTimer = 0;
       this.frame = 0;
+      this.weapon = "staff";
     }
     applyPermanentStats(stats = {}) {
       this.maxHp = 100 + (stats.bonusHp || 0);
@@ -1439,7 +1467,7 @@
         return;
       }
       Sprites.drawShadow(ctx, this.x, this.y + 4, 11);
-      const sprite = Sprites.getHeroSprite(this.dir, this.walking, this.frame);
+      const sprite = Sprites.getHeroSprite(this.dir, this.walking, this.frame, this.weapon);
       const sw = sprite.width;
       const sh = sprite.height;
       ctx.drawImage(
@@ -1509,6 +1537,17 @@
           isCrit
         });
       },
+      addFloatingText(x, y, text, color = "#22c55e") {
+        damageTexts.push({
+          x: x + (Math.random() * 8 - 4),
+          y: y - 10,
+          text,
+          vy: -38,
+          life: 0.85,
+          t: 0,
+          color
+        });
+      },
       number(x, y, amount, color = "#fde047") {
         damageTexts.push({
           x: x + (Math.random() * 12 - 6),
@@ -1560,7 +1599,7 @@
           ctx.fillStyle = "#080a0f";
           ctx.fillText(d.text, Math.round(d.x) + 1, Math.round(d.y) + 1);
           ctx.fillText(d.text, Math.round(d.x) - 1, Math.round(d.y) - 1);
-          ctx.fillStyle = d.isCrit ? "#fde047" : "#e0f2fe";
+          ctx.fillStyle = d.color || (d.isCrit ? "#fde047" : "#e0f2fe");
           ctx.fillText(d.text, Math.round(d.x), Math.round(d.y));
         }
         ctx.restore();
@@ -1772,16 +1811,20 @@
     constructor(x, y, angle, options = {}) {
       this.x = x;
       this.y = y;
-      this.speed = options.speed || 340;
+      this.angle = angle;
+      this.type = options.type || "dart";
+      this.speed = options.speed || (this.type === "arrow" ? 520 : 340);
       this.vx = Math.cos(angle) * this.speed;
       this.vy = Math.sin(angle) * this.speed;
       this.dmg = options.dmg || 18;
-      this.r = options.r || 5;
-      this.life = options.life || 1.1;
+      this.r = options.r || (this.type === "arrow" ? 6 : 5);
+      this.pierce = options.pierce || (this.type === "arrow" ? 2 : 1);
+      this.life = options.life || (this.type === "arrow" ? 1 : 1.1);
       this.t = 0;
       this.dead = false;
+      this.hitTargets = /* @__PURE__ */ new Set();
       this.trailTimer = 0;
-      this.color = options.color || "#38bdf8";
+      this.color = options.color || (this.type === "arrow" ? "#f59e0b" : "#38bdf8");
       this.coreColor = "#ffffff";
     }
     update(dt, world) {
@@ -1795,29 +1838,56 @@
       this.trailTimer += dt;
       if (this.trailTimer >= 0.04) {
         this.trailTimer = 0;
-        FX.spark(this.x, this.y, "#bae6fd", 2);
+        if (this.type === "arrow") {
+          FX.spark(this.x, this.y, "#fef08a", 1.5);
+        } else {
+          FX.spark(this.x, this.y, "#bae6fd", 2);
+        }
       }
       const tx = world.tileOf(this.x);
       const ty = world.tileOf(this.y);
       if (world.isSolid(tx, ty)) {
         this.dead = true;
-        FX.burst(this.x, this.y, "#93c5fd", 6, 80);
+        FX.burst(this.x, this.y, this.type === "arrow" ? "#d97706" : "#93c5fd", 6, 80);
       }
     }
     draw(ctx) {
       ctx.save();
-      ctx.fillStyle = "rgba(56, 189, 248, 0.35)";
-      ctx.beginPath();
-      ctx.arc(Math.round(this.x), Math.round(this.y), this.r * 1.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = this.color;
-      ctx.beginPath();
-      ctx.arc(Math.round(this.x), Math.round(this.y), this.r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = this.coreColor;
-      ctx.beginPath();
-      ctx.arc(Math.round(this.x), Math.round(this.y), this.r * 0.45, 0, Math.PI * 2);
-      ctx.fill();
+      if (this.type === "arrow") {
+        ctx.translate(Math.round(this.x), Math.round(this.y));
+        ctx.rotate(this.angle);
+        ctx.fillStyle = "rgba(254, 240, 138, 0.3)";
+        ctx.fillRect(-16, -2, 12, 4);
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(-12, -2, 22, 4);
+        ctx.fillStyle = "#92400e";
+        ctx.fillRect(-11, -1, 20, 2);
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(8, -3, 5, 6);
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fillRect(9, -2, 4, 4);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(10, -1, 3, 2);
+        ctx.fillStyle = "#38bdf8";
+        ctx.fillRect(-12, -4, 4, 2);
+        ctx.fillRect(-12, 2, 4, 2);
+        ctx.fillStyle = "#bae6fd";
+        ctx.fillRect(-10, -3, 2, 1);
+        ctx.fillRect(-10, 2, 2, 1);
+      } else {
+        ctx.fillStyle = "rgba(56, 189, 248, 0.35)";
+        ctx.beginPath();
+        ctx.arc(Math.round(this.x), Math.round(this.y), this.r * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(Math.round(this.x), Math.round(this.y), this.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = this.coreColor;
+        ctx.beginPath();
+        ctx.arc(Math.round(this.x), Math.round(this.y), this.r * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
   };
@@ -1964,16 +2034,332 @@
     }
   };
 
+  // src/core/crafting.js
+  var MATERIALS_DEF = {
+    slime_gel: {
+      id: "slime_gel",
+      name: "Gel Silvano",
+      icon: "\u{1F9EA}",
+      desc: "Materia gelatinosa pura raccolta dagli Slime del Bosco.",
+      color: "#22c55e",
+      rarity: "Comune"
+    },
+    ice_crystal: {
+      id: "ice_crystal",
+      name: "Cristallo Gelido",
+      icon: "\u2744\uFE0F",
+      desc: "Ghiaccio perenne non fondente che brilla sulle vette innevate.",
+      color: "#38bdf8",
+      rarity: "Non Comune"
+    },
+    sun_amber: {
+      id: "sun_amber",
+      name: "Ambra delle Sabbie",
+      icon: "\u2600\uFE0F",
+      desc: "Gemma solare fossilizzata tra le dune ardenti del deserto.",
+      color: "#f59e0b",
+      rarity: "Non Comune"
+    },
+    magma_core: {
+      id: "magma_core",
+      name: "Nucleo di Lava",
+      icon: "\u{1F525}",
+      desc: "Frammento incandescente di roccia e fuoco elementale della caldera.",
+      color: "#ef4444",
+      rarity: "Raro"
+    },
+    ancient_bone: {
+      id: "ancient_bone",
+      name: "Osso Antico",
+      icon: "\u{1F9B4}",
+      desc: "Resto pietrificato degli scheletri a guardia delle antiche rovine.",
+      color: "#cbd5e1",
+      rarity: "Comune"
+    },
+    iron_scrap: {
+      id: "iron_scrap",
+      name: "Metallo Temprato",
+      icon: "\u2699\uFE0F",
+      desc: "Lingotti e frammenti di metallo usati per forgiare armi robuste.",
+      color: "#94a3b8",
+      rarity: "Comune"
+    },
+    arcane_rune: {
+      id: "arcane_rune",
+      name: "Runa Arcana",
+      icon: "\u2728",
+      desc: "Raro artefatto runico carico di antica magia elementale.",
+      color: "#c084fc",
+      rarity: "Raro"
+    }
+  };
+  var WEAPONS_DEF = {
+    staff: {
+      id: "staff",
+      name: "Bastone dell'Arcimago",
+      icon: "\u{1FA84}",
+      typeName: "Magia a Distanza (Dardi Autoguidati)",
+      desc: "Scaglia dardi arcani luminosi che inseguono i bersagli pi\xF9 vicini con precisione fatata.",
+      maxLevel: 5,
+      unlockCost: null,
+      // Sbloccato di default
+      baseStats: {
+        damage: 18,
+        cooldown: 0.85,
+        range: 320,
+        projectiles: 1,
+        speed: 380
+      },
+      upgrades: [
+        {
+          level: 2,
+          gold: 80,
+          materials: { slime_gel: 4, arcane_rune: 1 },
+          benefit: "+6 Danno, +1 Dardo magico",
+          stats: { damageBonus: 6, extraProjectiles: 1, cooldownReduction: 0.05 }
+        },
+        {
+          level: 3,
+          gold: 160,
+          materials: { slime_gel: 6, ice_crystal: 3, arcane_rune: 2 },
+          benefit: "+8 Danno, -15% Tempo di Ricarica",
+          stats: { damageBonus: 14, extraProjectiles: 1, cooldownReduction: 0.15 }
+        },
+        {
+          level: 4,
+          gold: 260,
+          materials: { ice_crystal: 5, magma_core: 3, arcane_rune: 3 },
+          benefit: "+10 Danno, +1 Dardo aggiuntivo (3 dardi)",
+          stats: { damageBonus: 24, extraProjectiles: 2, cooldownReduction: 0.18 }
+        },
+        {
+          level: 5,
+          gold: 400,
+          materials: { magma_core: 6, arcane_rune: 5 },
+          benefit: "+16 Danno, Dardi di Mana Instabile ad alta velocit\xE0",
+          stats: { damageBonus: 40, extraProjectiles: 2, cooldownReduction: 0.25 }
+        }
+      ]
+    },
+    sword: {
+      id: "sword",
+      name: "Spada da Cavaliere",
+      icon: "\u{1F5E1}\uFE0F",
+      typeName: "Mischia ad Area (Fendenti Ravvicinati)",
+      desc: "Esegue rapidi fendenti semicircolari ad ampio raggio con elevato danno da taglio e potente spinta indietro (knockback).",
+      maxLevel: 5,
+      unlockCost: {
+        gold: 120,
+        materials: { iron_scrap: 4, ancient_bone: 3 }
+      },
+      baseStats: {
+        damage: 28,
+        cooldown: 0.55,
+        range: 92,
+        knockback: 180,
+        arcAngle: Math.PI * 0.95
+      },
+      upgrades: [
+        {
+          level: 2,
+          gold: 100,
+          materials: { iron_scrap: 5, ancient_bone: 4 },
+          benefit: "+8 Danno da taglio, +16px Ampiezza fendente",
+          stats: { damageBonus: 8, rangeBonus: 16, cooldownReduction: 0.04 }
+        },
+        {
+          level: 3,
+          gold: 180,
+          materials: { iron_scrap: 8, sun_amber: 3, ancient_bone: 5 },
+          benefit: "+12 Danno, +35% Spinta Indietro (Knockback)",
+          stats: { damageBonus: 20, rangeBonus: 22, knockbackBonus: 70 }
+        },
+        {
+          level: 4,
+          gold: 280,
+          materials: { iron_scrap: 10, magma_core: 3, arcane_rune: 2 },
+          benefit: "+15 Danno, -20% Tempo di Recupero tra i colpi",
+          stats: { damageBonus: 35, rangeBonus: 30, cooldownReduction: 0.12 }
+        },
+        {
+          level: 5,
+          gold: 420,
+          materials: { iron_scrap: 15, magma_core: 5, arcane_rune: 4 },
+          benefit: "+22 Danno, Lama di Fiamme Runica a Vortice 360\xB0",
+          stats: { damageBonus: 57, rangeBonus: 42, fullCircle: true }
+        }
+      ]
+    },
+    bow: {
+      id: "bow",
+      name: "Arco dei Guardaboschi",
+      icon: "\u{1F3F9}",
+      typeName: "Frecce Perforanti a Lungo Raggio",
+      desc: "Scocca frecce aerodinamiche ad altissima velocit\xE0 che trapassano i nemici in linea retta a grande distanza.",
+      maxLevel: 5,
+      unlockCost: {
+        gold: 120,
+        materials: { ancient_bone: 4, sun_amber: 3 }
+      },
+      baseStats: {
+        damage: 22,
+        cooldown: 0.7,
+        range: 440,
+        pierce: 2,
+        speed: 520
+      },
+      upgrades: [
+        {
+          level: 2,
+          gold: 100,
+          materials: { ancient_bone: 5, sun_amber: 4 },
+          benefit: "+6 Danno, +1 Bersaglio trapassabile (Pierce 3)",
+          stats: { damageBonus: 6, extraPierce: 1, cooldownReduction: 0.05 }
+        },
+        {
+          level: 3,
+          gold: 180,
+          materials: { sun_amber: 6, ice_crystal: 4, iron_scrap: 4 },
+          benefit: "+10 Danno, +25% Velocit\xE0 di volo della freccia",
+          stats: { damageBonus: 16, extraPierce: 1, speedBonus: 130 }
+        },
+        {
+          level: 4,
+          gold: 280,
+          materials: { sun_amber: 8, magma_core: 4, arcane_rune: 2 },
+          benefit: "+14 Danno, Tiro Doppio (2 frecce parallele)",
+          stats: { damageBonus: 30, extraPierce: 2, extraArrows: 1 }
+        },
+        {
+          level: 5,
+          gold: 420,
+          materials: { sun_amber: 10, arcane_rune: 4, magma_core: 5 },
+          benefit: "+20 Danno, Frecce di Cristallo Solare a Perforazione Totale",
+          stats: { damageBonus: 50, infinitePierce: true, extraArrows: 1 }
+        }
+      ]
+    }
+  };
+
+  // src/entities/item_pickup.js
+  var ItemPickup = class {
+    constructor(x, y, itemId = "slime_gel") {
+      this.x = x;
+      this.y = y;
+      this.itemId = itemId;
+      this.def = MATERIALS_DEF[itemId] || { name: "Artefatto", icon: "\u{1F4E6}", color: "#f8fafc" };
+      this.r = 8;
+      this.dead = false;
+      this.timer = Math.random() * Math.PI * 2;
+      this.flying = false;
+      this.flySpeed = 70;
+    }
+    update(dt, player, onCollect) {
+      if (this.dead) return;
+      this.timer += dt * 4;
+      const dx = player.x - this.x;
+      const dy = player.y - 8 - this.y;
+      const dist2 = dx * dx + dy * dy;
+      const dist = Math.sqrt(dist2);
+      const magnetRange = (player.magnetRadius || 85) * 1.15;
+      if (dist < magnetRange) {
+        this.flying = true;
+      }
+      if (this.flying) {
+        this.flySpeed = Math.min(560, this.flySpeed + dt * 700);
+        if (dist > 1) {
+          this.x += dx / dist * this.flySpeed * dt;
+          this.y += dy / dist * this.flySpeed * dt;
+        }
+        if (dist < player.r + this.r + 4) {
+          this.dead = true;
+          FX.burst(this.x, this.y, this.def.color, 8, 95);
+          FX.addFloatingText(this.x, this.y - 18, `+1 ${this.def.name}`, this.def.color);
+          if (onCollect) {
+            onCollect(this.itemId);
+          }
+        }
+      }
+    }
+    draw(ctx) {
+      if (this.dead) return;
+      const bob = Math.sin(this.timer) * 3.5;
+      Sprites.drawShadow(ctx, this.x, this.y + 4, 5);
+      ctx.save();
+      const drawY = Math.round(this.y + bob - 6);
+      ctx.fillStyle = this.def.color + "33";
+      ctx.beginPath();
+      ctx.arc(Math.round(this.x), drawY, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = "14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(this.def.icon, Math.round(this.x), drawY);
+      ctx.restore();
+    }
+  };
+
+  // src/entities/slash_effect.js
+  var SlashEffect = class {
+    constructor(x, y, angle, radius = 92, arc = Math.PI * 0.95) {
+      this.x = x;
+      this.y = y;
+      this.angle = angle;
+      this.radius = radius;
+      this.arc = arc;
+      this.life = 0.16;
+      this.t = 0;
+      this.dead = false;
+    }
+    update(dt) {
+      this.t += dt;
+      if (this.t >= this.life) {
+        this.dead = true;
+      }
+    }
+    draw(ctx) {
+      if (this.dead) return;
+      const progress = this.t / this.life;
+      const alpha = Math.max(0, 1 - progress);
+      ctx.save();
+      ctx.translate(Math.round(this.x), Math.round(this.y));
+      const startAngle = this.angle - this.arc / 2;
+      const endAngle = this.angle + this.arc / 2;
+      ctx.strokeStyle = `rgba(226, 232, 240, ${alpha * 0.9})`;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius, startAngle, endAngle);
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius, startAngle + 0.1, endAngle - 0.1);
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(56, 189, 248, ${alpha * 0.4})`;
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius - 4, startAngle, endAngle);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+
   // src/systems/combat.js
   var CombatSystem = class {
     constructor() {
       this.projectiles = [];
+      this.slashes = [];
       this.trainingTargets = [];
       this.enemies = [];
       this.pickups = [];
+      this.itemPickups = [];
+      this.collectedItems = {};
+      this.weaponId = "staff";
+      this.weaponLevel = 1;
+      this.weaponName = "Bastone dell'Arcimago";
       this.baseCooldown = 0.85;
       this.cooldownTimer = 0;
-      this.attackRange = 310;
+      this.attackRange = 320;
       this.currentTarget = null;
       this.projectilesPerShot = 1;
       this.damageMultiplier = 1;
@@ -1984,12 +2370,66 @@
       this.kills = 0;
       this.goldEarned = 0;
       this.setupDemoTargets();
+      this.setWeapon("staff", 1);
     }
     setupDemoTargets() {
       this.trainingTargets = [
         new TrainingTarget(120, -50, "Manichino Est", 60),
         new TrainingTarget(-130, 40, "Manichino Ovest", 60)
       ];
+    }
+    /**
+     * Configura l'arma equipaggiata e le sue statistiche forgiate
+     */
+    setWeapon(weaponId = "staff", level = 1, bonusDamage = 0) {
+      const def = WEAPONS_DEF[weaponId] || WEAPONS_DEF.staff;
+      this.weaponId = def.id;
+      this.weaponLevel = Math.max(1, Math.min(def.maxLevel, level));
+      this.weaponName = def.name;
+      let totalDmgBonus = 0;
+      let cdReduction = 0;
+      let extraProj = 0;
+      let extraPierce = 0;
+      let rangeBonus = 0;
+      let knockbackBonus = 0;
+      let fullCircle = false;
+      let extraArrows = 0;
+      if (def.upgrades) {
+        for (let lvl = 2; lvl <= this.weaponLevel; lvl++) {
+          const u = def.upgrades.find((up) => up.level === lvl);
+          if (u && u.stats) {
+            if (u.stats.damageBonus) totalDmgBonus += u.stats.damageBonus;
+            if (u.stats.cooldownReduction) cdReduction += u.stats.cooldownReduction;
+            if (u.stats.extraProjectiles) extraProj += u.stats.extraProjectiles;
+            if (u.stats.extraPierce) extraPierce += u.stats.extraPierce;
+            if (u.stats.rangeBonus) rangeBonus += u.stats.rangeBonus;
+            if (u.stats.knockbackBonus) knockbackBonus += u.stats.knockbackBonus;
+            if (u.stats.fullCircle) fullCircle = true;
+            if (u.stats.extraArrows) extraArrows += u.stats.extraArrows;
+          }
+        }
+      }
+      if (this.weaponId === "sword") {
+        this.baseCooldown = Math.max(0.28, def.baseStats.cooldown - cdReduction);
+        this.attackRange = def.baseStats.range + rangeBonus;
+        this.swordDamage = def.baseStats.damage + totalDmgBonus + bonusDamage;
+        this.swordRange = this.attackRange;
+        this.swordArc = fullCircle ? Math.PI * 2 : def.baseStats.arcAngle;
+        this.swordKnockback = def.baseStats.knockback + knockbackBonus;
+      } else if (this.weaponId === "bow") {
+        this.baseCooldown = Math.max(0.35, def.baseStats.cooldown - cdReduction);
+        this.attackRange = def.baseStats.range;
+        this.bowDamage = def.baseStats.damage + totalDmgBonus + bonusDamage;
+        this.bowPierce = def.baseStats.pierce + extraPierce;
+        this.bowArrowsCount = 1 + extraArrows;
+        this.bowSpeed = def.baseStats.speed;
+      } else {
+        this.baseCooldown = Math.max(0.4, def.baseStats.cooldown - cdReduction);
+        this.attackRange = def.baseStats.range;
+        this.staffDamage = def.baseStats.damage + totalDmgBonus + bonusDamage;
+        this.projectilesPerShot = def.baseStats.projectiles + extraProj;
+      }
+      this.cooldownTimer = 0;
     }
     getAllTargets() {
       return [...this.trainingTargets, ...this.enemies];
@@ -2009,14 +2449,60 @@
       }
       return nearest;
     }
+    /**
+     * Genera la lista di oggetti e artefatti rilasciati da un nemico sconfitto
+     */
+    rollMonsterDrops(kind) {
+      const drops = [];
+      const r = Math.random();
+      if (kind === "slime_forest") {
+        if (r < 0.75) drops.push("slime_gel");
+        if (Math.random() < 0.22) drops.push("iron_scrap");
+      } else if (kind === "slime_ice") {
+        if (r < 0.7) drops.push("ice_crystal");
+        if (Math.random() < 0.2) drops.push("arcane_rune");
+      } else if (kind === "slime_sand") {
+        if (r < 0.7) drops.push("sun_amber");
+        if (Math.random() < 0.25) drops.push("iron_scrap");
+      } else if (kind === "slime_magma") {
+        if (r < 0.65) drops.push("magma_core");
+        if (Math.random() < 0.22) drops.push("arcane_rune");
+      } else if (kind === "slime_water") {
+        if (r < 0.7) drops.push("slime_gel");
+        if (Math.random() < 0.2) drops.push("ice_crystal");
+      } else {
+        if (r < 0.75) drops.push("ancient_bone");
+        if (Math.random() < 0.4) drops.push("iron_scrap");
+      }
+      return drops;
+    }
     update(dt, player, world, camera) {
       this.currentTarget = this.findNearestTarget(player);
       if (this.cooldownTimer > 0) {
         this.cooldownTimer -= dt;
       }
-      if (this.currentTarget && this.cooldownTimer <= 0) {
-        this.fireArcaneDarts(player, this.currentTarget);
-        this.cooldownTimer = this.baseCooldown;
+      if (this.cooldownTimer <= 0) {
+        if (this.weaponId === "sword") {
+          if (this.currentTarget) {
+            this.performSwordCleave(player, this.currentTarget, camera);
+            this.cooldownTimer = this.baseCooldown;
+          }
+        } else if (this.weaponId === "bow") {
+          if (this.currentTarget) {
+            this.fireBowArrows(player, this.currentTarget);
+            this.cooldownTimer = this.baseCooldown;
+          }
+        } else {
+          if (this.currentTarget) {
+            this.fireArcaneDarts(player, this.currentTarget);
+            this.cooldownTimer = this.baseCooldown;
+          }
+        }
+      }
+      for (let i = this.slashes.length - 1; i >= 0; i--) {
+        const s = this.slashes[i];
+        s.update(dt);
+        if (s.dead) this.slashes.splice(i, 1);
       }
       for (const t of this.trainingTargets) {
         t.update(dt, world);
@@ -2039,6 +2525,12 @@
           this.kills++;
           this.goldEarned += e.goldValue || 4;
           this.pickups.push(new GemPickup(e.x, e.y, e.xpValue, e.gemType));
+          const drops = this.rollMonsterDrops(e.kind);
+          for (const itemId of drops) {
+            const ox = Math.random() * 18 - 9;
+            const oy = Math.random() * 18 - 9;
+            this.itemPickups.push(new ItemPickup(e.x + ox, e.y + oy, itemId));
+          }
           this.enemies.splice(i, 1);
         }
       }
@@ -2047,6 +2539,15 @@
         g.update(dt, player);
         if (g.dead) {
           this.pickups.splice(i, 1);
+        }
+      }
+      for (let i = this.itemPickups.length - 1; i >= 0; i--) {
+        const item = this.itemPickups[i];
+        item.update(dt, player, (itemId) => {
+          this.collectedItems[itemId] = (this.collectedItems[itemId] || 0) + 1;
+        });
+        if (item.dead) {
+          this.itemPickups.splice(i, 1);
         }
       }
       if (this.hasOrbitOrb) {
@@ -2084,28 +2585,91 @@
           continue;
         }
         for (const t of this.getAllTargets()) {
-          if (t.dead) continue;
+          if (t.dead || p.hitTargets.has(t)) continue;
           const dx = t.x - p.x;
           const dy = t.y - p.y;
           const dist2 = dx * dx + dy * dy;
           const hitRadius = p.r + t.r;
           if (dist2 < hitRadius * hitRadius) {
+            p.hitTargets.add(t);
             const angle = Math.atan2(p.vy, p.vx);
-            t.takeDamage(p.dmg, angle, 115);
-            camera.kick(0.16);
-            p.dead = true;
-            this.projectiles.splice(i, 1);
-            break;
+            t.takeDamage(p.dmg, angle, p.type === "arrow" ? 140 : 115);
+            camera.kick(0.15);
+            p.pierce--;
+            if (p.pierce <= 0) {
+              p.dead = true;
+              this.projectiles.splice(i, 1);
+              break;
+            }
           }
         }
       }
       FX.update(dt);
     }
+    /**
+     * Attacco Spada: fendente ravvicinato ad area che colpisce tutti i nemici nell'arco
+     */
+    performSwordCleave(player, target, camera) {
+      let angle = player.moveAngle || Math.PI / 2;
+      if (target) {
+        angle = Math.atan2(target.y - player.y, target.x - player.x);
+      }
+      const range = this.swordRange || 92;
+      const arc = this.swordArc || Math.PI * 0.95;
+      const dmg = Math.round(this.swordDamage * this.damageMultiplier);
+      const knockback = this.swordKnockback || 180;
+      this.slashes.push(new SlashEffect(player.x, player.y - 6, angle, range, arc));
+      camera.kick(0.18);
+      for (const t of this.getAllTargets()) {
+        if (t.dead) continue;
+        const dx = t.x - player.x;
+        const dy = t.y - (player.y - 6);
+        const dist = Math.hypot(dx, dy);
+        if (dist <= range + t.r) {
+          const enemyAngle = Math.atan2(dy, dx);
+          let diff = Math.abs(enemyAngle - angle);
+          while (diff > Math.PI) diff = Math.abs(diff - Math.PI * 2);
+          if (arc >= Math.PI * 1.9 || diff <= arc / 2 + 0.18) {
+            t.takeDamage(dmg, enemyAngle, knockback);
+            FX.burst(t.x, t.y - 8, "#f8fafc", 4, 110);
+          }
+        }
+      }
+    }
+    /**
+     * Attacco Arco: frecce rapide e perforanti a lunga gittata
+     */
+    fireBowArrows(player, target) {
+      const dx = target.x - player.x;
+      const dy = target.y - (player.y - 12);
+      const baseAngle = Math.atan2(dy, dx);
+      const dmg = Math.round(this.bowDamage * this.damageMultiplier);
+      const count = this.bowArrowsCount || 1;
+      const spreadAngle = 0.14;
+      const startAngle = baseAngle - (count - 1) * spreadAngle / 2;
+      for (let i = 0; i < count; i++) {
+        const angle = startAngle + i * spreadAngle;
+        const spawnX = player.x + Math.cos(angle) * 10;
+        const spawnY = player.y - 12 + Math.sin(angle) * 10;
+        this.projectiles.push(
+          new Projectile(spawnX, spawnY, angle, {
+            type: "arrow",
+            dmg,
+            speed: this.bowSpeed || 520,
+            pierce: this.bowPierce || 2
+          })
+        );
+      }
+      FX.spark(player.x, player.y - 12, "#fef08a", 4);
+    }
+    /**
+     * Attacco Bastone: dardi arcani a ventaglio
+     */
     fireArcaneDarts(player, target) {
       const dx = target.x - player.x;
       const dy = target.y - (player.y - 12);
       const baseAngle = Math.atan2(dy, dx);
-      const baseDmg = 18 + (player.permanentBonusDamage || 0);
+      const baseDmg = (this.staffDamage || 18) + (player.permanentBonusDamage || 0);
       const dmg = Math.round(baseDmg * this.damageMultiplier);
       const count = this.projectilesPerShot;
       const spreadAngle = 0.22;
@@ -2114,11 +2678,14 @@
         const angle = startAngle + i * spreadAngle;
         const spawnX = player.x + Math.cos(angle) * 12;
         const spawnY = player.y - 12 + Math.sin(angle) * 12;
-        this.projectiles.push(new Projectile(spawnX, spawnY, angle, {
-          speed: 360,
-          dmg,
-          r: 5
-        }));
+        this.projectiles.push(
+          new Projectile(spawnX, spawnY, angle, {
+            type: "dart",
+            speed: 370,
+            dmg,
+            r: 5
+          })
+        );
         FX.burst(spawnX, spawnY, "#38bdf8", 3, 60);
       }
     }
@@ -2129,7 +2696,8 @@
       for (const p of this.projectiles) {
         p.draw(ctx);
       }
-      if (this.hasOrbitOrb && this.currentTarget) {
+      for (const s of this.slashes) {
+        s.draw(ctx);
       }
     }
     drawOrbitOrbs(ctx, player) {
@@ -2152,6 +2720,9 @@
     drawPickups(ctx) {
       for (const p of this.pickups) {
         p.draw(ctx);
+      }
+      for (const it of this.itemPickups) {
+        it.draw(ctx);
       }
     }
     drawFX(ctx) {
@@ -2339,29 +2910,64 @@
     _getLocalProfile(nickname) {
       const key = `aether_profile_${nickname.toLowerCase()}`;
       const raw = localStorage.getItem(key);
+      let p = null;
       if (raw) {
         try {
-          return JSON.parse(raw);
+          p = JSON.parse(raw);
         } catch {
         }
       }
-      const defaultProfile = {
-        nickname,
-        gold: 100,
-        totalRuns: 0,
-        totalKills: 0,
-        highestLevel: 1,
-        bestSurvivalSeconds: 0,
-        talents: {
-          max_hp: 0,
-          damage: 0,
-          speed: 0,
-          magnet: 0,
-          gold_gain: 0
-        }
-      };
-      localStorage.setItem(key, JSON.stringify(defaultProfile));
-      return defaultProfile;
+      if (!p) {
+        p = {
+          nickname,
+          gold: 150,
+          totalRuns: 0,
+          totalKills: 0,
+          highestLevel: 1,
+          bestSurvivalSeconds: 0,
+          talents: {
+            max_hp: 0,
+            damage: 0,
+            speed: 0,
+            magnet: 0,
+            gold_gain: 0
+          },
+          inventory: {
+            slime_gel: 4,
+            ice_crystal: 0,
+            sun_amber: 0,
+            magma_core: 0,
+            ancient_bone: 3,
+            iron_scrap: 4,
+            arcane_rune: 1
+          },
+          weapons: {
+            staff: 1,
+            sword: 0,
+            bow: 0
+          },
+          equippedWeapon: "staff"
+        };
+        localStorage.setItem(key, JSON.stringify(p));
+      }
+      if (!p.inventory) {
+        p.inventory = {
+          slime_gel: 4,
+          ice_crystal: 0,
+          sun_amber: 0,
+          magma_core: 0,
+          ancient_bone: 3,
+          iron_scrap: 4,
+          arcane_rune: 1
+        };
+      }
+      if (!p.weapons) {
+        p.weapons = { staff: 1, sword: 0, bow: 0 };
+      }
+      if (!p.equippedWeapon) {
+        p.equippedWeapon = "staff";
+      }
+      return p;
     }
     _saveLocalProfile(profile) {
       const key = `aether_profile_${profile.nickname.toLowerCase()}`;
@@ -2385,10 +2991,40 @@
           nextCost
         };
       });
+      const weaponsCatalog = Object.values(WEAPONS_DEF).map((def) => {
+        const currentLevel = profile.weapons[def.id] || 0;
+        let nextCost = null;
+        let nextBenefit = null;
+        if (currentLevel === 0) {
+          nextCost = def.unlockCost;
+          nextBenefit = "Forgia e sblocca quest'arma per le spedizioni";
+        } else if (currentLevel < def.maxLevel) {
+          const up = def.upgrades.find((u) => u.level === currentLevel + 1);
+          if (up) {
+            nextCost = { gold: up.gold, materials: up.materials };
+            nextBenefit = up.benefit;
+          }
+        }
+        return {
+          ...def,
+          currentLevel,
+          isUnlocked: currentLevel >= 1,
+          isEquipped: profile.equippedWeapon === def.id,
+          isMaxLevel: currentLevel >= def.maxLevel,
+          nextCost,
+          nextBenefit
+        };
+      });
+      const inventoryCatalog = Object.values(MATERIALS_DEF).map((mat) => ({
+        ...mat,
+        count: profile.inventory[mat.id] || 0
+      }));
       return {
         ...profile,
         calculatedStats,
-        talentsCatalog
+        talentsCatalog,
+        weaponsCatalog,
+        inventoryCatalog
       };
     }
     // --- METODI PUBBLICI ---
@@ -2436,6 +3072,75 @@
       this._saveLocalProfile(p);
       return this._formatProfile(p);
     }
+    async craftOrUpgradeWeapon(weaponId) {
+      if (this.isOnline) {
+        try {
+          const res = await fetch(`${API_BASE}/api/blacksmith/craft`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nickname: this.nickname, weaponId })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) return json.profile;
+          }
+        } catch (err) {
+          console.warn("Errore server forgiatura, fallback offline:", err);
+        }
+      }
+      const p = this._getLocalProfile(this.nickname);
+      const def = WEAPONS_DEF[weaponId];
+      if (!def) throw new Error("Arma non valida");
+      const currentLevel = p.weapons[weaponId] || 0;
+      if (currentLevel >= def.maxLevel) throw new Error("Livello massimo gi\xE0 raggiunto!");
+      let goldCost = 0;
+      let materialsCost = {};
+      if (currentLevel === 0) {
+        goldCost = def.unlockCost ? def.unlockCost.gold || 0 : 0;
+        materialsCost = def.unlockCost ? def.unlockCost.materials || {} : {};
+      } else {
+        const up = def.upgrades.find((u) => u.level === currentLevel + 1);
+        goldCost = up.gold || 0;
+        materialsCost = up.materials || {};
+      }
+      if (p.gold < goldCost) throw new Error(`Oro insufficiente: servono ${goldCost} oro`);
+      for (const [matId, req] of Object.entries(materialsCost)) {
+        if ((p.inventory[matId] || 0) < req) {
+          const matDef = MATERIALS_DEF[matId] || { name: matId };
+          throw new Error(`Materiale insufficiente: servono ${req}x ${matDef.name}`);
+        }
+      }
+      p.gold -= goldCost;
+      for (const [matId, req] of Object.entries(materialsCost)) {
+        p.inventory[matId] = Math.max(0, (p.inventory[matId] || 0) - req);
+      }
+      p.weapons[weaponId] = currentLevel + 1;
+      this._saveLocalProfile(p);
+      return this._formatProfile(p);
+    }
+    async equipWeapon(weaponId) {
+      if (this.isOnline) {
+        try {
+          const res = await fetch(`${API_BASE}/api/weapons/equip`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nickname: this.nickname, weaponId })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) return json.profile;
+          }
+        } catch {
+        }
+      }
+      const p = this._getLocalProfile(this.nickname);
+      if ((p.weapons[weaponId] || 0) < 1) {
+        throw new Error("Devi prima forgiare quest'arma dal Fabbro!");
+      }
+      p.equippedWeapon = weaponId;
+      this._saveLocalProfile(p);
+      return this._formatProfile(p);
+    }
     async submitRun(runStats) {
       if (this.isOnline) {
         try {
@@ -2462,6 +3167,11 @@
       p.totalKills += runStats.kills || 0;
       p.highestLevel = Math.max(p.highestLevel, runStats.level || 1);
       p.bestSurvivalSeconds = Math.max(p.bestSurvivalSeconds, runStats.survivalSeconds || 0);
+      if (runStats.collectedItems) {
+        for (const [matId, count] of Object.entries(runStats.collectedItems)) {
+          p.inventory[matId] = (p.inventory[matId] || 0) + count;
+        }
+      }
       this._saveLocalProfile(p);
       return {
         profile: this._formatProfile(p),
@@ -2512,10 +3222,16 @@
     const elStatBestTime = document.getElementById("stat-best-time");
     const elServerStatus = document.getElementById("server-status");
     const tabBtnTalents = document.getElementById("tab-btn-talents");
+    const tabBtnBlacksmith = document.getElementById("tab-btn-blacksmith");
+    const tabBtnInventory = document.getElementById("tab-btn-inventory");
     const tabBtnLeaderboard = document.getElementById("tab-btn-leaderboard");
     const tabTalents = document.getElementById("tab-talents");
+    const tabBlacksmith = document.getElementById("tab-blacksmith");
+    const tabInventory = document.getElementById("tab-inventory");
     const tabLeaderboard = document.getElementById("tab-leaderboard");
     const talentsContainer = document.getElementById("talents-container");
+    const weaponsContainer = document.getElementById("weapons-container");
+    const inventoryContainer = document.getElementById("inventory-container");
     const leaderboardRows = document.getElementById("leaderboard-rows");
     const btnStartRun = document.getElementById("btn-start-run");
     const elFps = document.getElementById("hud-fps");
@@ -2527,6 +3243,9 @@
     const elHpFill = document.getElementById("hp-fill");
     const elHpText = document.getElementById("hp-text");
     const elRunGold = document.getElementById("hud-run-gold");
+    const elRunItems = document.getElementById("hud-run-items");
+    const elWeaponIcon = document.getElementById("hud-weapon-icon");
+    const elWeaponName = document.getElementById("hud-weapon-name");
     const elDamage = document.getElementById("hud-damage");
     const elTarget = document.getElementById("hud-target");
     const elCdFill = document.getElementById("hud-cd-fill");
@@ -2535,6 +3254,7 @@
     const elSumLevel = document.getElementById("sum-level");
     const elSumKills = document.getElementById("sum-kills");
     const elSumGold = document.getElementById("sum-gold");
+    const elSumItems = document.getElementById("sum-items");
     const elSumScore = document.getElementById("sum-score");
     const btnReturnSanctuary = document.getElementById("btn-return-sanctuary");
     let gameState = "MENU";
@@ -2567,6 +3287,8 @@
         elServerStatus.className = "status-offline";
       }
       renderTalentsGrid();
+      renderWeaponsGrid();
+      renderInventoryGrid();
     }
     function renderTalentsGrid() {
       if (!currentProfile || !talentsContainer) return;
@@ -2612,6 +3334,134 @@
         talentsContainer.appendChild(card);
       });
     }
+    function renderWeaponsGrid() {
+      if (!currentProfile || !weaponsContainer) return;
+      weaponsContainer.innerHTML = "";
+      currentProfile.weaponsCatalog.forEach((w) => {
+        const card = document.createElement("div");
+        card.className = `weapon-card ${w.isEquipped ? "equipped" : ""}`;
+        let statusHtml = "";
+        if (w.isEquipped) {
+          statusHtml = `<div class="weapon-badge-equipped">\u2713 In Uso</div>`;
+        }
+        let reqHtml = "";
+        let canAfford = false;
+        if (w.isMaxLevel) {
+          reqHtml = `<div class="weapon-req-box" style="color: #4ade80; text-align: center; font-weight: 700;">\u2605 Maestria Massima (LV 5)</div>`;
+        } else if (w.nextCost) {
+          const goldHas = currentProfile.gold >= (w.nextCost.gold || 0);
+          let matsOk = true;
+          let matsRows = "";
+          if (w.nextCost.materials) {
+            for (const [matId, reqAmt] of Object.entries(w.nextCost.materials)) {
+              const owned = currentProfile.inventory && currentProfile.inventory[matId] || 0;
+              const hasEnough = owned >= reqAmt;
+              if (!hasEnough) matsOk = false;
+              const matDef = MATERIALS_DEF[matId] || { name: matId, icon: "\u{1F4E6}" };
+              matsRows += `
+              <div class="req-item ${hasEnough ? "has" : "missing"}">
+                <span>${matDef.icon} ${matDef.name}:</span>
+                <span>${owned} / ${reqAmt}</span>
+              </div>
+            `;
+            }
+          }
+          canAfford = goldHas && matsOk;
+          reqHtml = `
+          <div class="weapon-req-box">
+            <div class="weapon-req-title">${w.isUnlocked ? "Requisiti Potenziamento:" : "Materiali per Forgiare:"}</div>
+            <div class="req-item ${goldHas ? "has" : "missing"}">
+              <span>\u{1FA99} Oro:</span>
+              <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
+            </div>
+            ${matsRows}
+            <div style="margin-top: 6px; font-size: 11px; color: #38bdf8; font-weight: 600;">\u2728 <b>Beneficio:</b> ${w.nextBenefit}</div>
+          </div>
+        `;
+        }
+        card.innerHTML = `
+        ${statusHtml}
+        <div>
+          <div class="weapon-head">
+            <div class="weapon-icon">${w.icon}</div>
+            <div>
+              <div class="weapon-title">${w.name}</div>
+              <div class="weapon-type-tag">${w.typeName}</div>
+            </div>
+          </div>
+          <div class="weapon-desc">${w.desc}</div>
+        </div>
+
+        <div>
+          <div class="weapon-level-row">
+            <span>Grado Forgiatura:</span>
+            <span style="color: ${w.isUnlocked ? "#38bdf8" : "#94a3b8"};">
+              ${w.isUnlocked ? `Livello ${w.currentLevel} / ${w.maxLevel}` : "Bloccata"}
+            </span>
+          </div>
+
+          <div style="margin: 8px 0;">
+            ${reqHtml}
+          </div>
+
+          <div class="weapon-actions">
+            ${!w.isMaxLevel ? `
+              <button class="btn-forge" ${!canAfford ? "disabled" : ""}>
+                \u{1F528} ${w.isUnlocked ? `Potenzia a LV ${w.currentLevel + 1}` : "Forgia dal Fabbro"}
+              </button>
+            ` : ""}
+            ${w.isUnlocked && !w.isEquipped ? `
+              <button class="btn-equip">\u2694\uFE0F Equipaggia</button>
+            ` : ""}
+          </div>
+        </div>
+      `;
+        const btnForge = card.querySelector(".btn-forge");
+        if (btnForge && canAfford) {
+          btnForge.addEventListener("click", async () => {
+            try {
+              currentProfile = await API.craftOrUpgradeWeapon(w.id);
+              refreshProfile(currentProfile.nickname);
+            } catch (err) {
+              alert(err.message);
+            }
+          });
+        }
+        const btnEquip = card.querySelector(".btn-equip");
+        if (btnEquip) {
+          btnEquip.addEventListener("click", async () => {
+            try {
+              currentProfile = await API.equipWeapon(w.id);
+              refreshProfile(currentProfile.nickname);
+            } catch (err) {
+              alert(err.message);
+            }
+          });
+        }
+        weaponsContainer.appendChild(card);
+      });
+    }
+    function renderInventoryGrid() {
+      if (!currentProfile || !inventoryContainer) return;
+      inventoryContainer.innerHTML = "";
+      currentProfile.inventoryCatalog.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "inventory-item-card";
+        const count = item.count || 0;
+        card.innerHTML = `
+        <div class="item-top">
+          <div class="item-icon-box">${item.icon}</div>
+          <div class="item-count-badge" style="opacity: ${count > 0 ? 1 : 0.4};">x${count}</div>
+        </div>
+        <div>
+          <div class="item-name">${item.name}</div>
+          <div class="item-rarity" style="color: ${item.color};">${item.rarity}</div>
+        </div>
+        <div class="item-desc">${item.desc}</div>
+      `;
+        inventoryContainer.appendChild(card);
+      });
+    }
     async function renderLeaderboard() {
       leaderboardRows.innerHTML = '<tr><td colspan="6" style="text-align:center;">Caricamento classifica...</td></tr>';
       const list = await API.getLeaderboard();
@@ -2633,19 +3483,17 @@
         leaderboardRows.appendChild(tr);
       });
     }
-    tabBtnTalents.addEventListener("click", () => {
-      tabBtnTalents.classList.add("active");
-      tabBtnLeaderboard.classList.remove("active");
-      tabTalents.classList.add("active");
-      tabLeaderboard.classList.remove("active");
-    });
-    tabBtnLeaderboard.addEventListener("click", () => {
-      tabBtnLeaderboard.classList.add("active");
-      tabBtnTalents.classList.remove("active");
-      tabLeaderboard.classList.add("active");
-      tabTalents.classList.remove("active");
-      renderLeaderboard();
-    });
+    function switchTab(btn, pane, callback) {
+      [tabBtnTalents, tabBtnBlacksmith, tabBtnInventory, tabBtnLeaderboard].forEach((b) => b?.classList.remove("active"));
+      [tabTalents, tabBlacksmith, tabInventory, tabLeaderboard].forEach((p) => p?.classList.remove("active"));
+      btn?.classList.add("active");
+      pane?.classList.add("active");
+      if (callback) callback();
+    }
+    tabBtnTalents.addEventListener("click", () => switchTab(tabBtnTalents, tabTalents, renderTalentsGrid));
+    tabBtnBlacksmith.addEventListener("click", () => switchTab(tabBtnBlacksmith, tabBlacksmith, renderWeaponsGrid));
+    tabBtnInventory.addEventListener("click", () => switchTab(tabBtnInventory, tabInventory, renderInventoryGrid));
+    tabBtnLeaderboard.addEventListener("click", () => switchTab(tabBtnLeaderboard, tabLeaderboard, renderLeaderboard));
     btnSaveNick.addEventListener("click", () => {
       refreshProfile(inputNick.value);
     });
@@ -2656,19 +3504,26 @@
       player.x = 0;
       player.y = 50;
       camera.snapTo(player.x, player.y);
+      const eqWeapon = currentProfile.equippedWeapon || "staff";
+      const eqLevel = currentProfile.weapons && currentProfile.weapons[eqWeapon] || 1;
+      player.weapon = eqWeapon;
+      combat.setWeapon(eqWeapon, eqLevel, player.permanentBonusDamage || 0);
       combat.kills = 0;
       combat.goldEarned = 0;
+      combat.collectedItems = {};
+      combat.itemPickups = [];
       combat.projectiles = [];
+      combat.slashes = [];
       combat.pickups = [];
       combat.enemies = [];
       combat.hasOrbitOrb = false;
-      combat.projectilesPerShot = 1;
       combat.damageMultiplier = 1;
-      combat.baseCooldown = 0.85;
       progression.level = 1;
       progression.currentXp = 0;
       progression.nextLevelXp = 25;
       progression.isPausedForLevelUp = false;
+      if (elWeaponIcon) elWeaponIcon.textContent = combat.weaponId === "sword" ? "\u{1F5E1}\uFE0F" : combat.weaponId === "bow" ? "\u{1F3F9}" : "\u{1FA84}";
+      if (elWeaponName) elWeaponName.textContent = combat.weaponName;
       for (let i = 0; i < 10; i++) {
         const pt = world.findValidSpawn(300, 1300, "forest");
         combat.enemies.push(new Enemy(pt.x, pt.y, "slime_forest"));
@@ -2697,17 +3552,20 @@
     async function handleGameOver() {
       if (gameState === "GAMEOVER") return;
       gameState = "GAMEOVER";
+      const totalItems = Object.values(combat.collectedItems || {}).reduce((a, b) => a + b, 0);
       const runStats = {
         level: progression.level,
         kills: combat.kills,
         survivalSeconds: Math.floor(runSurvivalSeconds),
-        goldEarned: combat.goldEarned
+        goldEarned: combat.goldEarned,
+        collectedItems: combat.collectedItems
       };
       const res = await API.submitRun(runStats);
       elSumTime.textContent = formatTime(runStats.survivalSeconds);
       elSumLevel.textContent = `${runStats.level}`;
       elSumKills.textContent = `${runStats.kills}`;
       elSumGold.textContent = `+${res.finalGold} \u{1FA99}`;
+      if (elSumItems) elSumItems.textContent = `+${totalItems} \u{1F392}`;
       elSumScore.textContent = `${res.score}`;
       gameHud.classList.add("hidden");
       modalGameOver.classList.remove("hidden");
@@ -2811,7 +3669,13 @@
           if (elHpFill) elHpFill.style.width = `${Math.round(hpRatio * 100)}%`;
           if (elHpText) elHpText.textContent = `${Math.max(0, Math.round(player.hp))} / ${player.maxHp} HP`;
           if (elRunGold) elRunGold.textContent = `${combat.goldEarned}`;
-          if (elDamage) elDamage.textContent = `${Math.round((18 + (player.permanentBonusDamage || 0)) * combat.damageMultiplier)}`;
+          const runItemsCount = Object.values(combat.collectedItems || {}).reduce((a, b) => a + b, 0);
+          if (elRunItems) elRunItems.textContent = `${runItemsCount}`;
+          let currentBaseDmg = 18;
+          if (combat.weaponId === "sword") currentBaseDmg = combat.swordDamage || 28;
+          else if (combat.weaponId === "bow") currentBaseDmg = combat.bowDamage || 22;
+          else currentBaseDmg = combat.staffDamage || 18;
+          if (elDamage) elDamage.textContent = `${Math.round(currentBaseDmg * combat.damageMultiplier)}`;
           if (elTarget) {
             elTarget.textContent = combat.currentTarget ? combat.currentTarget.name : "Nessuno";
             elTarget.style.color = combat.currentTarget ? "#38bdf8" : "#94a3b8";

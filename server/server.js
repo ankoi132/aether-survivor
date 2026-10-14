@@ -46,15 +46,43 @@ app.post('/api/talents/upgrade', (req, res) => {
   }
 });
 
-// 4. Fine partita e registrazione statistiche
+// 4. Fine partita e registrazione statistiche con materiali raccolti
 app.post('/api/runs/complete', (req, res) => {
   try {
-    const { nickname, kills, level, survivalSeconds, goldEarned } = req.body;
+    const { nickname, kills, level, survivalSeconds, goldEarned, collectedItems } = req.body;
     if (!nickname) {
       return res.status(400).json({ success: false, error: 'Nickname obbligatorio' });
     }
-    const result = db.recordRun(nickname, { kills, level, survivalSeconds, goldEarned });
+    const result = db.recordRun(nickname, { kills, level, survivalSeconds, goldEarned, collectedItems });
     res.json({ success: true, result });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 5. Forgiatura e Potenziamento Armi dal Fabbro
+app.post('/api/blacksmith/craft', (req, res) => {
+  try {
+    const { nickname, weaponId } = req.body;
+    if (!nickname || !weaponId) {
+      return res.status(400).json({ success: false, error: 'Nickname e weaponId sono obbligatori' });
+    }
+    const profile = db.craftOrUpgradeWeapon(nickname, weaponId);
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 6. Equipaggia Arma per la spedizione
+app.post('/api/weapons/equip', (req, res) => {
+  try {
+    const { nickname, weaponId } = req.body;
+    if (!nickname || !weaponId) {
+      return res.status(400).json({ success: false, error: 'Nickname e weaponId sono obbligatori' });
+    }
+    const profile = db.equipWeapon(nickname, weaponId);
+    res.json({ success: true, profile });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }

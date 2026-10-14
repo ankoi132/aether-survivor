@@ -23,6 +23,7 @@ export class Player {
 
     this.animTimer = 0;
     this.frame = 0;
+    this.weapon = 'staff'; // 'staff' | 'sword' | 'bow'
   }
 
   applyPermanentStats(stats = {}) {
@@ -93,8 +94,8 @@ export class Player {
     // 1. Ombra proiettata sotto i piedi
     Sprites.drawShadow(ctx, this.x, this.y + 4, 11);
 
-    // 2. Sprite del personaggio (centrato sui piedi)
-    const sprite = Sprites.getHeroSprite(this.dir, this.walking, this.frame);
+    // 2. Sprite del personaggio (centrato sui piedi con arma equipaggiata)
+    const sprite = Sprites.getHeroSprite(this.dir, this.walking, this.frame, this.weapon);
     const sw = sprite.width;
     const sh = sprite.height;
 

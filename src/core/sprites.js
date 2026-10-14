@@ -38,7 +38,7 @@ export const Sprites = (() => {
     gemCore: '#ffffff'
   };
 
-  function renderHeroFrame(dir, isWalking, frameIndex) {
+  function renderHeroFrame(dir, isWalking, frameIndex, weapon = 'staff') {
     const w = 26 * PX;
     const h = 28 * PX;
     const { canvas, ctx } = createOffscreen(w, h);
@@ -112,25 +112,56 @@ export const Sprites = (() => {
     ctx.fillStyle = PALETTE.cloakLight;
     ctx.fillRect(cx - 4 * PX, cy - 14 * PX, 8 * PX, 2 * PX);
 
-    // 7. Bastone Arcano con Gemma Celestiale
-    const staffX = isFacingLeft ? cx - 8 * PX : cx + 6 * PX;
-    const staffY = cy - 9 * PX;
+    // 7. Arma dell'eroe (Spada, Arco o Bastone da Mago)
+    const wepX = isFacingLeft ? cx - 8 * PX : cx + 6 * PX;
+    const wepY = cy - 9 * PX;
 
-    // Asta di legno
-    ctx.fillStyle = PALETTE.outline;
-    ctx.fillRect(staffX - 1, staffY - 1, 2 * PX + 2, 16 * PX + 2);
-    ctx.fillStyle = PALETTE.staffWood;
-    ctx.fillRect(staffX, staffY, 2 * PX, 16 * PX);
-    ctx.fillStyle = PALETTE.staffLight;
-    ctx.fillRect(staffX, staffY, 1 * PX, 16 * PX);
+    if (weapon === 'sword') {
+      // 1. Spada da Cavaliere
+      ctx.fillStyle = PALETTE.outline;
+      ctx.fillRect(wepX - 1, wepY - 2 * PX, 2 * PX + 2, 13 * PX + 2);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(wepX, wepY - 2 * PX, 2 * PX, 13 * PX);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(wepX, wepY - 2 * PX, 1 * PX, 13 * PX);
 
-    // Gemma di mana con alone luminoso
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
-    ctx.fillRect(staffX - 2 * PX, staffY - 3 * PX, 6 * PX, 6 * PX);
-    ctx.fillStyle = PALETTE.gemGlow;
-    ctx.fillRect(staffX - 1 * PX, staffY - 2 * PX, 4 * PX, 4 * PX);
-    ctx.fillStyle = PALETTE.gemCore;
-    ctx.fillRect(staffX, staffY - 1 * PX, 2 * PX, 2 * PX);
+      ctx.fillStyle = PALETTE.outline;
+      ctx.fillRect(wepX - 2 * PX - 1, wepY + 8 * PX - 1, 6 * PX + 2, 2 * PX + 2);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(wepX - 2 * PX, wepY + 8 * PX, 6 * PX, 2 * PX);
+
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(wepX, wepY + 10 * PX, 2 * PX, 3 * PX);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(wepX, wepY + 13 * PX, 2 * PX, 1 * PX);
+    } else if (weapon === 'bow') {
+      // 2. Arco dei Guardaboschi
+      ctx.fillStyle = PALETTE.outline;
+      ctx.fillRect(wepX - 1, wepY - 1 * PX, 3 * PX + 2, 16 * PX + 2);
+      ctx.fillStyle = '#92400e';
+      ctx.fillRect(wepX, wepY - 1 * PX, 3 * PX, 16 * PX);
+      ctx.fillStyle = '#d97706';
+      ctx.fillRect(wepX + 1 * PX, wepY + 1 * PX, 1 * PX, 12 * PX);
+
+      ctx.fillStyle = '#f8fafc';
+      const cordX = isFacingLeft ? wepX + 3 * PX : wepX - 1 * PX;
+      ctx.fillRect(cordX, wepY, 1 * PX, 14 * PX);
+    } else {
+      // 3. Bastone Arcano con Gemma Celestiale
+      ctx.fillStyle = PALETTE.outline;
+      ctx.fillRect(wepX - 1, wepY - 1, 2 * PX + 2, 16 * PX + 2);
+      ctx.fillStyle = PALETTE.staffWood;
+      ctx.fillRect(wepX, wepY, 2 * PX, 16 * PX);
+      ctx.fillStyle = PALETTE.staffLight;
+      ctx.fillRect(wepX, wepY, 1 * PX, 16 * PX);
+
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+      ctx.fillRect(wepX - 2 * PX, wepY - 3 * PX, 6 * PX, 6 * PX);
+      ctx.fillStyle = PALETTE.gemGlow;
+      ctx.fillRect(wepX - 1 * PX, wepY - 2 * PX, 4 * PX, 4 * PX);
+      ctx.fillStyle = PALETTE.gemCore;
+      ctx.fillRect(wepX, wepY - 1 * PX, 2 * PX, 2 * PX);
+    }
 
     return canvas;
   }
@@ -341,10 +372,10 @@ export const Sprites = (() => {
     return canvas;
   }
 
-  function getHeroSprite(dir, isWalking, frame) {
-    const key = `hero_${dir}_${isWalking ? 1 : 0}_${frame}`;
+  function getHeroSprite(dir, isWalking, frame, weapon = 'staff') {
+    const key = `hero_${weapon}_${dir}_${isWalking ? 1 : 0}_${frame}`;
     if (!cache.has(key)) {
-      cache.set(key, renderHeroFrame(dir, isWalking, frame));
+      cache.set(key, renderHeroFrame(dir, isWalking, frame, weapon));
     }
     return cache.get(key);
   }
