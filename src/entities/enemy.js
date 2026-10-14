@@ -21,6 +21,8 @@ export class Enemy {
       this.aggroRadius = 180;
       this.xpValue = 12;
       this.gemType = 'cyan';
+      this.contactDamage = 6;
+      this.goldValue = 4;
     } else if (kind === 'slime_water') {
       this.name = 'Slime delle Onde';
       this.maxHp = 45;
@@ -29,6 +31,8 @@ export class Enemy {
       this.aggroRadius = 195;
       this.xpValue = 16;
       this.gemType = 'cyan';
+      this.contactDamage = 8;
+      this.goldValue = 6;
     } else {
       this.name = 'Scheletro Guardiano';
       this.maxHp = 70;
@@ -37,6 +41,8 @@ export class Enemy {
       this.aggroRadius = 210;
       this.xpValue = 25;
       this.gemType = 'emerald';
+      this.contactDamage = 14;
+      this.goldValue = 12;
     }
 
     this.hp = this.maxHp;

@@ -11,38 +11,126 @@
     <canvas id="gameCanvas"></canvas>
   </div>
 
-  <!-- Barra Superiore Esperienza & Livello (discreta, non copre il centro) -->
-  <div id="top-xp-bar">
-    <div id="level-badge">LV <span id="hud-level">1</span></div>
-    <div id="xp-track">
-      <div id="xp-fill"></div>
-      <div id="xp-text">0 / 25 XP</div>
-    </div>
-  </div>
+  <!-- =========================================================================
+       MENU PRINCIPALE & SANTUARIO DEI TALENTI (Meta-Progressione Backend)
+       ========================================================================= -->
+  <div id="main-menu" class="overlay-screen">
+    <div class="menu-box">
+      <div class="menu-header">
+        <div class="menu-logo">✨ AETHER SURVIVOR ✨</div>
+        <div class="menu-subtitle">Il Santuario dei Maghi e la Meta-Progressione</div>
+      </div>
 
-  <!-- Mini-Badge Statistiche (In alto a destra, trasparente e compatto) -->
-  <div id="top-stats">
-    <span id="hud-fps">60</span> FPS · <span id="hud-pos">X: 0, Y: 0</span> · Nemici nel mondo: <span id="hud-enemies">0</span>
-  </div>
+      <!-- Barra Profilo Giocatore -->
+      <div class="profile-card">
+        <div class="profile-row">
+          <div class="nick-field">
+            <label for="player-nickname">Mago:</label>
+            <input type="text" id="player-nickname" maxlength="16" placeholder="Il tuo nome">
+            <button id="btn-save-nick" class="btn-small">Salva</button>
+          </div>
+          <div class="profile-gold">
+            <span class="gold-icon">🪙</span>
+            <span id="menu-gold" class="gold-amount">100</span> Oro Permanente
+          </div>
+        </div>
 
-  <!-- Slot Magia Attiva (In basso a sinistra, discreto) -->
-  <div id="bottom-spell-slot">
-    <div class="spell-icon">✨</div>
-    <div class="spell-info">
-      <div class="spell-name" id="hud-spell-name">Dardo Arcano</div>
-      <div class="spell-stat">Danno: <b id="hud-damage">18</b> · Bersaglio: <b id="hud-target">Nessuno</b></div>
-      <div class="spell-cd-track">
-        <div id="hud-cd-fill"></div>
+        <div class="career-stats">
+          <div class="stat-item">Partite: <b id="stat-runs">0</b></div>
+          <div class="stat-item">Mostri Sconfitti: <b id="stat-kills">0</b></div>
+          <div class="stat-item">Livello Record: <b id="stat-high-lvl">1</b></div>
+          <div class="stat-item">Miglior Tempo: <b id="stat-best-time">00:00</b></div>
+          <div class="stat-item online-status">Stato Server: <b id="server-status" class="status-offline">Offline (Locale)</b></div>
+        </div>
+      </div>
+
+      <!-- Navigazione Schede (Grimorio Talenti / Classifica) -->
+      <div class="menu-tabs">
+        <button id="tab-btn-talents" class="tab-btn active">🔮 Grimorio dei Talenti</button>
+        <button id="tab-btn-leaderboard" class="tab-btn">🏆 Classifica dei Campioni</button>
+      </div>
+
+      <!-- Scheda 1: Grimorio dei Talenti Permanenti -->
+      <div id="tab-talents" class="tab-content active">
+        <div class="talents-grid" id="talents-container">
+          <!-- Popolato dinamicamente da api.js -->
+        </div>
+      </div>
+
+      <!-- Scheda 2: Classifica Globale -->
+      <div id="tab-leaderboard" class="tab-content">
+        <div class="leaderboard-table-wrapper">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Mago</th>
+                <th>Punteggio</th>
+                <th>Livello</th>
+                <th>Uccisioni</th>
+                <th>Tempo</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-rows">
+              <tr><td colspan="6" style="text-align:center;">Caricamento classifica...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pulsante Avvio Spedizione -->
+      <div class="menu-actions">
+        <button id="btn-start-run" class="btn-primary">⚔️ ENTRA NELLA SPEDIZIONE</button>
       </div>
     </div>
   </div>
 
-  <!-- Istruzioni di Gioco (in basso al centro) -->
-  <div id="controls-hint">
-    <b>W A S D</b> per muoverti · Esplora la mappa e sconfiggi i mostri randagi · L'attacco è automatico
+  <!-- =========================================================================
+       HUD DI GIOCO (Minimalista ed elegante in cima e sui bordi)
+       ========================================================================= -->
+  <div id="game-hud" class="hidden">
+    <!-- Barra Superiore Esperienza & Salute -->
+    <div id="top-xp-bar">
+      <div id="level-badge">LV <span id="hud-level">1</span></div>
+      <div id="xp-track">
+        <div id="xp-fill"></div>
+        <div id="xp-text">0 / 25 XP</div>
+      </div>
+      <div id="hp-track">
+        <div id="hp-fill"></div>
+        <div id="hp-text">100 / 100 HP</div>
+      </div>
+      <div id="run-gold-badge">
+        🪙 <span id="hud-run-gold">0</span>
+      </div>
+    </div>
+
+    <!-- Mini-Badge Statistiche (In alto a destra) -->
+    <div id="top-stats">
+      <span id="hud-fps">60</span> FPS · ⏱️ <span id="hud-timer">00:00</span> · Nemici: <span id="hud-enemies">0</span>
+    </div>
+
+    <!-- Slot Magia Attiva (In basso a sinistra) -->
+    <div id="bottom-spell-slot">
+      <div class="spell-icon">✨</div>
+      <div class="spell-info">
+        <div class="spell-name" id="hud-spell-name">Dardo Arcano</div>
+        <div class="spell-stat">Danno: <b id="hud-damage">18</b> · Bersaglio: <b id="hud-target">Nessuno</b></div>
+        <div class="spell-cd-track">
+          <div id="hud-cd-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Istruzioni di Gioco (in basso al centro) -->
+    <div id="controls-hint">
+      <b>W A S D</b> per muoverti · Attacco automatico · Raccogli gemme e sconfiggi i mostri
+    </div>
   </div>
 
-  <!-- Schermata di Selezione Potenziamento (Level-Up) -->
+  <!-- =========================================================================
+       SCHERMATA DI LEVEL-UP (Scelta Carte Potenziamento)
+       ========================================================================= -->
   <div id="levelup-modal" class="hidden">
     <div class="modal-box">
       <div class="modal-header">
@@ -56,6 +144,45 @@
 
       <div class="modal-footer">
         Clicca su una carta oppure premi il tasto <b>[1]</b>, <b>[2]</b> o <b>[3]</b> sulla tastiera
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       SCHERMATA FINE SPEDIZIONE / GAME OVER
+       ========================================================================= -->
+  <div id="gameover-modal" class="hidden overlay-screen">
+    <div class="modal-box summary-box">
+      <div class="modal-header">
+        <div class="modal-sub" style="color: #ef4444;">IL MAGO È CADUTO</div>
+        <div class="modal-title">Riepilogo della Spedizione</div>
+      </div>
+
+      <div class="summary-stats-grid">
+        <div class="summary-card">
+          <div class="sum-label">Tempo Sopravvissuto</div>
+          <div class="sum-val" id="sum-time">00:00</div>
+        </div>
+        <div class="summary-card">
+          <div class="sum-label">Livello Raggiunto</div>
+          <div class="sum-val" id="sum-level">1</div>
+        </div>
+        <div class="summary-card">
+          <div class="sum-label">Mostri Sconfitti</div>
+          <div class="sum-val" id="sum-kills">0</div>
+        </div>
+        <div class="summary-card gold-card">
+          <div class="sum-label">Oro Raccolto</div>
+          <div class="sum-val" id="sum-gold">+0 🪙</div>
+        </div>
+      </div>
+
+      <div class="summary-score">
+        Punteggio Conquistato: <b id="sum-score">0</b> punti
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-return-sanctuary" class="btn-primary">🔮 TORNA AL SANTUARIO (POTENZIA I TALENTI)</button>
       </div>
     </div>
   </div>

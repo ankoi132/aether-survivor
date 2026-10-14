@@ -19,13 +19,17 @@ export class CombatSystem {
     this.attackRange = 310;   // Raggio di puntamento automatico in pixel
     this.currentTarget = null;
 
-    // Statistiche potenziabili (Fase C)
+    // Statistiche potenziabili (Fase C + Meta-Progressione)
     this.projectilesPerShot = 1;
     this.damageMultiplier = 1.0;
     this.hasOrbitOrb = false;
     this.orbitOrbsCount = 0;
     this.orbitAngle = 0;
     this.orbitDamageTimer = 0;
+
+    // Statistiche della spedizione attuale
+    this.kills = 0;
+    this.goldEarned = 0;
 
     // Crea 2 manichini da allenamento nel Santuario centrale
     this.setupDemoTargets();
@@ -85,7 +89,24 @@ export class CombatSystem {
       const e = this.enemies[i];
       e.update(dt, player, world);
 
+      // Danno da contatto nemico -> giocatore
+      if (!e.dead && player.hp > 0) {
+        const cdx = e.x - player.x;
+        const cdy = e.y - player.y;
+        const cdist2 = cdx * cdx + cdy * cdy;
+        const touchR = e.r + player.r;
+        if (cdist2 < touchR * touchR) {
+          player.takeDamage(e.contactDamage || 8);
+          camera.kick(0.24);
+          FX.burst(player.x, player.y - 8, '#ef4444', 5, 80);
+        }
+      }
+
       if (e.dead) {
+        // Registra uccisione e oro guadagnato
+        this.kills++;
+        this.goldEarned += (e.goldValue || 4);
+
         // Rilascio gemma di Mana/XP
         this.pickups.push(new GemPickup(e.x, e.y, e.xpValue, e.gemType));
         this.enemies.splice(i, 1);
@@ -174,7 +195,8 @@ export class CombatSystem {
     const dy = target.y - (player.y - 12);
     const baseAngle = Math.atan2(dy, dx);
 
-    const dmg = Math.round(18 * this.damageMultiplier);
+    const baseDmg = 18 + (player.permanentBonusDamage || 0);
+    const dmg = Math.round(baseDmg * this.damageMultiplier);
     const count = this.projectilesPerShot;
 
     // Se spara più proiettili, li distribuisce a ventaglio

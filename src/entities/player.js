@@ -12,6 +12,8 @@ export class Player {
     this.hp = 100;
     this.maxHp = 100;
     this.magnetRadius = 85;   // Raggio di attrazione magnetica per gemme di mana
+    this.permanentBonusDamage = 0;
+    this.invulnerableTimer = 0;
 
     // Orientamento e animazione
     this.dir = 0;             // 0: Giù, 1: Giù-Destra, 2: Destra, etc.
@@ -21,6 +23,23 @@ export class Player {
 
     this.animTimer = 0;
     this.frame = 0;
+  }
+
+  applyPermanentStats(stats = {}) {
+    this.maxHp = 100 + (stats.bonusHp || 0);
+    this.hp = this.maxHp;
+    this.baseSpd = Math.round(105 * (stats.speedMultiplier || 1.0));
+    this.magnetRadius = Math.round(85 * (stats.magnetMultiplier || 1.0));
+    this.permanentBonusDamage = stats.bonusDamage || 0;
+  }
+
+  takeDamage(amount) {
+    if (this.invulnerableTimer > 0 || this.hp <= 0) return;
+    this.hp = Math.max(0, this.hp - amount);
+    this.invulnerableTimer = 0.6; // 600ms invulnerabilità
+    if (this.hp <= 0 && this.onDeath) {
+      this.onDeath();
+    }
   }
 
   get currentSpeed() {
@@ -33,6 +52,10 @@ export class Player {
   }
 
   update(dt, input, world) {
+    if (this.invulnerableTimer > 0) {
+      this.invulnerableTimer -= dt;
+    }
+
     const [ax, ay] = input.axis();
     this.walking = ax !== 0 || ay !== 0;
 
@@ -62,6 +85,11 @@ export class Player {
   }
 
   draw(ctx) {
+    // Lampeggio visivo durante i frame di invulnerabilità
+    if (this.invulnerableTimer > 0 && Math.floor(this.invulnerableTimer * 20) % 2 === 0) {
+      return;
+    }
+
     // 1. Ombra proiettata sotto i piedi
     Sprites.drawShadow(ctx, this.x, this.y + 4, 11);
 
