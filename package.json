@@ -1,0 +1,26 @@
+{
+  "name": "aether-survivor",
+  "version": "0.3.0",
+  "description": "Original 2D Fantasy Action-RPG / Survivor Game built with pure HTML5 Canvas & scalable web architecture",
+  "type": "module",
+  "main": "bundle.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "game",
+    "roguelike",
+    "survivor",
+    "pixel-art",
+    "canvas",
+    "multiplayer",
+    "fantasy"
+  ],
+  "author": "ANK",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

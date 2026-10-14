@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Aether Survivor - Fantasy Action RPG 2D</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <!-- Barra Superiore Esperienza & Livello (discreta, non copre il centro) -->
+  <div id="top-xp-bar">
+    <div id="level-badge">LV <span id="hud-level">1</span></div>
+    <div id="xp-track">
+      <div id="xp-fill"></div>
+      <div id="xp-text">0 / 25 XP</div>
+    </div>
+  </div>
+
+  <!-- Mini-Badge Statistiche (In alto a destra, trasparente e compatto) -->
+  <div id="top-stats">
+    <span id="hud-fps">60</span> FPS · <span id="hud-pos">X: 0, Y: 0</span> · Nemici nel mondo: <span id="hud-enemies">0</span>
+  </div>
+
+  <!-- Slot Magia Attiva (In basso a sinistra, discreto) -->
+  <div id="bottom-spell-slot">
+    <div class="spell-icon">✨</div>
+    <div class="spell-info">
+      <div class="spell-name" id="hud-spell-name">Dardo Arcano</div>
+      <div class="spell-stat">Danno: <b id="hud-damage">18</b> · Bersaglio: <b id="hud-target">Nessuno</b></div>
+      <div class="spell-cd-track">
+        <div id="hud-cd-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Istruzioni di Gioco (in basso al centro) -->
+  <div id="controls-hint">
+    <b>W A S D</b> per muoverti · Esplora la mappa e sconfiggi i mostri randagi · L'attacco è automatico
+  </div>
+
+  <!-- Schermata di Selezione Potenziamento (Level-Up) -->
+  <div id="levelup-modal" class="hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-sub">LIVELLO SUPERATO</div>
+        <div class="modal-title">Scegli una Benedizione Arcana</div>
+      </div>
+
+      <div id="upgrade-cards" class="cards-grid">
+        <!-- Generato dinamicamente da JS -->
+      </div>
+
+      <div class="modal-footer">
+        Clicca su una carta oppure premi il tasto <b>[1]</b>, <b>[2]</b> o <b>[3]</b> sulla tastiera
+      </div>
+    </div>
+  </div>
+
+  <script defer src="bundle.js"></script>
+</body>
+</html>
