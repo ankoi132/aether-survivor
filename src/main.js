@@ -65,6 +65,22 @@ window.addEventListener('DOMContentLoaded', async () => {
   const elCdFill = document.getElementById('hud-cd-fill');
   const cardsContainer = document.getElementById('upgrade-cards');
 
+  // Elementi In-Game Inventory / Zaino & Armeria
+  const btnOpenBag = document.getElementById('btn-open-bag');
+  const ingameModal = document.getElementById('ingame-inventory-modal');
+  const btnCloseBag = document.getElementById('btn-close-bag');
+  const btnResumeGame = document.getElementById('btn-resume-game');
+  const ingameTabBtnLoot = document.getElementById('ingame-tab-btn-loot');
+  const ingameTabBtnWeapons = document.getElementById('ingame-tab-btn-weapons');
+  const ingameTabBtnForge = document.getElementById('ingame-tab-btn-forge');
+  const ingameTabLoot = document.getElementById('ingame-tab-loot');
+  const ingameTabWeapons = document.getElementById('ingame-tab-weapons');
+  const ingameTabForge = document.getElementById('ingame-tab-forge');
+  const ingameLootContainer = document.getElementById('ingame-loot-container');
+  const ingameWeaponsContainer = document.getElementById('ingame-weapons-container');
+  const ingameForgeContainer = document.getElementById('ingame-forge-container');
+  const weaponNotification = document.getElementById('weapon-notification');
+
   // Elementi Riepilogo Fine Spedizione
   const elSumTime = document.getElementById('sum-time');
   const elSumLevel = document.getElementById('sum-level');
@@ -78,6 +94,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   let gameState = 'MENU'; // 'MENU' | 'PLAYING' | 'GAMEOVER'
   let currentProfile = null;
   let runSurvivalSeconds = 0;
+  let isInventoryOpen = false;
+  let notificationTimeout = null;
 
   // Istanze di gioco
   const camera = new Camera(768, 420);
@@ -359,6 +377,267 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
 
   // =========================================================================
+  // GESTIONE INVENTARIO & ARMERIA IN-GAME (Tasto I o pulsante Zaino)
+  // =========================================================================
+  function showWeaponNotification(text) {
+    if (!weaponNotification) return;
+    weaponNotification.textContent = text;
+    weaponNotification.classList.remove('hidden');
+    clearTimeout(notificationTimeout);
+    notificationTimeout = setTimeout(() => {
+      weaponNotification.classList.add('hidden');
+    }, 2200);
+  }
+
+  function equipWeapon(weaponId) {
+    const level = (currentProfile && currentProfile.weapons && currentProfile.weapons[weaponId]) || 1;
+    player.weapon = weaponId;
+    combat.setWeapon(weaponId, level, player.permanentBonusDamage || 0);
+
+    if (currentProfile) {
+      currentProfile.equippedWeapon = weaponId;
+    }
+
+    if (elWeaponIcon) elWeaponIcon.textContent = weaponId === 'sword' ? '🗡️' : (weaponId === 'bow' ? '🏹' : '🪄');
+    if (elWeaponName) elWeaponName.textContent = combat.weaponName;
+
+    let dmg = 18;
+    if (weaponId === 'sword') dmg = combat.swordDamage || 28;
+    else if (weaponId === 'bow') dmg = combat.bowDamage || 22;
+    else dmg = combat.staffDamage || 18;
+    if (elDamage) elDamage.textContent = `${Math.round(dmg * combat.damageMultiplier)}`;
+
+    const weaponNames = {
+      staff: "Bastone dell'Arcimago 🪄",
+      sword: "Spada da Cavaliere 🗡️",
+      bow: "Arco dei Guardaboschi 🏹"
+    };
+    showWeaponNotification(`⚔️ Arma Equipaggiata: ${weaponNames[weaponId] || weaponId}`);
+    renderIngameWeapons();
+  }
+
+  function renderIngameLoot() {
+    if (!ingameLootContainer) return;
+    ingameLootContainer.innerHTML = '';
+
+    const allMaterials = Object.values(MATERIALS_DEF);
+    allMaterials.forEach(mat => {
+      const runCount = (combat.collectedItems && combat.collectedItems[mat.id]) || 0;
+      const totalOwned = (currentProfile && currentProfile.inventory && currentProfile.inventory[mat.id]) || 0;
+
+      const card = document.createElement('div');
+      card.className = 'inventory-item-card';
+      card.innerHTML = `
+        <div class="item-top">
+          <div class="item-icon-box">${mat.icon}</div>
+          <div class="item-count-badge" style="opacity: ${runCount > 0 ? 1 : 0.45};">
+            +${runCount} raccolti ora
+          </div>
+        </div>
+        <div>
+          <div class="item-name">${mat.name}</div>
+          <div class="item-rarity" style="color: ${mat.color};">${mat.rarity} · In archivio: ${totalOwned}</div>
+        </div>
+        <div class="item-desc">${mat.desc}</div>
+      `;
+      ingameLootContainer.appendChild(card);
+    });
+  }
+
+  function renderIngameWeapons() {
+    if (!ingameWeaponsContainer) return;
+    ingameWeaponsContainer.innerHTML = '';
+
+    const weaponsList = [
+      {
+        id: 'staff',
+        key: '1',
+        name: "Bastone dell'Arcimago",
+        icon: '🪄',
+        type: 'Magia a Distanza (Dardi Autoguidati)',
+        desc: 'Scaglia dardi arcani luminosi che inseguono automaticamente i nemici nel raggio d\'azione.',
+        stats: 'Danno: 18 · Dardi: 1-3 · Gittata: Lunga'
+      },
+      {
+        id: 'sword',
+        key: '2',
+        name: 'Spada da Cavaliere',
+        icon: '🗡️',
+        type: 'Mischia ad Area (Fendenti Ravvicinati)',
+        desc: 'Colpisce con violenti archi di taglio semicircolari, scintille metalliche e forte respinta indietro (knockback).',
+        stats: 'Danno: 28 · Raggio arco: 92px · Spinta: Alta'
+      },
+      {
+        id: 'bow',
+        key: '3',
+        name: 'Arco dei Guardaboschi',
+        icon: '🏹',
+        type: 'Frecce Perforanti a Lungo Raggio',
+        desc: 'Scocca frecce fulminee che trapassano 2 o più nemici in linea retta a grandissima distanza.',
+        stats: 'Danno: 22 · Perforazione: 2 bersagli · Velocità freccia: Altissima'
+      }
+    ];
+
+    weaponsList.forEach(w => {
+      const isCurrent = combat.weaponId === w.id;
+      const card = document.createElement('div');
+      card.className = `weapon-card ${isCurrent ? 'equipped' : ''}`;
+      card.innerHTML = `
+        ${isCurrent ? '<div class="weapon-badge-equipped">✓ In Uso Ora</div>' : ''}
+        <div>
+          <div class="weapon-head">
+            <div class="weapon-icon">${w.icon}</div>
+            <div>
+              <div class="weapon-title">${w.name} [Tasto ${w.key}]</div>
+              <div class="weapon-type-tag">${w.type}</div>
+            </div>
+          </div>
+          <div class="weapon-desc">${w.desc}</div>
+          <div style="font-size: 11px; color: #38bdf8; font-weight: 700; margin-top: 6px;">⚡ ${w.stats}</div>
+        </div>
+        <div style="margin-top: 10px;">
+          <button class="btn-equip" style="width: 100%;">
+            ${isCurrent ? '✓ Già Equipaggiata' : `⚔️ Equipaggia Subito [Tasto ${w.key}]`}
+          </button>
+        </div>
+      `;
+
+      const btn = card.querySelector('.btn-equip');
+      btn.addEventListener('click', () => {
+        equipWeapon(w.id);
+      });
+
+      ingameWeaponsContainer.appendChild(card);
+    });
+  }
+
+  function renderIngameForge() {
+    if (!ingameForgeContainer) return;
+    ingameForgeContainer.innerHTML = '';
+
+    if (!currentProfile) return;
+
+    currentProfile.weaponsCatalog.forEach(w => {
+      const card = document.createElement('div');
+      card.className = `weapon-card ${w.isEquipped ? 'equipped' : ''}`;
+
+      let reqHtml = '';
+      let canAfford = false;
+
+      if (w.isMaxLevel) {
+        reqHtml = `<div class="weapon-req-box" style="color: #4ade80; text-align: center; font-weight: 700;">★ Grado Massimo (LV 5)</div>`;
+      } else if (w.nextCost) {
+        const goldHas = currentProfile.gold >= (w.nextCost.gold || 0);
+        let matsOk = true;
+        let matsRows = '';
+
+        if (w.nextCost.materials) {
+          for (const [matId, reqAmt] of Object.entries(w.nextCost.materials)) {
+            const owned = ((currentProfile.inventory && currentProfile.inventory[matId]) || 0) + ((combat.collectedItems && combat.collectedItems[matId]) || 0);
+            const hasEnough = owned >= reqAmt;
+            if (!hasEnough) matsOk = false;
+            const matDef = MATERIALS_DEF[matId] || { name: matId, icon: '📦' };
+            matsRows += `
+              <div class="req-item ${hasEnough ? 'has' : 'missing'}">
+                <span>${matDef.icon} ${matDef.name}:</span>
+                <span>${owned} / ${reqAmt}</span>
+              </div>
+            `;
+          }
+        }
+
+        canAfford = goldHas && matsOk;
+
+        reqHtml = `
+          <div class="weapon-req-box">
+            <div class="weapon-req-title">${w.isUnlocked ? 'Requisiti Potenziamento:' : 'Materiali per Forgiare:'}</div>
+            <div class="req-item ${goldHas ? 'has' : 'missing'}">
+              <span>🪙 Oro:</span>
+              <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
+            </div>
+            ${matsRows}
+            <div style="margin-top: 6px; font-size: 11px; color: #38bdf8; font-weight: 600;">✨ ${w.nextBenefit}</div>
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="weapon-head">
+          <div class="weapon-icon">${w.icon}</div>
+          <div>
+            <div class="weapon-title">${w.name}</div>
+            <div class="weapon-type-tag">Grado Forgiatura: Livello ${w.currentLevel} / ${w.maxLevel}</div>
+          </div>
+        </div>
+        <div style="margin: 8px 0;">${reqHtml}</div>
+        <button class="btn-forge" ${!canAfford ? 'disabled' : ''} style="width: 100%;">
+          🔨 ${w.isUnlocked ? `Potenzia a Livello ${w.currentLevel + 1}` : 'Forgia dal Fabbro'}
+        </button>
+      `;
+
+      const btnForge = card.querySelector('.btn-forge');
+      if (btnForge && canAfford) {
+        btnForge.addEventListener('click', async () => {
+          try {
+            currentProfile = await API.craftOrUpgradeWeapon(w.id);
+            renderIngameForge();
+            renderIngameWeapons();
+            equipWeapon(combat.weaponId);
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+      }
+
+      ingameForgeContainer.appendChild(card);
+    });
+  }
+
+  function switchIngameTab(tabName) {
+    [ingameTabBtnLoot, ingameTabBtnWeapons, ingameTabBtnForge].forEach(b => b?.classList.remove('active'));
+    [ingameTabLoot, ingameTabWeapons, ingameTabForge].forEach(p => p?.classList.remove('active'));
+
+    if (tabName === 'loot') {
+      ingameTabBtnLoot?.classList.add('active');
+      ingameTabLoot?.classList.add('active');
+      renderIngameLoot();
+    } else if (tabName === 'weapons') {
+      ingameTabBtnWeapons?.classList.add('active');
+      ingameTabWeapons?.classList.add('active');
+      renderIngameWeapons();
+    } else {
+      ingameTabBtnForge?.classList.add('active');
+      ingameTabForge?.classList.add('active');
+      renderIngameForge();
+    }
+  }
+
+  function openIngameInventory(tab = 'loot') {
+    if (gameState !== 'PLAYING') return;
+    isInventoryOpen = true;
+    if (ingameModal) ingameModal.classList.remove('hidden');
+    switchIngameTab(tab);
+  }
+
+  function closeIngameInventory() {
+    isInventoryOpen = false;
+    if (ingameModal) ingameModal.classList.add('hidden');
+  }
+
+  function toggleIngameInventory() {
+    if (isInventoryOpen) closeIngameInventory();
+    else openIngameInventory('loot');
+  }
+
+  if (btnOpenBag) btnOpenBag.addEventListener('click', () => toggleIngameInventory());
+  if (btnCloseBag) btnCloseBag.addEventListener('click', () => closeIngameInventory());
+  if (btnResumeGame) btnResumeGame.addEventListener('click', () => closeIngameInventory());
+
+  if (ingameTabBtnLoot) ingameTabBtnLoot.addEventListener('click', () => switchIngameTab('loot'));
+  if (ingameTabBtnWeapons) ingameTabBtnWeapons.addEventListener('click', () => switchIngameTab('weapons'));
+  if (ingameTabBtnForge) ingameTabBtnForge.addEventListener('click', () => switchIngameTab('forge'));
+
+  // =========================================================================
   // AVVIO DELLA SPEDIZIONE
   // =========================================================================
   function startExpedition() {
@@ -399,6 +678,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (elWeaponName) elWeaponName.textContent = combat.weaponName;
 
     // 3. Popola i mostri randagi nei rispettivi biomi della grande mappa finita
+    // Mostri ravvicinati appena fuori dal piazzale del villaggio per test immediato di combattimento e animazioni
+    combat.enemies.push(new Enemy(140, -170, 'slime_forest'));
+    combat.enemies.push(new Enemy(180, -190, 'slime_forest'));
+    combat.enemies.push(new Enemy(-160, -170, 'slime_ice'));
+    combat.enemies.push(new Enemy(-180, 150, 'slime_sand'));
+    combat.enemies.push(new Enemy(170, 160, 'skeleton'));
+
     for (let i = 0; i < 10; i++) {
       const pt = world.findValidSpawn(300, 1300, 'forest');
       combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_forest'));
@@ -421,9 +707,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 4. Cambia schermata
+    closeIngameInventory();
     menuScreen.classList.add('hidden');
     gameHud.classList.remove('hidden');
     modalGameOver.classList.add('hidden');
+
+    showWeaponNotification("Tasto [I]: Zaino/Inventario · Tasti [1/2/3]: Cambia Arma");
   }
 
   btnStartRun.addEventListener('click', startExpedition);
@@ -505,6 +794,33 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (e.key === '1') progression.chooseUpgrade(0);
       else if (e.key === '2') progression.chooseUpgrade(1);
       else if (e.key === '3') progression.chooseUpgrade(2);
+      return;
+    }
+
+    if (gameState === 'PLAYING') {
+      // Tasti [I] e [B] per aprire/chiudere lo Zaino & Inventario
+      if (e.code === 'KeyI' || e.code === 'KeyB' || e.key === 'i' || e.key === 'I' || e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        toggleIngameInventory();
+        return;
+      }
+
+      // Tasto [ESC] per chiudere l'inventario se aperto
+      if (e.key === 'Escape' || e.code === 'Escape') {
+        if (isInventoryOpen) {
+          closeIngameInventory();
+          return;
+        }
+      }
+
+      // Tasti rapidi 1, 2, 3 per cambiare arma all'istante
+      if (e.key === '1') {
+        equipWeapon('staff');
+      } else if (e.key === '2') {
+        equipWeapon('sword');
+      } else if (e.key === '3') {
+        equipWeapon('bow');
+      }
     }
   });
 
@@ -549,11 +865,10 @@ window.addEventListener('DOMContentLoaded', async () => {
         fpsTimer = 0;
       }
 
-      // 1. UPDATE
+      // 1. UPDATE (Mondo in pausa se l'inventario o il level up è aperto)
       if (gameState === 'PLAYING') {
-        runSurvivalSeconds += dt;
-
-        if (!progression.isPausedForLevelUp) {
+        if (!isInventoryOpen && !progression.isPausedForLevelUp) {
+          runSurvivalSeconds += dt;
           player.update(dt, Input, world);
           combat.update(dt, player, world, camera);
           camera.follow(player.x, player.y, dt);

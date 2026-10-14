@@ -98,8 +98,15 @@ app.get('/api/leaderboard', (req, res) => {
   }
 });
 
-// 6. Hosting statico del client di gioco (bundle.js, index.html, assets)
-app.use(express.static(ROOT_DIR));
+// 6. Hosting statico del client di gioco (bundle.js, index.html, assets) senza cache del browser
+app.use(express.static(ROOT_DIR, {
+  etag: false,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+}));
 
 app.listen(PORT, () => {
   console.log(`\n======================================================`);

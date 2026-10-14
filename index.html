@@ -127,15 +127,18 @@
       <div id="run-gold-badge">
         🪙 <span id="hud-run-gold">0</span>
       </div>
-      <div id="run-items-badge" title="Materiali e artefatti raccolti">
-        🎒 <span id="hud-run-items">0</span>
-      </div>
+      <button id="btn-open-bag" class="hud-bag-btn" title="Apri Inventario e Zaino (Tasto [I] o [B])">
+        🎒 Zaino [I] (<span id="hud-run-items">0</span>)
+      </button>
     </div>
 
     <!-- Mini-Badge Statistiche (In alto a destra) -->
     <div id="top-stats">
       <span id="hud-fps">60</span> FPS · ⏱️ <span id="hud-timer">00:00</span> · Nemici: <span id="hud-enemies">0</span>
     </div>
+
+    <!-- Notifica Fluttuante Cambio Arma / Azione -->
+    <div id="weapon-notification" class="hidden"></div>
 
     <!-- Slot Arma Attiva (In basso a sinistra) -->
     <div id="bottom-spell-slot">
@@ -151,7 +154,7 @@
 
     <!-- Istruzioni di Gioco (in basso al centro) -->
     <div id="controls-hint">
-      <b>W A S D</b> per muoverti · Attacco automatico · Raccogli gemme e sconfiggi i mostri
+      <b>W A S D</b> Muoviti · <b>[I]</b> Zaino & Inventario · <b>[1/2/3]</b> Cambia Arma · Attacco automatico
     </div>
   </div>
 
@@ -218,6 +221,65 @@
     </div>
   </div>
 
-  <script defer src="bundle.js"></script>
+  <!-- =========================================================================
+       MODALE IN-GAME: ZAINO, INVENTARIO & ARMERIA (Tasto [I] o pulsante Zaino)
+       ========================================================================= -->
+  <div id="ingame-inventory-modal" class="hidden overlay-screen">
+    <div class="menu-box ingame-box">
+      <div class="ingame-modal-header">
+        <div>
+          <div class="menu-logo" style="font-size: 21px;">🎒 ZAINO & ARMERIA</div>
+          <div class="menu-subtitle">Materiali raccolti nella spedizione e Cambio rapido Armi</div>
+        </div>
+        <button id="btn-close-bag" class="btn-close-modal" title="Chiudi [I o ESC]">✕</button>
+      </div>
+
+      <!-- Schede dell'Inventario In-Game -->
+      <div class="menu-tabs">
+        <button id="ingame-tab-btn-loot" class="tab-btn active">📦 Risorse Spedizione</button>
+        <button id="ingame-tab-btn-weapons" class="tab-btn">⚔️ Armeria (Tasti 1, 2, 3)</button>
+        <button id="ingame-tab-btn-forge" class="tab-btn">🔨 Fucina Fabbro</button>
+      </div>
+
+      <!-- Scheda 1: Risorse e Bottino Spedizione -->
+      <div id="ingame-tab-loot" class="tab-content active">
+        <div class="inventory-intro">
+          <div class="inventory-title">Materiali & Artefatti raccolti finora</div>
+          <div class="inventory-desc">Bottini rilasciati dai mostri sconfitti nei diversi biomi. Usali alla Fucina per creare o potenziare Spada, Arco e Bastone!</div>
+        </div>
+        <div class="inventory-grid" id="ingame-loot-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <!-- Scheda 2: Armeria Rapida (Cambio e Test Armi immediato) -->
+      <div id="ingame-tab-weapons" class="tab-content">
+        <div class="inventory-intro">
+          <div class="inventory-title">Cambia Arma Equipaggiata</div>
+          <div class="inventory-desc">Puoi cambiare arma all'istante anche durante la partita premendo i tasti <b>[1]</b>, <b>[2]</b> o <b>[3]</b> sulla tastiera!</div>
+        </div>
+        <div class="weapons-grid" id="ingame-weapons-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <!-- Scheda 3: Fucina del Fabbro -->
+      <div id="ingame-tab-forge" class="tab-content">
+        <div class="blacksmith-intro">
+          <div class="blacksmith-title">🔨 Forgia e Potenzia le Tue Armi</div>
+          <div class="blacksmith-desc">Spendi i materiali raccolti e l'oro conquistato per potenziare gli attacchi!</div>
+        </div>
+        <div class="weapons-grid" id="ingame-forge-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 12px;">
+        <button id="btn-resume-game" class="btn-primary" style="width: 100%;">▶️ RIPRENDI LA SPEDIZIONE (Premi [I] o [ESC])</button>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="bundle.js?v=0.4.2"></script>
 </body>
 </html>

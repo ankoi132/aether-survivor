@@ -47,6 +47,37 @@
         "magnet": 0,
         "gold_gain": 0
       }
+    },
+    "mago-6485": {
+      "nickname": "Mago-6485",
+      "createdAt": "2026-10-14T19:54:23.068Z",
+      "gold": 25,
+      "totalRuns": 0,
+      "totalKills": 0,
+      "highestLevel": 1,
+      "bestSurvivalSeconds": 0,
+      "talents": {
+        "max_hp": 1,
+        "damage": 1,
+        "speed": 0,
+        "magnet": 0,
+        "gold_gain": 0
+      },
+      "inventory": {
+        "slime_gel": 4,
+        "ice_crystal": 0,
+        "sun_amber": 0,
+        "magma_core": 0,
+        "ancient_bone": 3,
+        "iron_scrap": 4,
+        "arcane_rune": 1
+      },
+      "weapons": {
+        "staff": 1,
+        "sword": 0,
+        "bow": 0
+      },
+      "equippedWeapon": "staff"
     }
   },
   "leaderboard": [

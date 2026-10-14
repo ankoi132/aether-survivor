@@ -1,6 +1,6 @@
 /**
  * entities/target.js - Bersagli di prova (Manichini da addestramento e Slime di prova)
- * Dotati di HP, barra vitale fluttuante, flash bianco all'impatto e knockback fisico.
+ * Dotati di HP, barra vitale fluttuante, flash bianco all'impatto, flinch elastico e knockback fisico.
  */
 import { Sprites } from '../core/sprites.js';
 import { FX } from '../core/fx.js';
@@ -19,28 +19,42 @@ export class TrainingTarget {
     this.vx = 0;
     this.vy = 0;
     this.flash = 0;
+    this.squashTimer = 0;
     this.dead = false;
     this.respawnTimer = 0;
   }
 
-  takeDamage(amount, knockAngle = 0, knockForce = 120) {
+  takeDamage(amount, knockAngle = 0, knockForce = 120, attackType = 'magic') {
     if (this.dead) return;
 
-    this.hp -= amount;
-    this.flash = 0.15; // 150ms di flash bianco all'impatto
+    this.hp = Math.max(0, this.hp - amount);
+    this.flash = 0.12; // 120ms di flash bianco all'impatto
+    this.squashTimer = 0.15; // flinch elastico
 
     // Applicazione del contraccolpo (knockback)
     this.vx = Math.cos(knockAngle) * knockForce;
     this.vy = Math.sin(knockAngle) * knockForce;
 
-    // Genera numero di danno fluttuante
-    FX.addDamageNumber(this.x, this.y - 12, amount);
-    FX.burst(this.x, this.y - 6, '#38bdf8', 6, 90);
+    // Effetti visivi differenziati per tipo di colpo subito
+    if (attackType === 'slash') {
+      FX.addSlashCut(this.x, this.y - 8, knockAngle, 32);
+      FX.addShockwave(this.x, this.y - 8, 18, '#ffffff', 0.15);
+      FX.addDamageNumber(this.x, this.y - 20, amount, true);
+    } else if (attackType === 'pierce') {
+      FX.burst(this.x, this.y - 8, '#fef08a', 5, 105);
+      FX.addShockwave(this.x, this.y - 8, 14, '#f59e0b', 0.14);
+      FX.addDamageNumber(this.x, this.y - 20, amount, false);
+    } else {
+      FX.burst(this.x, this.y - 8, '#38bdf8', 6, 85);
+      FX.addDamageNumber(this.x, this.y - 20, amount, false);
+    }
 
     if (this.hp <= 0) {
-      this.hp = 0;
       this.dead = true;
-      this.respawnTimer = 2.2; // Respawna dopo 2.2s per continuare il test
+      this.respawnTimer = 2.4; // Respawna dopo 2.4s per continuare l'addestramento
+      FX.addShockwave(this.x, this.y - 6, 28, '#b45309', 0.22);
+      FX.addBones(this.x, this.y - 6, 5); // schegge e supporti di legno
+      FX.addSmokePuff(this.x, this.y - 10, '#78716c');
       FX.burst(this.x, this.y - 10, '#f59e0b', 14, 140);
     }
   }
@@ -56,12 +70,16 @@ export class TrainingTarget {
         this.y = this.startY;
         this.vx = 0;
         this.vy = 0;
+        this.squashTimer = 0;
+        this.flash = 0;
+        FX.addShockwave(this.x, this.y - 6, 20, '#22c55e', 0.18);
         FX.burst(this.x, this.y - 10, '#22c55e', 12, 100);
       }
       return;
     }
 
     if (this.flash > 0) this.flash -= dt;
+    if (this.squashTimer > 0) this.squashTimer -= dt;
 
     // Attrito sul knockback
     this.x += this.vx * dt;
@@ -84,6 +102,16 @@ export class TrainingTarget {
     const cy = Math.round(this.y);
 
     ctx.save();
+
+    // Flinch elastico (squash & stretch) al colpo
+    if (this.squashTimer > 0) {
+      const progress = this.squashTimer / 0.15;
+      const scaleX = 1 + Math.sin(progress * Math.PI) * 0.24;
+      const scaleY = 1 - Math.sin(progress * Math.PI) * 0.18;
+      ctx.translate(cx, cy);
+      ctx.scale(scaleX, scaleY);
+      ctx.translate(-cx, -cy);
+    }
 
     // 2. Disegno Pixel-Art del Manichino da Addestramento
     // Palo di supporto in legno
