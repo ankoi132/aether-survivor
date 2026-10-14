@@ -124,7 +124,7 @@ export class CombatSystem {
     let minDist2 = this.attackRange * this.attackRange;
 
     for (const target of this.getAllTargets()) {
-      if (target.dead) continue;
+      if (target.dead || target.isDying) continue;
       const dx = target.x - player.x;
       const dy = target.y - player.y;
       const d2 = dx * dx + dy * dy;
@@ -215,8 +215,8 @@ export class CombatSystem {
       const e = this.enemies[i];
       e.update(dt, player, world);
 
-      // Danno da contatto nemico -> giocatore
-      if (!e.dead && player.hp > 0) {
+      // Danno da contatto nemico -> giocatore (solo se vivo e non morente)
+      if (!e.dead && !e.isDying && player.hp > 0) {
         const cdx = e.x - player.x;
         const cdy = e.y - player.y;
         const cdist2 = cdx * cdx + cdy * cdy;
@@ -228,8 +228,9 @@ export class CombatSystem {
         }
       }
 
-      if (e.dead) {
-        // Registra uccisione e oro guadagnato
+      // Rilascio di XP e artefatti appena il mostro riceve il colpo di grazia
+      if (e.isDying && !e.hasDroppedLoot) {
+        e.hasDroppedLoot = true;
         this.kills++;
         this.goldEarned += (e.goldValue || 4);
 
@@ -239,11 +240,14 @@ export class CombatSystem {
         // 2. Rilascio di Oggetti e Artefatti da raccogliere
         const drops = this.rollMonsterDrops(e.kind);
         for (const itemId of drops) {
-          const ox = (Math.random() * 18 - 9);
-          const oy = (Math.random() * 18 - 9);
+          const ox = (Math.random() * 22 - 11);
+          const oy = (Math.random() * 22 - 11);
           this.itemPickups.push(new ItemPickup(e.x + ox, e.y + oy, itemId));
         }
+      }
 
+      // Rimozione definitiva solo quando l'animazione di morte è completata
+      if (e.dead) {
         this.enemies.splice(i, 1);
       }
     }
@@ -291,7 +295,7 @@ export class CombatSystem {
           if (odx * odx + ody * ody < (target.r + 14) * (target.r + 14)) {
             const angle = Math.atan2(ody, odx);
             const dmg = Math.round(14 * this.damageMultiplier);
-            target.takeDamage(dmg, angle, 90);
+            target.takeDamage(dmg, angle, 90, 'magic');
             this.orbitDamageTimer = 0.28;
             camera.kick(0.12);
             break;
@@ -321,7 +325,8 @@ export class CombatSystem {
         if (dist2 < hitRadius * hitRadius) {
           p.hitTargets.add(t);
           const angle = Math.atan2(p.vy, p.vx);
-          t.takeDamage(p.dmg, angle, p.type === 'arrow' ? 140 : 115);
+          const attackType = p.type === 'arrow' ? 'pierce' : 'magic';
+          t.takeDamage(p.dmg, angle, p.type === 'arrow' ? 140 : 115, attackType);
           camera.kick(0.15);
 
           p.pierce--;
@@ -369,7 +374,7 @@ export class CombatSystem {
         while (diff > Math.PI) diff = Math.abs(diff - Math.PI * 2);
 
         if (arc >= Math.PI * 1.9 || diff <= arc / 2 + 0.18) {
-          t.takeDamage(dmg, enemyAngle, knockback);
+          t.takeDamage(dmg, enemyAngle, knockback, 'slash');
           FX.burst(t.x, t.y - 8, '#f8fafc', 4, 110);
         }
       }

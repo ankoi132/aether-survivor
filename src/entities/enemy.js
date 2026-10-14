@@ -1,16 +1,27 @@
 /**
- * entities/enemy.js - Nemici fantasy randagi che popolano la mappa (no onde, no spawner infinito)
+ * entities/enemy.js - Nemici fantasy con macchine a stati, animazioni di impatto (flinch/flash)
+ * e animazioni di morte differenziate per bioma (dissolvenza/splat per slime, crollo ossa per scheletri)
  */
 import { Sprites } from '../core/sprites.js';
 import { FX } from '../core/fx.js';
+
+export const ENEMY_COLORS = {
+  slime_forest: '#22c55e',
+  slime_ice: '#93c5fd',
+  slime_sand: '#f59e0b',
+  slime_magma: '#ef4444',
+  slime_water: '#0284c7',
+  skeleton: '#cbd5e1'
+};
 
 export class Enemy {
   constructor(x, y, kind = 'slime_forest') {
     this.x = x;
     this.y = y;
-    this.kind = kind; // 'slime_forest', 'slime_water', 'skeleton'
+    this.kind = kind;
     this.spawnX = x;
     this.spawnY = y;
+    this.color = ENEMY_COLORS[kind] || '#22c55e';
 
     // Statistiche per tipo
     if (kind === 'slime_forest') {
@@ -77,8 +88,12 @@ export class Enemy {
 
     this.hp = this.maxHp;
     this.dead = false;
+    this.isDying = false;
+    this.hasDroppedLoot = false;
+    this.deathTimer = 0;
+    this.deathMaxTimer = 0.36;
 
-    // Macchina a stati: 'WANDER' | 'CHASE'
+    // Macchina a stati: 'WANDER' | 'CHASE' | 'DYING'
     this.state = 'WANDER';
     this.wanderTimer = Math.random() * 2;
     this.wanderAngle = Math.random() * Math.PI * 2;
@@ -89,18 +104,20 @@ export class Enemy {
     this.animTimer = Math.random() * 2;
     this.frame = 0;
 
-    // Knockback e feedback
+    // Knockback, flash e flinch (squash & stretch sui colpi)
     this.vx = 0;
     this.vy = 0;
     this.flashTimer = 0;
+    this.squashTimer = 0;
     this.alertTimer = 0;
   }
 
-  takeDamage(dmg, knockbackAngle, knockbackForce = 120) {
-    if (this.dead) return;
+  takeDamage(dmg, knockbackAngle, knockbackForce = 120, attackType = 'magic') {
+    if (this.dead || this.isDying) return;
 
     this.hp = Math.max(0, this.hp - dmg);
     this.flashTimer = 0.12;
+    this.squashTimer = 0.15;
 
     // Se viene colpito mentre vaga, entra immediatamente in allerta
     if (this.state === 'WANDER') {
@@ -112,22 +129,68 @@ export class Enemy {
     this.vx += Math.cos(knockbackAngle) * knockbackForce;
     this.vy += Math.sin(knockbackAngle) * knockbackForce;
 
-    // Feedback particelle e numero fluttuante
-    FX.burst(this.x, this.y - 8, '#f8fafc', 5, 80);
-    FX.addDamageNumber(this.x, this.y - 20, dmg, false);
+    // Effetti grafici differenziati per tipo di attacco subito
+    if (attackType === 'slash') {
+      // Colpo di Spada: taglio di lama brillante, scintille metalliche e numero critico
+      FX.addSlashCut(this.x, this.y - 8, knockbackAngle, 32);
+      FX.addShockwave(this.x, this.y - 8, 18, '#ffffff', 0.15);
+      FX.addDamageNumber(this.x, this.y - 20, dmg, true);
+    } else if (attackType === 'pierce') {
+      // Colpo d'Arco: perforazione rapida, onda d'urto stretta
+      FX.burst(this.x, this.y - 8, '#fef08a', 5, 105);
+      FX.addShockwave(this.x, this.y - 8, 14, '#f59e0b', 0.14);
+      FX.addDamageNumber(this.x, this.y - 20, dmg, false);
+    } else {
+      // Colpo Magico (Bastone / Sfera): alone arcano
+      FX.burst(this.x, this.y - 8, '#38bdf8', 6, 85);
+      FX.addDamageNumber(this.x, this.y - 20, dmg, false);
+    }
 
-    if (this.hp <= 0) {
-      this.dead = true;
-      const deathColor = this.kind.startsWith('slime') ? '#22c55e' : '#cbd5e1';
-      FX.burst(this.x, this.y - 10, deathColor, 12, 110);
+    // Raggiunta salute zero: inizio animazione di morte
+    if (this.hp <= 0 && !this.isDying) {
+      this.isDying = true;
+      this.state = 'DYING';
+      this.deathTimer = this.deathMaxTimer;
+
+      if (this.kind.startsWith('slime_')) {
+        // Morte Slime: onda d'urto colorata, globuli e bolle gelatinose che esplodono
+        FX.addShockwave(this.x, this.y + 4, 28, this.color, 0.22);
+        FX.addSlimeSplat(this.x, this.y - 4, this.color, 12);
+        FX.burst(this.x, this.y - 6, this.color, 14, 130);
+      } else {
+        // Morte Scheletro: onda d'urto, ossa rotanti che rimbalzano al suolo e fumo spettrale
+        FX.addShockwave(this.x, this.y + 4, 32, '#cbd5e1', 0.24);
+        FX.addBones(this.x, this.y - 6, 6);
+        FX.addSmokePuff(this.x, this.y - 10, '#64748b');
+        FX.burst(this.x, this.y - 6, '#f8fafc', 8, 90);
+      }
     }
   }
 
   update(dt, player, world) {
     if (this.dead) return;
 
+    // Gestione fase di morte animata
+    if (this.isDying) {
+      this.deathTimer -= dt;
+      // Il knockback decelera rapidamente
+      const friction = Math.exp(-12.0 * dt);
+      this.vx *= friction;
+      this.vy *= friction;
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+
+      if (this.deathTimer <= 0) {
+        this.dead = true;
+      }
+      return;
+    }
+
     if (this.flashTimer > 0) {
       this.flashTimer -= dt;
+    }
+    if (this.squashTimer > 0) {
+      this.squashTimer -= dt;
     }
     if (this.alertTimer > 0) {
       this.alertTimer -= dt;
@@ -147,12 +210,10 @@ export class Enemy {
 
     // 3. Macchina a stati del comportamento
     if (this.state === 'WANDER') {
-      // Se il giocatore entra nel raggio di percezione: ALLERTA!
       if (dist < this.aggroRadius) {
         this.state = 'CHASE';
         this.alertTimer = 0.8;
       } else {
-        // Pattugliamento pacifico dell'area
         this.wanderTimer -= dt;
         if (this.wanderTimer <= 0) {
           this.isWanderMoving = Math.random() > 0.4;
@@ -171,13 +232,11 @@ export class Enemy {
         }
       }
     } else if (this.state === 'CHASE') {
-      // Se il giocatore fugge molto lontano, il nemico si calma
       if (dist > this.aggroRadius * 1.7) {
         this.state = 'WANDER';
         this.wanderTimer = 2.0;
         this.isWanderMoving = false;
       } else if (dist > 18) {
-        // Inseguimento fluido del giocatore
         const angle = Math.atan2(dy, dx);
         this.dir = Sprites.dirFromAngle(angle);
 
@@ -192,7 +251,7 @@ export class Enemy {
       }
     }
 
-    // 4. Risoluzione collisioni con l'ambiente (scivola su muri, rocce, alberi)
+    // 4. Risoluzione collisioni con l'ambiente
     world.collide(this);
 
     // Calcolo frame animazione
@@ -202,15 +261,69 @@ export class Enemy {
   draw(ctx) {
     if (this.dead) return;
 
-    // Ombra a terra
+    // 1. Animazione di Morte
+    if (this.isDying) {
+      const p = 1 - (this.deathTimer / this.deathMaxTimer);
+
+      if (this.kind.startsWith('slime_')) {
+        // Slime: schiacciamento sul terreno (squash) e dissolvenza con bolle
+        const scaleX = 1 + p * 0.85;
+        const scaleY = Math.max(0.06, 1 - p * 1.15);
+
+        ctx.save();
+        ctx.translate(Math.round(this.x), Math.round(this.y + 4));
+        ctx.scale(scaleX, scaleY);
+        ctx.globalAlpha = Math.max(0, 1 - p * 0.85);
+
+        if (p < 0.3) {
+          ctx.filter = 'brightness(3.2)';
+        }
+
+        const slimeType = this.kind.replace('slime_', '');
+        const sprite = Sprites.getSlimeSprite(slimeType, 1); // Frame schiacciato
+        const sw = sprite.width;
+        const sh = sprite.height;
+        ctx.drawImage(sprite, Math.round(-sw / 2), Math.round(-sh + 4));
+        ctx.restore();
+      } else {
+        // Scheletro: crollo all'indietro, sfarfallio e dissolvenza nel fumo
+        ctx.save();
+        ctx.translate(Math.round(this.x), Math.round(this.y + 4 + p * 8));
+        ctx.rotate(p * 0.65 * (this.vx >= 0 ? 1 : -1));
+        ctx.globalAlpha = Math.max(0, 1 - p);
+
+        if (p < 0.25) {
+          ctx.filter = 'brightness(3.0)';
+        }
+
+        const sprite = Sprites.getSkeletonSprite(this.dir, false, 0);
+        const sw = sprite.width;
+        const sh = sprite.height;
+        ctx.drawImage(sprite, Math.round(-sw / 2), Math.round(-sh + 8));
+        ctx.restore();
+      }
+      return;
+    }
+
+    // 2. Ombra a terra
     Sprites.drawShadow(ctx, this.x, this.y + 4, this.kind.startsWith('slime') ? 9 : 10);
 
     ctx.save();
-    if (this.flashTimer > 0) {
-      ctx.filter = 'brightness(2.2)';
+
+    // Effetto Flinch / Squash sui colpi ricevuti
+    if (this.squashTimer > 0) {
+      const flinchAmt = (this.squashTimer / 0.15) * 0.22;
+      ctx.translate(Math.round(this.x), Math.round(this.y));
+      ctx.scale(1 + flinchAmt, 1 - flinchAmt);
+      ctx.translate(-Math.round(this.x), -Math.round(this.y));
     }
 
-    // Render dello sprite pixel-art
+    // Flash bianco d'impatto
+    if (this.flashTimer > 0) {
+      ctx.filter = 'brightness(2.8)';
+    }
+
+    // Render dello sprite pixel-art vivo
     if (this.kind.startsWith('slime_')) {
       const slimeType = this.kind.replace('slime_', '');
       const sprite = Sprites.getSlimeSprite(slimeType, this.frame);
@@ -227,7 +340,7 @@ export class Enemy {
 
     ctx.restore();
 
-    // 3. Indicatore di Allerta (!) quando viene ingaggiato
+    // 3. Indicatore di Allerta (!)
     if (this.alertTimer > 0) {
       ctx.fillStyle = '#ef4444';
       ctx.font = 'bold 12px monospace';

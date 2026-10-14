@@ -1487,76 +1487,179 @@
   // src/core/fx.js
   var FX = /* @__PURE__ */ (() => {
     const particles = [];
+    const shockwaves = [];
+    const slashCuts = [];
+    const bones = [];
     const damageTexts = [];
     return {
       /**
-       * Esplosione circolare di particelle di impatto
+       * Esplosione circolare di particelle colorate
        */
       burst(x, y, color = "#38bdf8", count = 8, speed = 120) {
         for (let i = 0; i < count; i++) {
           const angle = Math.random() * Math.PI * 2;
-          const s = speed * (0.3 + Math.random() * 0.7);
+          const s = speed * (0.35 + Math.random() * 0.65);
           particles.push({
             x,
             y,
             vx: Math.cos(angle) * s,
             vy: Math.sin(angle) * s,
             color,
-            size: Math.random() < 0.3 ? 3 : 2,
-            life: 0.25 + Math.random() * 0.25,
+            size: Math.random() < 0.35 ? 3 : 2,
+            life: 0.25 + Math.random() * 0.22,
             t: 0
           });
         }
       },
       /**
-       * Scia o scintilla direzionale
+       * Scia o scintilla direzionale ad alta velocità
        */
       spark(x, y, color = "#bae6fd", size = 2) {
         particles.push({
           x: x + (Math.random() * 4 - 2),
           y: y + (Math.random() * 4 - 2),
-          vx: Math.random() * 20 - 10,
-          vy: Math.random() * 20 - 10,
+          vx: Math.random() * 30 - 15,
+          vy: Math.random() * 30 - 15,
           color,
           size,
-          life: 0.18 + Math.random() * 0.12,
+          life: 0.16 + Math.random() * 0.12,
           t: 0
         });
       },
       /**
-       * Numero di danno fluttuante che sale verso l'alto e sfuma
+       * Anello di onde d'urto ad espansione rapida (impatto colpi e morte mob)
+       */
+      addShockwave(x, y, maxRadius = 32, color = "#ffffff", duration = 0.24) {
+        shockwaves.push({
+          x,
+          y,
+          radius: 4,
+          maxRadius,
+          color,
+          life: duration,
+          t: 0
+        });
+      },
+      /**
+       * Taglio di fendente d'acciaio con scintille lungo l'angolo d'impatto
+       */
+      addSlashCut(x, y, angle, length = 26, color = "#ffffff") {
+        slashCuts.push({
+          x,
+          y,
+          angle,
+          length,
+          color,
+          life: 0.14,
+          t: 0
+        });
+        for (let i = 0; i < 4; i++) {
+          const pAngle = angle + Math.PI / 2 * (Math.random() > 0.5 ? 1 : -1) + (Math.random() * 0.6 - 0.3);
+          const spd = 60 + Math.random() * 90;
+          particles.push({
+            x,
+            y,
+            vx: Math.cos(pAngle) * spd,
+            vy: Math.sin(pAngle) * spd,
+            color: Math.random() > 0.3 ? "#fde047" : "#ffffff",
+            size: 2,
+            life: 0.15 + Math.random() * 0.1,
+            t: 0
+          });
+        }
+      },
+      /**
+       * Sbuffo di fumo o polvere che sale dolcemente
+       */
+      addSmokePuff(x, y, color = "#94a3b8") {
+        for (let i = 0; i < 5; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = Math.random() * 8;
+          particles.push({
+            x: x + Math.cos(angle) * dist,
+            y: y + Math.sin(angle) * dist,
+            vx: Math.random() * 20 - 10,
+            vy: -25 - Math.random() * 25,
+            color,
+            size: 4 + Math.floor(Math.random() * 3),
+            life: 0.35 + Math.random() * 0.2,
+            t: 0
+          });
+        }
+      },
+      /**
+       * Frammenti ossei che rimbalzano al suolo per la morte dello scheletro
+       */
+      addBones(x, y, count = 6) {
+        for (let i = 0; i < count; i++) {
+          const angle = -Math.PI / 2 + (Math.random() * 1.6 - 0.8);
+          const speed = 70 + Math.random() * 90;
+          bones.push({
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            gravity: 280,
+            rotation: Math.random() * Math.PI * 2,
+            vRot: Math.random() * 12 - 6,
+            size: i === 0 ? 6 : 4,
+            // Il primo pezzo è il teschio!
+            isSkull: i === 0,
+            groundY: y + 10 + Math.random() * 8,
+            bounces: 2,
+            life: 0.55 + Math.random() * 0.2,
+            t: 0
+          });
+        }
+      },
+      /**
+       * Spruzzi e globuli gelatinosi per la morte degli slime
+       */
+      addSlimeSplat(x, y, color = "#22c55e", count = 10) {
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 60 + Math.random() * 110;
+          particles.push({
+            x,
+            y,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd + 20,
+            // Leggera caduta verso terra
+            color,
+            size: Math.random() < 0.4 ? 4 : 3,
+            life: 0.3 + Math.random() * 0.2,
+            t: 0
+          });
+        }
+      },
+      /**
+       * Numero di danno fluttuante con pop-scale iniziale e critico
        */
       addDamageNumber(x, y, amount, isCrit = false) {
         damageTexts.push({
-          x: x + (Math.random() * 12 - 6),
+          x: x + (Math.random() * 14 - 7),
           y: y - 10,
-          text: `-${amount}`,
-          vy: -48,
-          life: 0.75,
+          text: isCrit ? `-${amount}!` : `-${amount}`,
+          vy: isCrit ? -54 : -42,
+          life: 0.72,
           t: 0,
-          isCrit
+          isCrit,
+          scale: isCrit ? 1.4 : 1.15
         });
       },
+      /**
+       * Testo fluttuante colorato per la raccolta di oggetti e artefatti
+       */
       addFloatingText(x, y, text, color = "#22c55e") {
         damageTexts.push({
           x: x + (Math.random() * 8 - 4),
-          y: y - 10,
+          y: y - 12,
           text,
-          vy: -38,
+          vy: -36,
           life: 0.85,
           t: 0,
-          color
-        });
-      },
-      number(x, y, amount, color = "#fde047") {
-        damageTexts.push({
-          x: x + (Math.random() * 12 - 6),
-          y: y - 10,
-          text: `-${amount}`,
-          vy: -48,
-          life: 0.75,
-          t: 0,
-          isCrit: color === "#fde047"
+          color,
+          scale: 1.05
         });
       },
       update(dt) {
@@ -1569,8 +1672,44 @@
           }
           p.x += p.vx * dt;
           p.y += p.vy * dt;
-          p.vx *= 0.92;
-          p.vy *= 0.92;
+          p.vx *= 0.91;
+          p.vy *= 0.91;
+        }
+        for (let i = shockwaves.length - 1; i >= 0; i--) {
+          const sw = shockwaves[i];
+          sw.t += dt;
+          if (sw.t >= sw.life) {
+            shockwaves.splice(i, 1);
+            continue;
+          }
+          const progress = sw.t / sw.life;
+          sw.radius = 4 + (sw.maxRadius - 4) * Math.sin(progress * Math.PI * 0.5);
+        }
+        for (let i = slashCuts.length - 1; i >= 0; i--) {
+          const sc = slashCuts[i];
+          sc.t += dt;
+          if (sc.t >= sc.life) {
+            slashCuts.splice(i, 1);
+          }
+        }
+        for (let i = bones.length - 1; i >= 0; i--) {
+          const b = bones[i];
+          b.t += dt;
+          if (b.t >= b.life) {
+            bones.splice(i, 1);
+            continue;
+          }
+          b.vy += b.gravity * dt;
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+          b.rotation += b.vRot * dt;
+          if (b.y >= b.groundY && b.bounces > 0) {
+            b.y = b.groundY;
+            b.vy = -b.vy * 0.45;
+            b.vx *= 0.65;
+            b.vRot *= 0.6;
+            b.bounces--;
+          }
         }
         for (let i = damageTexts.length - 1; i >= 0; i--) {
           const d = damageTexts[i];
@@ -1581,26 +1720,85 @@
           }
           d.y += d.vy * dt;
           d.vy *= 0.93;
+          if (d.scale > 1) {
+            d.scale = Math.max(1, d.scale - dt * 2.5);
+          }
         }
       },
       draw(ctx) {
         ctx.save();
+        for (const sw of shockwaves) {
+          const alpha = Math.max(0, 1 - sw.t / sw.life);
+          ctx.strokeStyle = sw.color;
+          ctx.globalAlpha = alpha * 0.85;
+          ctx.lineWidth = Math.max(1.5, 3 * (1 - sw.t / sw.life));
+          ctx.beginPath();
+          ctx.arc(Math.round(sw.x), Math.round(sw.y), Math.round(sw.radius), 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        for (const sc of slashCuts) {
+          const alpha = Math.max(0, 1 - sc.t / sc.life);
+          ctx.save();
+          ctx.translate(Math.round(sc.x), Math.round(sc.y));
+          ctx.rotate(sc.angle);
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = sc.color;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(-sc.length / 2, 0);
+          ctx.lineTo(sc.length / 2, 0);
+          ctx.stroke();
+          ctx.strokeStyle = "#fde047";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(-sc.length / 3, -1);
+          ctx.lineTo(sc.length / 3, 1);
+          ctx.stroke();
+          ctx.restore();
+        }
+        for (const b of bones) {
+          const alpha = Math.max(0, 1 - b.t / b.life * 0.8);
+          ctx.save();
+          ctx.translate(Math.round(b.x), Math.round(b.y));
+          ctx.rotate(b.rotation);
+          ctx.globalAlpha = alpha;
+          if (b.isSkull) {
+            ctx.fillStyle = "#0f172a";
+            ctx.fillRect(-3, -3, 6, 6);
+            ctx.fillStyle = "#f8fafc";
+            ctx.fillRect(-2, -2, 5, 5);
+            ctx.fillStyle = "#ef4444";
+            ctx.fillRect(-1, -1, 1, 1);
+            ctx.fillRect(1, -1, 1, 1);
+          } else {
+            ctx.fillStyle = "#0f172a";
+            ctx.fillRect(-3, -1, 6, 3);
+            ctx.fillStyle = "#cbd5e1";
+            ctx.fillRect(-2, 0, 5, 2);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(-2, 0, 2, 1);
+          }
+          ctx.restore();
+        }
         for (const p of particles) {
           const alpha = Math.max(0, 1 - p.t / p.life);
           ctx.fillStyle = p.color;
           ctx.globalAlpha = alpha;
           ctx.fillRect(Math.round(p.x - p.size / 2), Math.round(p.y - p.size / 2), p.size, p.size);
         }
-        ctx.font = 'bold 13px "Courier New", monospace, sans-serif';
-        ctx.textAlign = "center";
         for (const d of damageTexts) {
           const alpha = Math.max(0, 1 - d.t / d.life);
+          ctx.save();
           ctx.globalAlpha = alpha;
+          const fontSize = Math.round(13 * (d.scale || 1));
+          ctx.font = `bold ${fontSize}px "Courier New", monospace, sans-serif`;
+          ctx.textAlign = "center";
           ctx.fillStyle = "#080a0f";
           ctx.fillText(d.text, Math.round(d.x) + 1, Math.round(d.y) + 1);
           ctx.fillText(d.text, Math.round(d.x) - 1, Math.round(d.y) - 1);
           ctx.fillStyle = d.color || (d.isCrit ? "#fde047" : "#e0f2fe");
           ctx.fillText(d.text, Math.round(d.x), Math.round(d.y));
+          ctx.restore();
         }
         ctx.restore();
       }
@@ -1608,6 +1806,14 @@
   })();
 
   // src/entities/enemy.js
+  var ENEMY_COLORS = {
+    slime_forest: "#22c55e",
+    slime_ice: "#93c5fd",
+    slime_sand: "#f59e0b",
+    slime_magma: "#ef4444",
+    slime_water: "#0284c7",
+    skeleton: "#cbd5e1"
+  };
   var Enemy = class {
     constructor(x, y, kind = "slime_forest") {
       this.x = x;
@@ -1615,6 +1821,7 @@
       this.kind = kind;
       this.spawnX = x;
       this.spawnY = y;
+      this.color = ENEMY_COLORS[kind] || "#22c55e";
       if (kind === "slime_forest") {
         this.name = "Slime Silvano";
         this.maxHp = 35;
@@ -1678,6 +1885,10 @@
       }
       this.hp = this.maxHp;
       this.dead = false;
+      this.isDying = false;
+      this.hasDroppedLoot = false;
+      this.deathTimer = 0;
+      this.deathMaxTimer = 0.36;
       this.state = "WANDER";
       this.wanderTimer = Math.random() * 2;
       this.wanderAngle = Math.random() * Math.PI * 2;
@@ -1688,30 +1899,67 @@
       this.vx = 0;
       this.vy = 0;
       this.flashTimer = 0;
+      this.squashTimer = 0;
       this.alertTimer = 0;
     }
-    takeDamage(dmg, knockbackAngle, knockbackForce = 120) {
-      if (this.dead) return;
+    takeDamage(dmg, knockbackAngle, knockbackForce = 120, attackType = "magic") {
+      if (this.dead || this.isDying) return;
       this.hp = Math.max(0, this.hp - dmg);
       this.flashTimer = 0.12;
+      this.squashTimer = 0.15;
       if (this.state === "WANDER") {
         this.state = "CHASE";
         this.alertTimer = 0.8;
       }
       this.vx += Math.cos(knockbackAngle) * knockbackForce;
       this.vy += Math.sin(knockbackAngle) * knockbackForce;
-      FX.burst(this.x, this.y - 8, "#f8fafc", 5, 80);
-      FX.addDamageNumber(this.x, this.y - 20, dmg, false);
-      if (this.hp <= 0) {
-        this.dead = true;
-        const deathColor = this.kind.startsWith("slime") ? "#22c55e" : "#cbd5e1";
-        FX.burst(this.x, this.y - 10, deathColor, 12, 110);
+      if (attackType === "slash") {
+        FX.addSlashCut(this.x, this.y - 8, knockbackAngle, 32);
+        FX.addShockwave(this.x, this.y - 8, 18, "#ffffff", 0.15);
+        FX.addDamageNumber(this.x, this.y - 20, dmg, true);
+      } else if (attackType === "pierce") {
+        FX.burst(this.x, this.y - 8, "#fef08a", 5, 105);
+        FX.addShockwave(this.x, this.y - 8, 14, "#f59e0b", 0.14);
+        FX.addDamageNumber(this.x, this.y - 20, dmg, false);
+      } else {
+        FX.burst(this.x, this.y - 8, "#38bdf8", 6, 85);
+        FX.addDamageNumber(this.x, this.y - 20, dmg, false);
+      }
+      if (this.hp <= 0 && !this.isDying) {
+        this.isDying = true;
+        this.state = "DYING";
+        this.deathTimer = this.deathMaxTimer;
+        if (this.kind.startsWith("slime_")) {
+          FX.addShockwave(this.x, this.y + 4, 28, this.color, 0.22);
+          FX.addSlimeSplat(this.x, this.y - 4, this.color, 12);
+          FX.burst(this.x, this.y - 6, this.color, 14, 130);
+        } else {
+          FX.addShockwave(this.x, this.y + 4, 32, "#cbd5e1", 0.24);
+          FX.addBones(this.x, this.y - 6, 6);
+          FX.addSmokePuff(this.x, this.y - 10, "#64748b");
+          FX.burst(this.x, this.y - 6, "#f8fafc", 8, 90);
+        }
       }
     }
     update(dt, player, world) {
       if (this.dead) return;
+      if (this.isDying) {
+        this.deathTimer -= dt;
+        const friction2 = Math.exp(-12 * dt);
+        this.vx *= friction2;
+        this.vy *= friction2;
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        if (this.deathTimer <= 0) {
+          this.dead = true;
+        }
+        return;
+      }
       if (this.flashTimer > 0) {
         this.flashTimer -= dt;
+      }
+      if (this.squashTimer > 0) {
+        this.squashTimer -= dt;
       }
       if (this.alertTimer > 0) {
         this.alertTimer -= dt;
@@ -1767,10 +2015,50 @@
     }
     draw(ctx) {
       if (this.dead) return;
+      if (this.isDying) {
+        const p = 1 - this.deathTimer / this.deathMaxTimer;
+        if (this.kind.startsWith("slime_")) {
+          const scaleX = 1 + p * 0.85;
+          const scaleY = Math.max(0.06, 1 - p * 1.15);
+          ctx.save();
+          ctx.translate(Math.round(this.x), Math.round(this.y + 4));
+          ctx.scale(scaleX, scaleY);
+          ctx.globalAlpha = Math.max(0, 1 - p * 0.85);
+          if (p < 0.3) {
+            ctx.filter = "brightness(3.2)";
+          }
+          const slimeType = this.kind.replace("slime_", "");
+          const sprite = Sprites.getSlimeSprite(slimeType, 1);
+          const sw = sprite.width;
+          const sh = sprite.height;
+          ctx.drawImage(sprite, Math.round(-sw / 2), Math.round(-sh + 4));
+          ctx.restore();
+        } else {
+          ctx.save();
+          ctx.translate(Math.round(this.x), Math.round(this.y + 4 + p * 8));
+          ctx.rotate(p * 0.65 * (this.vx >= 0 ? 1 : -1));
+          ctx.globalAlpha = Math.max(0, 1 - p);
+          if (p < 0.25) {
+            ctx.filter = "brightness(3.0)";
+          }
+          const sprite = Sprites.getSkeletonSprite(this.dir, false, 0);
+          const sw = sprite.width;
+          const sh = sprite.height;
+          ctx.drawImage(sprite, Math.round(-sw / 2), Math.round(-sh + 8));
+          ctx.restore();
+        }
+        return;
+      }
       Sprites.drawShadow(ctx, this.x, this.y + 4, this.kind.startsWith("slime") ? 9 : 10);
       ctx.save();
+      if (this.squashTimer > 0) {
+        const flinchAmt = this.squashTimer / 0.15 * 0.22;
+        ctx.translate(Math.round(this.x), Math.round(this.y));
+        ctx.scale(1 + flinchAmt, 1 - flinchAmt);
+        ctx.translate(-Math.round(this.x), -Math.round(this.y));
+      }
       if (this.flashTimer > 0) {
-        ctx.filter = "brightness(2.2)";
+        ctx.filter = "brightness(2.8)";
       }
       if (this.kind.startsWith("slime_")) {
         const slimeType = this.kind.replace("slime_", "");
@@ -2307,7 +2595,7 @@
       this.angle = angle;
       this.radius = radius;
       this.arc = arc;
-      this.life = 0.16;
+      this.life = 0.18;
       this.t = 0;
       this.dead = false;
     }
@@ -2320,26 +2608,39 @@
     draw(ctx) {
       if (this.dead) return;
       const progress = this.t / this.life;
-      const alpha = Math.max(0, 1 - progress);
+      const alpha = Math.max(0, 1 - Math.pow(progress, 1.4));
       ctx.save();
       ctx.translate(Math.round(this.x), Math.round(this.y));
-      const startAngle = this.angle - this.arc / 2;
-      const endAngle = this.angle + this.arc / 2;
-      ctx.strokeStyle = `rgba(226, 232, 240, ${alpha * 0.9})`;
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.arc(0, 0, this.radius, startAngle, endAngle);
-      ctx.stroke();
-      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(0, 0, this.radius, startAngle + 0.1, endAngle - 0.1);
-      ctx.stroke();
-      ctx.strokeStyle = `rgba(56, 189, 248, ${alpha * 0.4})`;
-      ctx.lineWidth = 14;
-      ctx.beginPath();
-      ctx.arc(0, 0, this.radius - 4, startAngle, endAngle);
-      ctx.stroke();
+      const totalArc = this.arc;
+      const start = this.angle - totalArc / 2;
+      const headArc = Math.min(totalArc, totalArc * Math.min(1, progress * 2.2));
+      const tailProgress = Math.max(0, (progress - 0.28) / 0.72);
+      const tailOffset = totalArc * tailProgress;
+      const drawStart = start + tailOffset;
+      const drawEnd = start + headArc;
+      if (drawEnd > drawStart) {
+        ctx.strokeStyle = `rgba(56, 189, 248, ${alpha * 0.45})`;
+        ctx.lineWidth = 14;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius - 2, drawStart, drawEnd);
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(226, 232, 240, ${alpha * 0.95})`;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, drawStart, drawEnd);
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, drawStart + 0.04, drawEnd);
+        ctx.stroke();
+        const tipX = Math.cos(drawEnd) * this.radius;
+        const tipY = Math.sin(drawEnd) * this.radius;
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
   };
@@ -2438,7 +2739,7 @@
       let nearest = null;
       let minDist2 = this.attackRange * this.attackRange;
       for (const target of this.getAllTargets()) {
-        if (target.dead) continue;
+        if (target.dead || target.isDying) continue;
         const dx = target.x - player.x;
         const dy = target.y - player.y;
         const d2 = dx * dx + dy * dy;
@@ -2510,7 +2811,7 @@
       for (let i = this.enemies.length - 1; i >= 0; i--) {
         const e = this.enemies[i];
         e.update(dt, player, world);
-        if (!e.dead && player.hp > 0) {
+        if (!e.dead && !e.isDying && player.hp > 0) {
           const cdx = e.x - player.x;
           const cdy = e.y - player.y;
           const cdist2 = cdx * cdx + cdy * cdy;
@@ -2521,16 +2822,19 @@
             FX.burst(player.x, player.y - 8, "#ef4444", 5, 80);
           }
         }
-        if (e.dead) {
+        if (e.isDying && !e.hasDroppedLoot) {
+          e.hasDroppedLoot = true;
           this.kills++;
           this.goldEarned += e.goldValue || 4;
           this.pickups.push(new GemPickup(e.x, e.y, e.xpValue, e.gemType));
           const drops = this.rollMonsterDrops(e.kind);
           for (const itemId of drops) {
-            const ox = Math.random() * 18 - 9;
-            const oy = Math.random() * 18 - 9;
+            const ox = Math.random() * 22 - 11;
+            const oy = Math.random() * 22 - 11;
             this.itemPickups.push(new ItemPickup(e.x + ox, e.y + oy, itemId));
           }
+        }
+        if (e.dead) {
           this.enemies.splice(i, 1);
         }
       }
@@ -2569,7 +2873,7 @@
             if (odx * odx + ody * ody < (target.r + 14) * (target.r + 14)) {
               const angle = Math.atan2(ody, odx);
               const dmg = Math.round(14 * this.damageMultiplier);
-              target.takeDamage(dmg, angle, 90);
+              target.takeDamage(dmg, angle, 90, "magic");
               this.orbitDamageTimer = 0.28;
               camera.kick(0.12);
               break;
@@ -2593,7 +2897,8 @@
           if (dist2 < hitRadius * hitRadius) {
             p.hitTargets.add(t);
             const angle = Math.atan2(p.vy, p.vx);
-            t.takeDamage(p.dmg, angle, p.type === "arrow" ? 140 : 115);
+            const attackType = p.type === "arrow" ? "pierce" : "magic";
+            t.takeDamage(p.dmg, angle, p.type === "arrow" ? 140 : 115, attackType);
             camera.kick(0.15);
             p.pierce--;
             if (p.pierce <= 0) {
@@ -2630,7 +2935,7 @@
           let diff = Math.abs(enemyAngle - angle);
           while (diff > Math.PI) diff = Math.abs(diff - Math.PI * 2);
           if (arc >= Math.PI * 1.9 || diff <= arc / 2 + 0.18) {
-            t.takeDamage(dmg, enemyAngle, knockback);
+            t.takeDamage(dmg, enemyAngle, knockback, "slash");
             FX.burst(t.x, t.y - 8, "#f8fafc", 4, 110);
           }
         }
