@@ -171,6 +171,9 @@
       <button id="hud-btn-map" class="hud-action-btn" title="Mappa Tattica (Tasto [M])">
         🗺️ Mappa [M]
       </button>
+      <button id="hud-btn-teleport" class="hud-action-btn" title="Portali dell'Aether - Viaggio Rapido (Tasto [T])">
+        🌀 Portali [T]
+      </button>
       <button id="hud-btn-menu" class="hud-action-btn" title="Menu di Gioco & Impostazioni (Tasto [ESC])">
         ⚙️ Menu [ESC]
       </button>
@@ -234,6 +237,10 @@
         <button id="btn-close-map" class="btn-close-modal" title="Chiudi [M o ESC]">✕</button>
       </div>
 
+      <div class="map-travel-hint">
+        🌀 <b>Viaggio Rapido tra Città:</b> Clicca su un cerchio di città sulla mappa o sul tasto <b>[🌀 Viaggia]</b> per teletrasportarti all'istante! (I boss vanno raggiunti a piedi)
+      </div>
+
       <div class="tactical-map-layout">
         <!-- Canvas Grande Mappa -->
         <div class="tactical-canvas-wrapper">
@@ -245,49 +252,55 @@
 
         <!-- Legenda e Dettaglio Biomi & Città Fortificate -->
         <div class="tactical-legend-panel">
-          <div class="legend-title">Città Fortificate & Biomi</div>
+          <div class="legend-title">Città Fortificate & Rete Portali</div>
           <div class="legend-list">
-            <div class="legend-item">
+            <div class="legend-item legend-settlement-item">
               <span class="legend-color-box" style="background: #38bdf8; border-color: #bae6fd;"></span>
-              <div>
+              <div class="legend-text-box">
                 <b>🏰 Cittadella dell'Aether (Centro)</b>
-                <p>Safe Zone protetta con Fabbro, Taverna, Torre e Manichini da prova.</p>
+                <p>Safe Zone centrale protetta con Fabbro Reale, Taverna e Obelisco.</p>
               </div>
+              <button type="button" class="btn-map-travel" data-settlement="citadel" title="Teletrasportati alla Cittadella dell'Aether">🌀 Viaggia</button>
             </div>
-            <div class="legend-item">
+            <div class="legend-item legend-settlement-item">
               <span class="legend-color-box" style="background: #0284c7; border-color: #67e8f9;"></span>
-              <div>
+              <div class="legend-text-box">
                 <b>🌊 Borgo delle Cascate & Fiume (Ovest)</b>
-                <p>Safe Zone su scogliera fluviale, cascata, mulino e guadi attraversabili a piedi.</p>
+                <p>Safe Zone su scogliera fluviale, cascata, mulino e guadi calpestabili.</p>
               </div>
+              <button type="button" class="btn-map-travel" data-settlement="waterfall_village" title="Teletrasportati al Borgo delle Cascate">🌀 Viaggia</button>
             </div>
-            <div class="legend-item">
+            <div class="legend-item legend-settlement-item">
               <span class="legend-color-box" style="background: #e2e8f0; border-color: #38bdf8;"></span>
-              <div>
-                <b>❄️ Vette Innevate & Avamposto Frostpeak (Nord)</b>
+              <div class="legend-text-box">
+                <b>❄️ Vette Innevate & Frostpeak (Nord)</b>
                 <p>Safe Zone montuosa. Slime di ghiaccio e Cristalli Gelidi ❄️</p>
               </div>
+              <button type="button" class="btn-map-travel" data-settlement="frostpeak" title="Teletrasportati all'Avamposto di Frostpeak">🌀 Viaggia</button>
             </div>
-            <div class="legend-item">
+            <div class="legend-item legend-settlement-item">
               <span class="legend-color-box" style="background: #d97706; border-color: #fde047;"></span>
-              <div>
+              <div class="legend-text-box">
                 <b>🏜️ Deserto delle Dune & Oasi Al-Zahir (Sud-Ovest)</b>
                 <p>Safe Zone carovaniera. Slime sabbiosi e Ambra Solare ☀️</p>
               </div>
+              <button type="button" class="btn-map-travel" data-settlement="oasis" title="Teletrasportati all'Oasi di Al-Zahir">🌀 Viaggia</button>
             </div>
-            <div class="legend-item">
+            <div class="legend-item legend-settlement-item">
               <span class="legend-color-box" style="background: #7f1d1d; border-color: #ef4444;"></span>
-              <div>
-                <b>🌋 Caldera Vulcanica & Rocca di Cineris (Est)</b>
+              <div class="legend-text-box">
+                <b>🌋 Caldera Vulcanica & Rocca Cineris (Est)</b>
                 <p>Safe Zone ardente. Slime di lava e Nuclei Magmatici 🔥</p>
               </div>
+              <button type="button" class="btn-map-travel" data-settlement="cineris" title="Teletrasportati alla Rocca di Cineris">🌀 Viaggia</button>
             </div>
-            <div class="legend-item">
+            <div class="legend-item legend-settlement-item">
               <span class="legend-color-box" style="background: #166534; border-color: #22c55e;"></span>
-              <div>
-                <b>🌲 Bosco Silvano & Borgo di Sylva (Ovest)</b>
+              <div class="legend-text-box">
+                <b>🌲 Bosco Silvano & Borgo Sylva (Ovest)</b>
                 <p>Safe Zone degli erboristi. Slime verdi e Gel Silvano 🧪</p>
               </div>
+              <button type="button" class="btn-map-travel" data-settlement="sylva" title="Teletrasportati al Borgo di Sylva">🌀 Viaggia</button>
             </div>
             <div class="legend-item">
               <span class="legend-color-box" style="background: #64748b; border-color: #fde047;"></span>
@@ -438,7 +451,40 @@
   </div>
 
   <!-- =========================================================================
-       6. MODALE MENU DI GIOCO IN-GAME (Impostazioni / Negozio / Amici / Esci [ESC])
+       6. MODALE PORTALI DELL'AETHER - VIAGGIO RAPIDO TRA LE CITTÀ (Tasto [T])
+       ========================================================================= -->
+  <div id="teleport-modal" class="hidden overlay-screen" style="z-index: 105;">
+    <div class="menu-box ingame-box teleport-modal-box">
+      <div class="ingame-modal-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="teleport-portal-icon">🌀</div>
+          <div>
+            <div class="menu-logo" style="font-size: 21px;">PORTALI DELL'AETHER</div>
+            <div class="menu-subtitle">Rete di Viaggio Rapido tra le Safe Zone e i Villaggi Fortificati</div>
+          </div>
+        </div>
+        <button id="btn-close-teleport" class="btn-close-modal" title="Chiudi [T o ESC]">✕</button>
+      </div>
+
+      <div class="teleport-notice">
+        🛡️ <b>Rete di Protezione dell'Aether:</b> Spostati rapidamente tra i 6 insediamenti e villaggi protetti. Le zone dei Boss non contengono portali e si raggiungono solo a piedi lungo sentieri e strade maestre!
+      </div>
+
+      <!-- Griglia delle 6 destinazioni -->
+      <div class="teleport-grid" id="teleport-destinations-list">
+        <!-- Popolato dinamicamente da JS -->
+      </div>
+
+      <div class="modal-actions" style="margin-top: 14px;">
+        <button id="btn-resume-from-teleport" class="btn-primary" style="width: 100%;">
+          ▶️ TORNA ALLA SPEDIZIONE [T o ESC]
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       7. MODALE MENU DI GIOCO IN-GAME (Impostazioni / Negozio / Amici / Esci [ESC])
        ========================================================================= -->
   <div id="game-menu-modal" class="hidden overlay-screen" style="z-index: 110;">
     <div class="menu-box ingame-menu-box">

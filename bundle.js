@@ -1136,6 +1136,60 @@
       outline(P, cEdge);
       return P.canvas();
     }
+    function paintWaypointPortal() {
+      const P = Pix(28, 24);
+      const cStoneDark = pack("#1e293b");
+      const cStoneMid = pack("#334155");
+      const cStoneLight = pack("#64748b");
+      const cRuneCyan = pack("#0284c7");
+      const cRuneBright = pack("#38bdf8");
+      const cCrystalCore = pack("#ffffff");
+      const cCrystalCyan = pack("#7dd3fc");
+      const cEdge = pack("#090d16");
+      const cx = 14, cy = 15, rx = 12, ry = 7;
+      for (let y = 0; y < 24; y++) {
+        for (let x = 0; x < 28; x++) {
+          const dx = (x - cx) / rx;
+          const dy = (y - cy) / ry;
+          const d = dx * dx + dy * dy;
+          if (d <= 1) {
+            if (d > 0.72) {
+              P.set(x, y, y > cy ? cStoneDark : cStoneMid);
+            } else if (d > 0.38) {
+              const angle = Math.atan2(y - cy, x - cx);
+              const isRune = Math.sin(angle * 6) > 0.2;
+              P.set(x, y, isRune ? cRuneBright : cRuneCyan);
+            } else {
+              P.set(x, y, d > 0.15 ? cRuneBright : cStoneLight);
+            }
+          }
+        }
+      }
+      const cry = [
+        { x: 14, y: 3, col: cCrystalCore },
+        { x: 13, y: 4, col: cCrystalCore },
+        { x: 14, y: 4, col: cCrystalCore },
+        { x: 15, y: 4, col: cCrystalCore },
+        { x: 12, y: 5, col: cCrystalCyan },
+        { x: 13, y: 5, col: cCrystalCore },
+        { x: 14, y: 5, col: cCrystalCore },
+        { x: 15, y: 5, col: cCrystalCyan },
+        { x: 12, y: 6, col: cRuneCyan },
+        { x: 13, y: 6, col: cCrystalCyan },
+        { x: 14, y: 6, col: cCrystalCore },
+        { x: 15, y: 6, col: cCrystalCyan },
+        { x: 16, y: 6, col: cRuneCyan },
+        { x: 13, y: 7, col: cCrystalCyan },
+        { x: 14, y: 7, col: cCrystalCore },
+        { x: 15, y: 7, col: cCrystalCyan },
+        { x: 14, y: 8, col: cRuneBright }
+      ];
+      for (const pt of cry) {
+        P.set(pt.x, pt.y, pt.col);
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
     const propCache = /* @__PURE__ */ new Map();
     return {
       T,
@@ -1187,6 +1241,7 @@
           else if (type === "chest_open") propCache.set(type, paintChest(true));
           else if (type === "runic_pillar") propCache.set(type, paintRunicPillar(false));
           else if (type === "runic_pillar_lit") propCache.set(type, paintRunicPillar(true));
+          else if (type === "waypoint_portal") propCache.set(type, paintWaypointPortal());
         }
         return propCache.get(type);
       }
@@ -1541,6 +1596,7 @@
       radiusTiles: 13,
       // ~416px raggio di protezione
       color: "#38bdf8",
+      waypoint: { tx: -1, ty: 1 },
       blacksmith: {
         id: "bs_citadel",
         name: "Mastro Thorgar",
@@ -1557,6 +1613,7 @@
         { type: "house_blue", tx: -8, ty: 3, wTiles: 4, hTiles: 3, name: "Bottega degli Elisir" }
       ],
       props: [
+        { type: "waypoint_portal", tx: -1, ty: 1 },
         { type: "blacksmith_npc", tx: 5, ty: 4 },
         { type: "well", tx: 0, ty: 5 },
         { type: "lamppost", tx: -3, ty: -2 },
@@ -1574,6 +1631,7 @@
       centerTy: 22,
       radiusTiles: 12,
       color: "#06b6d4",
+      waypoint: { tx: -38, ty: 22 },
       blacksmith: {
         id: "bs_waterfall",
         name: "Mastro Finn",
@@ -1588,6 +1646,7 @@
         { type: "house_red", tx: -36, ty: 17, wTiles: 4, hTiles: 3, name: "Bottega delle Reti" }
       ],
       props: [
+        { type: "waypoint_portal", tx: -38, ty: 22 },
         { type: "blacksmith_npc", tx: -35, ty: 24 },
         { type: "well", tx: -40, ty: 20 },
         { type: "lamppost", tx: -43, ty: 21 },
@@ -1604,6 +1663,7 @@
       centerTy: -75,
       radiusTiles: 11,
       color: "#7dd3fc",
+      waypoint: { tx: 20, ty: -73 },
       blacksmith: {
         id: "bs_frostpeak",
         name: "Mastra Astrid",
@@ -1617,6 +1677,7 @@
         { type: "cabin_snow", tx: 23, ty: -80, wTiles: 4, hTiles: 3, name: "Osservatorio del Nord" }
       ],
       props: [
+        { type: "waypoint_portal", tx: 20, ty: -73 },
         { type: "blacksmith_npc", tx: 23, ty: -73 },
         { type: "brazier_fire", tx: 18, ty: -74 },
         { type: "brazier_fire", tx: 22, ty: -74 },
@@ -1632,6 +1693,7 @@
       centerTy: 65,
       radiusTiles: 11,
       color: "#f59e0b",
+      waypoint: { tx: -70, ty: 63 },
       blacksmith: {
         id: "bs_oasis",
         name: "Mastro Rashid",
@@ -1645,6 +1707,7 @@
         { type: "tent_desert", tx: -66, ty: 60, wTiles: 4, hTiles: 3, name: "Bazaar delle Dune" }
       ],
       props: [
+        { type: "waypoint_portal", tx: -70, ty: 63 },
         { type: "blacksmith_npc", tx: -66, ty: 66 },
         { type: "palm_tree", tx: -73, ty: 64 },
         { type: "palm_tree", tx: -67, ty: 64 },
@@ -1661,6 +1724,7 @@
       centerTy: 45,
       radiusTiles: 11,
       color: "#ef4444",
+      waypoint: { tx: 70, ty: 43 },
       blacksmith: {
         id: "bs_cineris",
         name: "Mastro Ignis",
@@ -1674,6 +1738,7 @@
         { type: "house_red", tx: 73, ty: 40, wTiles: 4, hTiles: 3, name: "Caserma delle Ceneri" }
       ],
       props: [
+        { type: "waypoint_portal", tx: 70, ty: 43 },
         { type: "blacksmith_npc", tx: 74, ty: 46 },
         { type: "brazier_fire", tx: 67, ty: 45 },
         { type: "brazier_fire", tx: 73, ty: 45 },
@@ -1689,6 +1754,7 @@
       centerTy: -35,
       radiusTiles: 11,
       color: "#22c55e",
+      waypoint: { tx: -75, ty: -33 },
       blacksmith: {
         id: "bs_sylva",
         name: "Mastra Elora",
@@ -1702,6 +1768,7 @@
         { type: "cabin_wood", tx: -72, ty: -40, wTiles: 4, hTiles: 3, name: "Erboristeria di Sylva" }
       ],
       props: [
+        { type: "waypoint_portal", tx: -75, ty: -33 },
         { type: "blacksmith_npc", tx: -71, ty: -34 },
         { type: "glowing_mushrooms", tx: -77, ty: -34 },
         { type: "glowing_mushrooms", tx: -73, ty: -36 },
@@ -1952,6 +2019,28 @@
             settlementColor: s.color,
             worldX: bx,
             worldY: by
+          };
+        }
+      }
+      return null;
+    }
+    /**
+     * Cerca il Portale di Teletrasporto / Waypoint dell'Aether più vicino entro un dato raggio dal giocatore
+     */
+    getNearbyWaypoint(playerX, playerY, maxDist = 85) {
+      for (const s of SETTLEMENTS) {
+        if (!s.waypoint) continue;
+        const wx = s.waypoint.tx * this.TS + this.TS / 2;
+        const wy = s.waypoint.ty * this.TS + this.TS / 2;
+        if (Math.hypot(playerX - wx, playerY - wy) <= maxDist) {
+          return {
+            ...s.waypoint,
+            settlementId: s.id,
+            settlementName: s.name,
+            settlementTitle: s.title,
+            settlementColor: s.color,
+            worldX: wx,
+            worldY: wy
           };
         }
       }
@@ -2324,6 +2413,36 @@
                     ctx.strokeRect(Math.round(p.x - 38), Math.round(p.y - sh - 14), 76, 16);
                     ctx.fillStyle = "#fde047";
                     ctx.fillText("\u{1F528} Fabbro [E]", Math.round(p.x), Math.round(p.y - sh - 2));
+                    ctx.restore();
+                  } else if (p.type === "waypoint_portal") {
+                    Sprites.drawShadow(ctx, p.x, p.y - 2, 20);
+                    const pulse = Math.sin(Date.now() / 280) * 0.12 + 0.38;
+                    const glow = ctx.createRadialGradient(p.x, p.y - 12, 6, p.x, p.y - 12, 65);
+                    glow.addColorStop(0, `rgba(56, 189, 248, ${pulse})`);
+                    glow.addColorStop(0.6, `rgba(14, 165, 233, ${pulse * 0.4})`);
+                    glow.addColorStop(1, "rgba(56, 189, 248, 0)");
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y - 12, 65, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.save();
+                    ctx.strokeStyle = `rgba(56, 189, 248, ${pulse + 0.25})`;
+                    ctx.lineWidth = 1.6;
+                    ctx.beginPath();
+                    ctx.ellipse(p.x, p.y - 2, 22, 11, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
+                    ctx.save();
+                    ctx.font = "bold 10px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+                    ctx.fillRect(Math.round(p.x - 56), Math.round(p.y - sh - 18), 112, 17);
+                    ctx.strokeStyle = "#38bdf8";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(Math.round(p.x - 56), Math.round(p.y - sh - 18), 112, 17);
+                    ctx.fillStyle = "#7dd3fc";
+                    ctx.fillText("\u{1F300} Portale Viaggio [E]", Math.round(p.x), Math.round(p.y - sh - 5));
                     ctx.restore();
                   } else if (p.type === "aether_obelisk") {
                     Sprites.drawShadow(ctx, p.x, p.y - 2, 22);
@@ -5042,6 +5161,11 @@
     const forgeNearBlacksmithBtnBox = document.getElementById("forge-near-blacksmith-btn-box");
     const btnOpenNearBlacksmith = document.getElementById("btn-open-near-blacksmith");
     const nearBsName = document.getElementById("near-bs-name");
+    const hudBtnTeleport = document.getElementById("hud-btn-teleport");
+    const teleportModal = document.getElementById("teleport-modal");
+    const btnCloseTeleport = document.getElementById("btn-close-teleport");
+    const btnResumeFromTeleport = document.getElementById("btn-resume-from-teleport");
+    const teleportDestinationsList = document.getElementById("teleport-destinations-list");
     let gameState = "MENU";
     let currentProfile = null;
     let runSurvivalSeconds = 0;
@@ -5049,6 +5173,7 @@
     let isMapOpen = false;
     let isMenuOpen = false;
     let isBlacksmithOpen = false;
+    let isTeleportOpen = false;
     let currentNearbyInteractable = null;
     let activeBlacksmith = null;
     let chests = [];
@@ -5063,7 +5188,7 @@
     window.addEventListener("mousedown", (e) => {
       if (e.button === 0) {
         isMouseDown = true;
-        if (gameState === "PLAYING" && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
+        if (gameState === "PLAYING" && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen && !isTeleportOpen) {
           const aim = camera.screenToWorld(e.clientX, e.clientY, canvas);
           handleWorldClickInteraction(aim);
         }
@@ -5700,6 +5825,7 @@
       closeIngameInventory();
       closeTacticalMap();
       closeGameMenu();
+      closeTeleportModal();
       isBlacksmithOpen = true;
       if (bsModalName) bsModalName.textContent = bs.name;
       if (bsModalTitle) bsModalTitle.textContent = `${bs.title} \xB7 ${bs.villageName || "Villaggio"}`;
@@ -5712,6 +5838,100 @@
       activeBlacksmith = null;
       blacksmithModal?.classList.add("hidden");
     }
+    function openTeleportModal() {
+      if (gameState !== "PLAYING") return;
+      closeIngameInventory();
+      closeTacticalMap();
+      closeGameMenu();
+      closeBlacksmithModal();
+      isTeleportOpen = true;
+      teleportModal?.classList.remove("hidden");
+      renderTeleportDestinations();
+    }
+    function closeTeleportModal() {
+      isTeleportOpen = false;
+      teleportModal?.classList.add("hidden");
+    }
+    function toggleTeleportModal() {
+      if (isTeleportOpen) closeTeleportModal();
+      else openTeleportModal();
+    }
+    function teleportTo(settlement) {
+      if (!settlement || !settlement.waypoint) return;
+      const targetX = settlement.waypoint.tx * world.TS + world.TS / 2;
+      const targetY = settlement.waypoint.ty * world.TS + world.TS;
+      if (Math.hypot(player.x - targetX, player.y - targetY) < 130) {
+        showWeaponNotification(`\u{1F4CD} Ti trovi gi\xE0 a ${settlement.name}!`);
+        closeTeleportModal();
+        return;
+      }
+      FX.addShockwave(player.x, player.y, 85, "#38bdf8", 0.45);
+      FX.burst(player.x, player.y, "#38bdf8", 25, 140);
+      FX.burst(player.x, player.y, "#ffffff", 15, 180);
+      camera.kick(0.4);
+      player.x = targetX;
+      player.y = targetY;
+      camera.snapTo(player.x, player.y);
+      const color = settlement.color || "#38bdf8";
+      FX.addShockwave(player.x, player.y, 95, color, 0.5);
+      FX.burst(player.x, player.y, color, 30, 160);
+      FX.burst(player.x, player.y, "#fde047", 15, 130);
+      camera.kick(0.35);
+      closeTeleportModal();
+      closeTacticalMap();
+      showWeaponNotification(`\u{1F300} Teletrasporto riuscito: Benvenuto a ${settlement.name}!`);
+    }
+    function renderTeleportDestinations() {
+      if (!teleportDestinationsList) return;
+      teleportDestinationsList.innerHTML = "";
+      const iconMap = {
+        citadel: "\u{1F3F0}",
+        waterfall_village: "\u{1F30A}",
+        frostpeak: "\u2744\uFE0F",
+        oasis: "\u{1F3DC}\uFE0F",
+        cineris: "\u{1F30B}",
+        sylva: "\u{1F332}"
+      };
+      SETTLEMENTS.forEach((s) => {
+        const card = document.createElement("div");
+        const distPx = Math.hypot(player.x - s.centerTx * world.TS, player.y - s.centerTy * world.TS);
+        const isHere = distPx < 350;
+        const distMeters = Math.round(distPx / 16);
+        card.className = `teleport-destination-card ${isHere ? "current-location" : ""}`;
+        card.style.borderColor = s.color || "#38bdf8";
+        const icon = iconMap[s.id] || "\u{1F3F0}";
+        card.innerHTML = `
+        <div class="destination-header">
+          <div class="destination-icon-box" style="border-color: ${s.color || "#38bdf8"}; color: ${s.color || "#38bdf8"};">
+            ${icon}
+          </div>
+          <div>
+            <div class="destination-title">${s.name}</div>
+            <div class="destination-sub">${s.title}</div>
+          </div>
+        </div>
+
+        <div class="destination-dist">
+          <span>\u{1F4CF}</span>
+          <span>${isHere ? "Sei in questa Safe Zone" : `Distanza: ${distMeters} m (~${Math.round(distPx / world.TS)} tiles)`}</span>
+        </div>
+
+        <div style="margin-top: 4px;">
+          ${isHere ? `<span class="badge-current-location">\u{1F4CD} Sei qui attualmente</span>` : `<button type="button" class="btn-teleport-warp" data-dest="${s.id}">\u{1F300} Viaggia a ${s.name}</button>`}
+        </div>
+      `;
+        if (!isHere) {
+          const btn = card.querySelector(".btn-teleport-warp");
+          if (btn) {
+            btn.addEventListener("click", () => teleportTo(s));
+          }
+        }
+        teleportDestinationsList.appendChild(card);
+      });
+    }
+    if (hudBtnTeleport) hudBtnTeleport.addEventListener("click", () => toggleTeleportModal());
+    if (btnCloseTeleport) btnCloseTeleport.addEventListener("click", () => closeTeleportModal());
+    if (btnResumeFromTeleport) btnResumeFromTeleport.addEventListener("click", () => closeTeleportModal());
     if (btnCloseBlacksmith) btnCloseBlacksmith.addEventListener("click", closeBlacksmithModal);
     if (btnResumeFromBlacksmith) btnResumeFromBlacksmith.addEventListener("click", closeBlacksmithModal);
     if (btnOpenNearBlacksmith) {
@@ -5746,6 +5966,7 @@
       closeTacticalMap();
       closeGameMenu();
       closeBlacksmithModal();
+      closeTeleportModal();
       isInventoryOpen = true;
       ingameModal?.classList.remove("hidden");
       switchIngameTab(tab);
@@ -5955,10 +6176,13 @@
         expandedCtx.beginPath();
         expandedCtx.arc(sx, sy, 3, 0, Math.PI * 2);
         expandedCtx.fill();
-        if (s.blacksmith) {
+        let badges = "";
+        if (s.blacksmith) badges += "\u{1F528} ";
+        if (s.waypoint) badges += "\u{1F300}";
+        if (badges) {
           expandedCtx.font = "9px sans-serif";
           expandedCtx.textAlign = "center";
-          expandedCtx.fillText("\u{1F528}", sx + 9, sy - 2);
+          expandedCtx.fillText(badges, sx, sy - 2);
         }
         expandedCtx.font = "bold 9px sans-serif";
         expandedCtx.fillStyle = s.color || "#38bdf8";
@@ -5967,6 +6191,9 @@
         expandedCtx.font = "8px sans-serif";
         expandedCtx.fillStyle = "#94a3b8";
         expandedCtx.fillText("\u{1F6E1}\uFE0F Safe Zone", sx, sy + sr + 9);
+        expandedCtx.font = "7.5px sans-serif";
+        expandedCtx.fillStyle = "#38bdf8";
+        expandedCtx.fillText("\u{1F300} Clicca per Viaggiare", sx, sy + sr + 18);
         expandedCtx.textAlign = "left";
       }
       for (const poi of POINTS_OF_INTEREST) {
@@ -6030,6 +6257,7 @@
       closeIngameInventory();
       closeGameMenu();
       closeBlacksmithModal();
+      closeTeleportModal();
       isMapOpen = true;
       expandedMapModal?.classList.remove("hidden");
       renderTacticalMap();
@@ -6050,6 +6278,45 @@
     });
     if (btnCloseMap) btnCloseMap.addEventListener("click", () => closeTacticalMap());
     if (btnResumeFromMap) btnResumeFromMap.addEventListener("click", () => closeTacticalMap());
+    if (expandedCanvas) {
+      expandedCanvas.style.cursor = "pointer";
+      expandedCanvas.addEventListener("click", (e) => {
+        if (gameState !== "PLAYING") return;
+        const rect = expandedCanvas.getBoundingClientRect();
+        const clickX = (e.clientX - rect.left) * (expandedCanvas.width / rect.width);
+        const clickY = (e.clientY - rect.top) * (expandedCanvas.height / rect.height);
+        const scale = expandedCanvas.width / ((world.MAP_RADIUS * 2 + 1) * world.TS);
+        const cx = expandedCanvas.width / 2;
+        const cy = expandedCanvas.height / 2;
+        for (const s of SETTLEMENTS) {
+          const sx = cx + s.centerTx * world.TS * scale;
+          const sy = cy + s.centerTy * world.TS * scale;
+          const sr = s.radiusTiles * world.TS * scale;
+          if (Math.hypot(clickX - sx, clickY - sy) <= Math.max(sr + 8, 24)) {
+            teleportTo(s);
+            return;
+          }
+        }
+        for (const poi of POINTS_OF_INTEREST) {
+          const px = cx + poi.tx * world.TS * scale;
+          const py = cy + poi.ty * world.TS * scale;
+          if (Math.hypot(clickX - px, clickY - py) <= 24) {
+            showWeaponNotification(`\u26A0\uFE0F ${poi.name} \xE8 una zona Boss! Raggiungila a piedi lungo strade e sentieri.`);
+            return;
+          }
+        }
+      });
+    }
+    document.querySelectorAll(".btn-map-travel").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const sId = btn.getAttribute("data-settlement");
+        const targetSettlement = SETTLEMENTS.find((s) => s.id === sId);
+        if (targetSettlement) {
+          teleportTo(targetSettlement);
+        }
+      });
+    });
     function switchGameMenuTab(tabName) {
       [menuTabBtnSettings, menuTabBtnShop, menuTabBtnFriends, menuTabBtnStats].forEach((b) => b?.classList.remove("active"));
       [menuTabSettings, menuTabShop, menuTabFriends, menuTabStats].forEach((p) => p?.classList.remove("active"));
@@ -6079,6 +6346,7 @@
       closeIngameInventory();
       closeTacticalMap();
       closeBlacksmithModal();
+      closeTeleportModal();
       isMenuOpen = true;
       gameMenuModal?.classList.remove("hidden");
       switchGameMenuTab(tab);
@@ -6294,12 +6562,21 @@
           }
         }
       }
+      const nearbyWp = world.getNearbyWaypoint(player.x, player.y, 95);
+      if (nearbyWp) {
+        if (Math.hypot(aimWorld.x - nearbyWp.worldX, aimWorld.y - nearbyWp.worldY) <= 46) {
+          openTeleportModal();
+          return true;
+        }
+      }
       return false;
     }
     function handleInteraction() {
       if (!currentNearbyInteractable || gameState !== "PLAYING") return;
       if (currentNearbyInteractable.type === "blacksmith") {
         openBlacksmithModal(currentNearbyInteractable.data);
+      } else if (currentNearbyInteractable.type === "waypoint") {
+        openTeleportModal();
       } else if (currentNearbyInteractable.type === "chest") {
         const ch = currentNearbyInteractable.data;
         if (ch.isLocked && ch.poi && ch.poi.bossKind) {
@@ -6404,9 +6681,18 @@
             closeBlacksmithModal();
             return;
           }
-          if (!isInventoryOpen && !isMapOpen && !isMenuOpen) {
+          if (isTeleportOpen) {
+            closeTeleportModal();
+            return;
+          }
+          if (!isInventoryOpen && !isMapOpen && !isMenuOpen && !isTeleportOpen) {
             handleInteraction();
           }
+          return;
+        }
+        if (e.code === "KeyT" || e.key === "t" || e.key === "T") {
+          e.preventDefault();
+          toggleTeleportModal();
           return;
         }
         if (e.code === "KeyI" || e.code === "KeyB" || e.key === "i" || e.key === "I" || e.key === "b" || e.key === "B") {
@@ -6420,6 +6706,10 @@
           return;
         }
         if (e.key === "Escape" || e.code === "Escape") {
+          if (isTeleportOpen) {
+            closeTeleportModal();
+            return;
+          }
           if (isBlacksmithOpen) {
             closeBlacksmithModal();
             return;
@@ -6439,7 +6729,7 @@
           openGameMenu("settings");
           return;
         }
-        if (!isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
+        if (!isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen && !isTeleportOpen) {
           if (e.key === "1") equipWeapon("staff");
           else if (e.key === "2") equipWeapon("sword");
           else if (e.key === "3") equipWeapon("bow");
@@ -6554,7 +6844,7 @@
         if (gameState === "MENU") {
           updateAndDrawTitleBackground(dt, currentTime / 1e3);
         }
-        const isPaused = isInventoryOpen || isMapOpen || isMenuOpen || isBlacksmithOpen || progression.isPausedForLevelUp;
+        const isPaused = isInventoryOpen || isMapOpen || isMenuOpen || isBlacksmithOpen || isTeleportOpen || progression.isPausedForLevelUp;
         if (gameState === "PLAYING") {
           if (!isPaused) {
             runSurvivalSeconds += dt;
@@ -6604,9 +6894,19 @@
                 }
               }
             }
+            if (!foundInteractable) {
+              const nearbyWp = world.getNearbyWaypoint(player.x, player.y, 85);
+              if (nearbyWp) {
+                foundInteractable = {
+                  type: "waypoint",
+                  data: nearbyWp,
+                  label: `Portale dell'Aether (${nearbyWp.settlementName})`
+                };
+              }
+            }
             currentNearbyInteractable = foundInteractable;
             if (hudInteractPrompt && hudInteractLabel) {
-              if (foundInteractable && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
+              if (foundInteractable && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen && !isTeleportOpen) {
                 hudInteractPrompt.classList.remove("hidden");
                 hudInteractLabel.textContent = foundInteractable.label;
               } else {

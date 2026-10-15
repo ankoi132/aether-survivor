@@ -171,6 +171,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   const btnOpenNearBlacksmith = document.getElementById('btn-open-near-blacksmith');
   const nearBsName = document.getElementById('near-bs-name');
 
+  // Elementi Modale Teletrasporto / Portali dell'Aether
+  const hudBtnTeleport = document.getElementById('hud-btn-teleport');
+  const teleportModal = document.getElementById('teleport-modal');
+  const btnCloseTeleport = document.getElementById('btn-close-teleport');
+  const btnResumeFromTeleport = document.getElementById('btn-resume-from-teleport');
+  const teleportDestinationsList = document.getElementById('teleport-destinations-list');
+
   // Stato Globale
   let gameState = 'MENU'; // 'MENU' | 'PLAYING' | 'GAMEOVER'
   let currentProfile = null;
@@ -179,6 +186,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   let isMapOpen = false;
   let isMenuOpen = false;
   let isBlacksmithOpen = false;
+  let isTeleportOpen = false;
   let currentNearbyInteractable = null;
   let activeBlacksmith = null;
   let chests = [];
@@ -198,7 +206,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (e.button === 0) {
       isMouseDown = true;
       // Se clicchi sul canvas di gioco, verifica se stai cliccando su forziere, fabbro o runa
-      if (gameState === 'PLAYING' && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
+      if (gameState === 'PLAYING' && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen && !isTeleportOpen) {
         const aim = camera.screenToWorld(e.clientX, e.clientY, canvas);
         handleWorldClickInteraction(aim);
       }
@@ -938,6 +946,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     closeIngameInventory();
     closeTacticalMap();
     closeGameMenu();
+    closeTeleportModal();
 
     isBlacksmithOpen = true;
     if (bsModalName) bsModalName.textContent = bs.name;
@@ -953,6 +962,132 @@ window.addEventListener('DOMContentLoaded', async () => {
     activeBlacksmith = null;
     blacksmithModal?.classList.add('hidden');
   }
+
+  // =========================================================================
+  // SISTEMA DEI PORTALI DELL'AETHER (Viaggio Rapido tra Insediamenti Protetti)
+  // =========================================================================
+  function openTeleportModal() {
+    if (gameState !== 'PLAYING') return;
+    closeIngameInventory();
+    closeTacticalMap();
+    closeGameMenu();
+    closeBlacksmithModal();
+
+    isTeleportOpen = true;
+    teleportModal?.classList.remove('hidden');
+    renderTeleportDestinations();
+  }
+
+  function closeTeleportModal() {
+    isTeleportOpen = false;
+    teleportModal?.classList.add('hidden');
+  }
+
+  function toggleTeleportModal() {
+    if (isTeleportOpen) closeTeleportModal();
+    else openTeleportModal();
+  }
+
+  function teleportTo(settlement) {
+    if (!settlement || !settlement.waypoint) return;
+
+    const targetX = settlement.waypoint.tx * world.TS + world.TS / 2;
+    const targetY = settlement.waypoint.ty * world.TS + world.TS;
+
+    // Se il giocatore è già vicino alla destinazione (< 130px)
+    if (Math.hypot(player.x - targetX, player.y - targetY) < 130) {
+      showWeaponNotification(`📍 Ti trovi già a ${settlement.name}!`);
+      closeTeleportModal();
+      return;
+    }
+
+    // 1. Onde d'urto e particelle arcane di partenza
+    FX.addShockwave(player.x, player.y, 85, '#38bdf8', 0.45);
+    FX.burst(player.x, player.y, '#38bdf8', 25, 140);
+    FX.burst(player.x, player.y, '#ffffff', 15, 180);
+    camera.kick(0.4);
+
+    // 2. Spostamento istantaneo eroe e snap telecamera
+    player.x = targetX;
+    player.y = targetY;
+    camera.snapTo(player.x, player.y);
+
+    // 3. Onde d'urto e particelle luminose all'arrivo
+    const color = settlement.color || '#38bdf8';
+    FX.addShockwave(player.x, player.y, 95, color, 0.5);
+    FX.burst(player.x, player.y, color, 30, 160);
+    FX.burst(player.x, player.y, '#fde047', 15, 130);
+    camera.kick(0.35);
+
+    // 4. Chiudi finestre e mostra notifica
+    closeTeleportModal();
+    closeTacticalMap();
+
+    showWeaponNotification(`🌀 Teletrasporto riuscito: Benvenuto a ${settlement.name}!`);
+  }
+
+  function renderTeleportDestinations() {
+    if (!teleportDestinationsList) return;
+    teleportDestinationsList.innerHTML = '';
+
+    const iconMap = {
+      citadel: '🏰',
+      waterfall_village: '🌊',
+      frostpeak: '❄️',
+      oasis: '🏜️',
+      cineris: '🌋',
+      sylva: '🌲'
+    };
+
+    SETTLEMENTS.forEach(s => {
+      const card = document.createElement('div');
+      const distPx = Math.hypot(player.x - (s.centerTx * world.TS), player.y - (s.centerTy * world.TS));
+      const isHere = distPx < 350;
+      const distMeters = Math.round(distPx / 16);
+
+      card.className = `teleport-destination-card ${isHere ? 'current-location' : ''}`;
+      card.style.borderColor = s.color || '#38bdf8';
+
+      const icon = iconMap[s.id] || '🏰';
+
+      card.innerHTML = `
+        <div class="destination-header">
+          <div class="destination-icon-box" style="border-color: ${s.color || '#38bdf8'}; color: ${s.color || '#38bdf8'};">
+            ${icon}
+          </div>
+          <div>
+            <div class="destination-title">${s.name}</div>
+            <div class="destination-sub">${s.title}</div>
+          </div>
+        </div>
+
+        <div class="destination-dist">
+          <span>📏</span>
+          <span>${isHere ? 'Sei in questa Safe Zone' : `Distanza: ${distMeters} m (~${Math.round(distPx / world.TS)} tiles)`}</span>
+        </div>
+
+        <div style="margin-top: 4px;">
+          ${isHere 
+            ? `<span class="badge-current-location">📍 Sei qui attualmente</span>`
+            : `<button type="button" class="btn-teleport-warp" data-dest="${s.id}">🌀 Viaggia a ${s.name}</button>`
+          }
+        </div>
+      `;
+
+      if (!isHere) {
+        const btn = card.querySelector('.btn-teleport-warp');
+        if (btn) {
+          btn.addEventListener('click', () => teleportTo(s));
+        }
+      }
+
+      teleportDestinationsList.appendChild(card);
+    });
+  }
+
+  if (hudBtnTeleport) hudBtnTeleport.addEventListener('click', () => toggleTeleportModal());
+  if (btnCloseTeleport) btnCloseTeleport.addEventListener('click', () => closeTeleportModal());
+  if (btnResumeFromTeleport) btnResumeFromTeleport.addEventListener('click', () => closeTeleportModal());
 
   if (btnCloseBlacksmith) btnCloseBlacksmith.addEventListener('click', closeBlacksmithModal);
   if (btnResumeFromBlacksmith) btnResumeFromBlacksmith.addEventListener('click', closeBlacksmithModal);
@@ -991,6 +1126,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     closeTacticalMap();
     closeGameMenu();
     closeBlacksmithModal();
+    closeTeleportModal();
     isInventoryOpen = true;
     ingameModal?.classList.remove('hidden');
     switchIngameTab(tab);
@@ -1278,11 +1414,14 @@ window.addEventListener('DOMContentLoaded', async () => {
       expandedCtx.arc(sx, sy, 3, 0, Math.PI * 2);
       expandedCtx.fill();
 
-      // Fabbro nel villaggio
-      if (s.blacksmith) {
+      // Fabbro e Portale nel villaggio
+      let badges = '';
+      if (s.blacksmith) badges += '🔨 ';
+      if (s.waypoint) badges += '🌀';
+      if (badges) {
         expandedCtx.font = '9px sans-serif';
         expandedCtx.textAlign = 'center';
-        expandedCtx.fillText('🔨', sx + 9, sy - 2);
+        expandedCtx.fillText(badges, sx, sy - 2);
       }
 
       expandedCtx.font = 'bold 9px sans-serif';
@@ -1292,6 +1431,9 @@ window.addEventListener('DOMContentLoaded', async () => {
       expandedCtx.font = '8px sans-serif';
       expandedCtx.fillStyle = '#94a3b8';
       expandedCtx.fillText('🛡️ Safe Zone', sx, sy + sr + 9);
+      expandedCtx.font = '7.5px sans-serif';
+      expandedCtx.fillStyle = '#38bdf8';
+      expandedCtx.fillText('🌀 Clicca per Viaggiare', sx, sy + sr + 18);
       expandedCtx.textAlign = 'left';
     }
 
@@ -1375,6 +1517,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     closeIngameInventory();
     closeGameMenu();
     closeBlacksmithModal();
+    closeTeleportModal();
     isMapOpen = true;
     expandedMapModal?.classList.remove('hidden');
     renderTacticalMap();
@@ -1398,6 +1541,53 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
   if (btnCloseMap) btnCloseMap.addEventListener('click', () => closeTacticalMap());
   if (btnResumeFromMap) btnResumeFromMap.addEventListener('click', () => closeTacticalMap());
+
+  // Click su Grande Mappa Tattica per Viaggio Rapido Immediato alle Città
+  if (expandedCanvas) {
+    expandedCanvas.style.cursor = 'pointer';
+    expandedCanvas.addEventListener('click', (e) => {
+      if (gameState !== 'PLAYING') return;
+      const rect = expandedCanvas.getBoundingClientRect();
+      const clickX = (e.clientX - rect.left) * (expandedCanvas.width / rect.width);
+      const clickY = (e.clientY - rect.top) * (expandedCanvas.height / rect.height);
+      const scale = expandedCanvas.width / ((world.MAP_RADIUS * 2 + 1) * world.TS);
+      const cx = expandedCanvas.width / 2;
+      const cy = expandedCanvas.height / 2;
+
+      // 1. Controlla se il click è caduto in una delle 6 Safe Zone cittadine
+      for (const s of SETTLEMENTS) {
+        const sx = cx + s.centerTx * world.TS * scale;
+        const sy = cy + s.centerTy * world.TS * scale;
+        const sr = s.radiusTiles * world.TS * scale;
+        if (Math.hypot(clickX - sx, clickY - sy) <= Math.max(sr + 8, 24)) {
+          teleportTo(s);
+          return;
+        }
+      }
+
+      // 2. Controllo Boss/Misteri: Esclusi dal teletrasporto (raggiungibili solo a piedi)
+      for (const poi of POINTS_OF_INTEREST) {
+        const px = cx + poi.tx * world.TS * scale;
+        const py = cy + poi.ty * world.TS * scale;
+        if (Math.hypot(clickX - px, clickY - py) <= 24) {
+          showWeaponNotification(`⚠️ ${poi.name} è una zona Boss! Raggiungila a piedi lungo strade e sentieri.`);
+          return;
+        }
+      }
+    });
+  }
+
+  // Listener per i pulsanti [🌀 Viaggia] nella legenda della mappa tattica
+  document.querySelectorAll('.btn-map-travel').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sId = btn.getAttribute('data-settlement');
+      const targetSettlement = SETTLEMENTS.find(s => s.id === sId);
+      if (targetSettlement) {
+        teleportTo(targetSettlement);
+      }
+    });
+  });
 
   // =========================================================================
   // 8. GESTIONE MENU DI GIOCO IN-GAME (Impostazioni / Shop / Amici / Esci)
@@ -1434,6 +1624,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     closeIngameInventory();
     closeTacticalMap();
     closeBlacksmithModal();
+    closeTeleportModal();
     isMenuOpen = true;
     gameMenuModal?.classList.remove('hidden');
     switchGameMenuTab(tab);
@@ -1703,15 +1894,26 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
+    // 4. Click su Portale dell'Aether / Waypoint (raggio interazione 95px)
+    const nearbyWp = world.getNearbyWaypoint(player.x, player.y, 95);
+    if (nearbyWp) {
+      if (Math.hypot(aimWorld.x - nearbyWp.worldX, aimWorld.y - nearbyWp.worldY) <= 46) {
+        openTeleportModal();
+        return true;
+      }
+    }
+
     return false;
   }
 
-  // Gestione dell'interazione con Fabbro, Forzieri e Rune con [E] o click sul prompt
+  // Gestione dell'interazione con Fabbro, Forzieri, Rune e Portali con [E] o click sul prompt
   function handleInteraction() {
     if (!currentNearbyInteractable || gameState !== 'PLAYING') return;
 
     if (currentNearbyInteractable.type === 'blacksmith') {
       openBlacksmithModal(currentNearbyInteractable.data);
+    } else if (currentNearbyInteractable.type === 'waypoint') {
+      openTeleportModal();
     } else if (currentNearbyInteractable.type === 'chest') {
       const ch = currentNearbyInteractable.data;
 
@@ -1838,16 +2040,27 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (gameState === 'PLAYING') {
-      // Tasto [E] per interagire con Fabbro, Forzieri e Rune
+      // Tasto [E] per interagire con Fabbro, Forzieri, Rune e Portali
       if (e.code === 'KeyE' || e.key === 'e' || e.key === 'E') {
         e.preventDefault();
         if (isBlacksmithOpen) {
           closeBlacksmithModal();
           return;
         }
-        if (!isInventoryOpen && !isMapOpen && !isMenuOpen) {
+        if (isTeleportOpen) {
+          closeTeleportModal();
+          return;
+        }
+        if (!isInventoryOpen && !isMapOpen && !isMenuOpen && !isTeleportOpen) {
           handleInteraction();
         }
+        return;
+      }
+
+      // Tasto [T] per Rete Portali di Viaggio Rapido
+      if (e.code === 'KeyT' || e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        toggleTeleportModal();
         return;
       }
 
@@ -1867,6 +2080,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 
       // Tasto [ESC] per chiudere o aprire i menu
       if (e.key === 'Escape' || e.code === 'Escape') {
+        if (isTeleportOpen) {
+          closeTeleportModal();
+          return;
+        }
         if (isBlacksmithOpen) {
           closeBlacksmithModal();
           return;
@@ -1889,7 +2106,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Cambio arma rapido con 1, 2, 3 (se i menu non sono aperti)
-      if (!isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
+      if (!isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen && !isTeleportOpen) {
         if (e.key === '1') equipWeapon('staff');
         else if (e.key === '2') equipWeapon('sword');
         else if (e.key === '3') equipWeapon('bow');
@@ -2024,7 +2241,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
 
       // 1. UPDATE (Mondo in pausa se Zaino, Mappa, Menu, Fabbro o LevelUp sono aperti)
-      const isPaused = isInventoryOpen || isMapOpen || isMenuOpen || isBlacksmithOpen || progression.isPausedForLevelUp;
+      const isPaused = isInventoryOpen || isMapOpen || isMenuOpen || isBlacksmithOpen || isTeleportOpen || progression.isPausedForLevelUp;
       if (gameState === 'PLAYING') {
         if (!isPaused) {
           runSurvivalSeconds += dt;
@@ -2037,7 +2254,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
           camera.follow(player.x, player.y, dt);
 
-          // Rilevamento interazioni vicine (Fabbro, Forzieri, Monoliti delle Cascate)
+          // Rilevamento interazioni vicine (Fabbro, Forzieri, Monoliti delle Cascate, Portali)
           let foundInteractable = null;
 
           // 1. Fabbro del villaggio più vicino (entro 85px)
@@ -2088,9 +2305,21 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
           }
 
+          // 4. Portale di Teletrasporto / Waypoint dell'Aether (entro 85px)
+          if (!foundInteractable) {
+            const nearbyWp = world.getNearbyWaypoint(player.x, player.y, 85);
+            if (nearbyWp) {
+              foundInteractable = {
+                type: 'waypoint',
+                data: nearbyWp,
+                label: `Portale dell'Aether (${nearbyWp.settlementName})`
+              };
+            }
+          }
+
           currentNearbyInteractable = foundInteractable;
           if (hudInteractPrompt && hudInteractLabel) {
-            if (foundInteractable && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
+            if (foundInteractable && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen && !isTeleportOpen) {
               hudInteractPrompt.classList.remove('hidden');
               hudInteractLabel.textContent = foundInteractable.label;
             } else {

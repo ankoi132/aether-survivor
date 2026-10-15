@@ -1182,6 +1182,56 @@ export const Tiles = (() => {
     return P.canvas();
   }
 
+  // 22. Portale di Teletrasporto / Waypoint dell'Aether
+  function paintWaypointPortal() {
+    const P = Pix(28, 24);
+    const cStoneDark = pack('#1e293b');
+    const cStoneMid = pack('#334155');
+    const cStoneLight = pack('#64748b');
+    const cRuneCyan = pack('#0284c7');
+    const cRuneBright = pack('#38bdf8');
+    const cCrystalCore = pack('#ffffff');
+    const cCrystalCyan = pack('#7dd3fc');
+    const cEdge = pack('#090d16');
+
+    // Basamento ellittico runico 2.5D
+    const cx = 14, cy = 15, rx = 12, ry = 7;
+    for (let y = 0; y < 24; y++) {
+      for (let x = 0; x < 28; x++) {
+        const dx = (x - cx) / rx;
+        const dy = (y - cy) / ry;
+        const d = dx * dx + dy * dy;
+        if (d <= 1.0) {
+          if (d > 0.72) {
+            P.set(x, y, (y > cy) ? cStoneDark : cStoneMid);
+          } else if (d > 0.38) {
+            const angle = Math.atan2(y - cy, x - cx);
+            const isRune = Math.sin(angle * 6) > 0.2;
+            P.set(x, y, isRune ? cRuneBright : cRuneCyan);
+          } else {
+            P.set(x, y, (d > 0.15) ? cRuneBright : cStoneLight);
+          }
+        }
+      }
+    }
+
+    // Cristallo dell'Aether fluttuante al centro
+    const cry = [
+      { x: 14, y: 3, col: cCrystalCore },
+      { x: 13, y: 4, col: cCrystalCore }, { x: 14, y: 4, col: cCrystalCore }, { x: 15, y: 4, col: cCrystalCore },
+      { x: 12, y: 5, col: cCrystalCyan }, { x: 13, y: 5, col: cCrystalCore }, { x: 14, y: 5, col: cCrystalCore }, { x: 15, y: 5, col: cCrystalCyan },
+      { x: 12, y: 6, col: cRuneCyan }, { x: 13, y: 6, col: cCrystalCyan }, { x: 14, y: 6, col: cCrystalCore }, { x: 15, y: 6, col: cCrystalCyan }, { x: 16, y: 6, col: cRuneCyan },
+      { x: 13, y: 7, col: cCrystalCyan }, { x: 14, y: 7, col: cCrystalCore }, { x: 15, y: 7, col: cCrystalCyan },
+      { x: 14, y: 8, col: cRuneBright }
+    ];
+    for (const pt of cry) {
+      P.set(pt.x, pt.y, pt.col);
+    }
+
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
   const propCache = new Map();
 
   return {
@@ -1241,6 +1291,7 @@ export const Tiles = (() => {
         else if (type === 'chest_open') propCache.set(type, paintChest(true));
         else if (type === 'runic_pillar') propCache.set(type, paintRunicPillar(false));
         else if (type === 'runic_pillar_lit') propCache.set(type, paintRunicPillar(true));
+        else if (type === 'waypoint_portal') propCache.set(type, paintWaypointPortal());
       }
       return propCache.get(type);
     }

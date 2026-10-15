@@ -172,11 +172,11 @@
     "yuta": {
       "nickname": "yuta",
       "createdAt": "2026-10-15T16:24:18.920Z",
-      "gold": 29,
-      "totalRuns": 2,
-      "totalKills": 14,
+      "gold": 86,
+      "totalRuns": 3,
+      "totalKills": 20,
       "highestLevel": 5,
-      "bestSurvivalSeconds": 35,
+      "bestSurvivalSeconds": 74,
       "talents": {
         "max_hp": 0,
         "damage": 0,
@@ -185,11 +185,11 @@
         "gold_gain": 0
       },
       "inventory": {
-        "slime_gel": 7,
+        "slime_gel": 8,
         "ice_crystal": 1,
         "sun_amber": 2,
-        "magma_core": 0,
-        "ancient_bone": 1,
+        "magma_core": 3,
+        "ancient_bone": 3,
         "iron_scrap": 5,
         "arcane_rune": 0
       },
@@ -218,6 +218,14 @@
       "kills": 11,
       "survivalSeconds": 35,
       "date": "2026-10-15T16:25:07.546Z"
+    },
+    {
+      "nickname": "yuta",
+      "score": 1840,
+      "level": 4,
+      "kills": 6,
+      "survivalSeconds": 74,
+      "date": "2026-10-15T19:15:01.886Z"
     },
     {
       "nickname": "yuta",

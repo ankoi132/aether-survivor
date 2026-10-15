@@ -19,6 +19,7 @@ export const SETTLEMENTS = [
     centerTy: 0,
     radiusTiles: 13, // ~416px raggio di protezione
     color: '#38bdf8',
+    waypoint: { tx: -1, ty: 1 },
     blacksmith: {
       id: 'bs_citadel',
       name: 'Mastro Thorgar',
@@ -35,6 +36,7 @@ export const SETTLEMENTS = [
       { type: 'house_blue', tx: -8, ty: 3, wTiles: 4, hTiles: 3, name: 'Bottega degli Elisir' }
     ],
     props: [
+      { type: 'waypoint_portal', tx: -1, ty: 1 },
       { type: 'blacksmith_npc', tx: 5, ty: 4 },
       { type: 'well', tx: 0, ty: 5 },
       { type: 'lamppost', tx: -3, ty: -2 },
@@ -52,6 +54,7 @@ export const SETTLEMENTS = [
     centerTy: 22,
     radiusTiles: 12,
     color: '#06b6d4',
+    waypoint: { tx: -38, ty: 22 },
     blacksmith: {
       id: 'bs_waterfall',
       name: 'Mastro Finn',
@@ -66,6 +69,7 @@ export const SETTLEMENTS = [
       { type: 'house_red', tx: -36, ty: 17, wTiles: 4, hTiles: 3, name: 'Bottega delle Reti' }
     ],
     props: [
+      { type: 'waypoint_portal', tx: -38, ty: 22 },
       { type: 'blacksmith_npc', tx: -35, ty: 24 },
       { type: 'well', tx: -40, ty: 20 },
       { type: 'lamppost', tx: -43, ty: 21 },
@@ -82,6 +86,7 @@ export const SETTLEMENTS = [
     centerTy: -75,
     radiusTiles: 11,
     color: '#7dd3fc',
+    waypoint: { tx: 20, ty: -73 },
     blacksmith: {
       id: 'bs_frostpeak',
       name: 'Mastra Astrid',
@@ -95,6 +100,7 @@ export const SETTLEMENTS = [
       { type: 'cabin_snow', tx: 23, ty: -80, wTiles: 4, hTiles: 3, name: 'Osservatorio del Nord' }
     ],
     props: [
+      { type: 'waypoint_portal', tx: 20, ty: -73 },
       { type: 'blacksmith_npc', tx: 23, ty: -73 },
       { type: 'brazier_fire', tx: 18, ty: -74 },
       { type: 'brazier_fire', tx: 22, ty: -74 },
@@ -110,6 +116,7 @@ export const SETTLEMENTS = [
     centerTy: 65,
     radiusTiles: 11,
     color: '#f59e0b',
+    waypoint: { tx: -70, ty: 63 },
     blacksmith: {
       id: 'bs_oasis',
       name: 'Mastro Rashid',
@@ -123,6 +130,7 @@ export const SETTLEMENTS = [
       { type: 'tent_desert', tx: -66, ty: 60, wTiles: 4, hTiles: 3, name: 'Bazaar delle Dune' }
     ],
     props: [
+      { type: 'waypoint_portal', tx: -70, ty: 63 },
       { type: 'blacksmith_npc', tx: -66, ty: 66 },
       { type: 'palm_tree', tx: -73, ty: 64 },
       { type: 'palm_tree', tx: -67, ty: 64 },
@@ -139,6 +147,7 @@ export const SETTLEMENTS = [
     centerTy: 45,
     radiusTiles: 11,
     color: '#ef4444',
+    waypoint: { tx: 70, ty: 43 },
     blacksmith: {
       id: 'bs_cineris',
       name: 'Mastro Ignis',
@@ -152,6 +161,7 @@ export const SETTLEMENTS = [
       { type: 'house_red', tx: 73, ty: 40, wTiles: 4, hTiles: 3, name: 'Caserma delle Ceneri' }
     ],
     props: [
+      { type: 'waypoint_portal', tx: 70, ty: 43 },
       { type: 'blacksmith_npc', tx: 74, ty: 46 },
       { type: 'brazier_fire', tx: 67, ty: 45 },
       { type: 'brazier_fire', tx: 73, ty: 45 },
@@ -167,6 +177,7 @@ export const SETTLEMENTS = [
     centerTy: -35,
     radiusTiles: 11,
     color: '#22c55e',
+    waypoint: { tx: -75, ty: -33 },
     blacksmith: {
       id: 'bs_sylva',
       name: 'Mastra Elora',
@@ -180,6 +191,7 @@ export const SETTLEMENTS = [
       { type: 'cabin_wood', tx: -72, ty: -40, wTiles: 4, hTiles: 3, name: 'Erboristeria di Sylva' }
     ],
     props: [
+      { type: 'waypoint_portal', tx: -75, ty: -33 },
       { type: 'blacksmith_npc', tx: -71, ty: -34 },
       { type: 'glowing_mushrooms', tx: -77, ty: -34 },
       { type: 'glowing_mushrooms', tx: -73, ty: -36 },
@@ -463,6 +475,29 @@ export class World {
           settlementColor: s.color,
           worldX: bx,
           worldY: by
+        };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Cerca il Portale di Teletrasporto / Waypoint dell'Aether più vicino entro un dato raggio dal giocatore
+   */
+  getNearbyWaypoint(playerX, playerY, maxDist = 85) {
+    for (const s of SETTLEMENTS) {
+      if (!s.waypoint) continue;
+      const wx = s.waypoint.tx * this.TS + this.TS / 2;
+      const wy = s.waypoint.ty * this.TS + this.TS / 2;
+      if (Math.hypot(playerX - wx, playerY - wy) <= maxDist) {
+        return {
+          ...s.waypoint,
+          settlementId: s.id,
+          settlementName: s.name,
+          settlementTitle: s.title,
+          settlementColor: s.color,
+          worldX: wx,
+          worldY: wy
         };
       }
     }
@@ -925,6 +960,41 @@ export class World {
                   ctx.strokeRect(Math.round(p.x - 38), Math.round(p.y - sh - 14), 76, 16);
                   ctx.fillStyle = '#fde047';
                   ctx.fillText('🔨 Fabbro [E]', Math.round(p.x), Math.round(p.y - sh - 2));
+                  ctx.restore();
+                } else if (p.type === 'waypoint_portal') {
+                  Sprites.drawShadow(ctx, p.x, p.y - 2, 20);
+                  const pulse = Math.sin(Date.now() / 280) * 0.12 + 0.38;
+                  const glow = ctx.createRadialGradient(p.x, p.y - 12, 6, p.x, p.y - 12, 65);
+                  glow.addColorStop(0, `rgba(56, 189, 248, ${pulse})`);
+                  glow.addColorStop(0.6, `rgba(14, 165, 233, ${pulse * 0.4})`);
+                  glow.addColorStop(1, 'rgba(56, 189, 248, 0)');
+                  ctx.fillStyle = glow;
+                  ctx.beginPath();
+                  ctx.arc(p.x, p.y - 12, 65, 0, Math.PI * 2);
+                  ctx.fill();
+
+                  // Anello runico al suolo
+                  ctx.save();
+                  ctx.strokeStyle = `rgba(56, 189, 248, ${pulse + 0.25})`;
+                  ctx.lineWidth = 1.6;
+                  ctx.beginPath();
+                  ctx.ellipse(p.x, p.y - 2, 22, 11, 0, 0, Math.PI * 2);
+                  ctx.stroke();
+                  ctx.restore();
+
+                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
+
+                  // Cartiglio fluttuante
+                  ctx.save();
+                  ctx.font = 'bold 10px sans-serif';
+                  ctx.textAlign = 'center';
+                  ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                  ctx.fillRect(Math.round(p.x - 56), Math.round(p.y - sh - 18), 112, 17);
+                  ctx.strokeStyle = '#38bdf8';
+                  ctx.lineWidth = 1;
+                  ctx.strokeRect(Math.round(p.x - 56), Math.round(p.y - sh - 18), 112, 17);
+                  ctx.fillStyle = '#7dd3fc';
+                  ctx.fillText('🌀 Portale Viaggio [E]', Math.round(p.x), Math.round(p.y - sh - 5));
                   ctx.restore();
                 } else if (p.type === 'aether_obelisk') {
                   Sprites.drawShadow(ctx, p.x, p.y - 2, 22);
