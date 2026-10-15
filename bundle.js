@@ -3223,7 +3223,10 @@
   var API_BASE = window.location.protocol.startsWith("http") ? "" : "http://localhost:3000";
   var GameAPI = class {
     constructor() {
+      this.token = localStorage.getItem("aether_auth_token") || null;
       this.nickname = localStorage.getItem("aether_nickname") || "Mago-" + Math.floor(1e3 + Math.random() * 9e3);
+      this.currentUser = null;
+      this.isGuest = !this.token;
       this.isOnline = false;
       this.checkHealth();
     }
@@ -3237,7 +3240,106 @@
         this.isOnline = false;
       }
     }
-    // --- LOGICA OFFLINE LOCALSTORAGE ---
+    _authHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (this.token) {
+        headers["Authorization"] = `Bearer ${this.token}`;
+      }
+      return headers;
+    }
+    // =========================================================================
+    // METODI DI AUTENTICAZIONE ACCOUNT
+    // =========================================================================
+    /**
+     * Registra un nuovo account
+     */
+    async register(username, password, email = "") {
+      const res = await fetch(`${API_BASE}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, email })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Errore durante la registrazione");
+      }
+      this.token = data.token;
+      this.currentUser = data.user;
+      this.nickname = data.user.username;
+      this.isGuest = false;
+      localStorage.setItem("aether_auth_token", this.token);
+      localStorage.setItem("aether_nickname", this.nickname);
+      return data;
+    }
+    /**
+     * Effettua l'accesso a un account esistente
+     */
+    async login(username, password) {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Errore durante l'accesso");
+      }
+      this.token = data.token;
+      this.currentUser = data.user;
+      this.nickname = data.user.username;
+      this.isGuest = false;
+      localStorage.setItem("aether_auth_token", this.token);
+      localStorage.setItem("aether_nickname", this.nickname);
+      return data;
+    }
+    /**
+     * Disconnette l'account e torna in modalità ospite
+     */
+    async logout() {
+      if (this.token) {
+        try {
+          await fetch(`${API_BASE}/api/auth/logout`, {
+            method: "POST",
+            headers: this._authHeaders()
+          });
+        } catch {
+        }
+      }
+      this.token = null;
+      this.currentUser = null;
+      this.isGuest = true;
+      localStorage.removeItem("aether_auth_token");
+    }
+    /**
+     * Tenta di ripristinare la sessione attiva salvata in localStorage
+     */
+    async restoreSession() {
+      if (!this.token) {
+        this.isGuest = true;
+        return null;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/me`, {
+          method: "GET",
+          headers: this._authHeaders()
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.user) {
+            this.currentUser = data.user;
+            this.nickname = data.user.username;
+            this.isGuest = false;
+            localStorage.setItem("aether_nickname", this.nickname);
+            return data;
+          }
+        }
+      } catch {
+      }
+      return null;
+    }
+    // =========================================================================
+    // LOGICA OFFLINE LOCALSTORAGE (Per ospiti o assenza di connessione)
+    // =========================================================================
     _getLocalProfile(nickname) {
       const key = `aether_profile_${nickname.toLowerCase()}`;
       const raw = localStorage.getItem(key);
@@ -3277,7 +3379,8 @@
             sword: 0,
             bow: 0
           },
-          equippedWeapon: "staff"
+          equippedWeapon: "staff",
+          inAppPurchases: []
         };
         localStorage.setItem(key, JSON.stringify(p));
       }
@@ -3297,6 +3400,9 @@
       }
       if (!p.equippedWeapon) {
         p.equippedWeapon = "staff";
+      }
+      if (!p.inAppPurchases) {
+        p.inAppPurchases = [];
       }
       return p;
     }
@@ -3358,12 +3464,15 @@
         inventoryCatalog
       };
     }
-    // --- METODI PUBBLICI ---
-    async getProfile(nickname) {
+    // =========================================================================
+    // METODI PUBBLICI DI GIOCO
+    // =========================================================================
+    async getProfile(nickname = this.nickname) {
       this.nickname = nickname;
       localStorage.setItem("aether_nickname", nickname);
       try {
-        const res = await fetch(`${API_BASE}/api/profile/${encodeURIComponent(nickname)}`);
+        const headers = this._authHeaders();
+        const res = await fetch(`${API_BASE}/api/profile/${encodeURIComponent(nickname)}`, { headers });
         if (res.ok) {
           const json = await res.json();
           if (json.success) {
@@ -3382,7 +3491,7 @@
         try {
           const res = await fetch(`${API_BASE}/api/talents/upgrade`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: this._authHeaders(),
             body: JSON.stringify({ nickname: this.nickname, talentId })
           });
           if (res.ok) {
@@ -3408,7 +3517,7 @@
         try {
           const res = await fetch(`${API_BASE}/api/blacksmith/craft`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: this._authHeaders(),
             body: JSON.stringify({ nickname: this.nickname, weaponId })
           });
           if (res.ok) {
@@ -3454,7 +3563,7 @@
         try {
           const res = await fetch(`${API_BASE}/api/weapons/equip`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: this._authHeaders(),
             body: JSON.stringify({ nickname: this.nickname, weaponId })
           });
           if (res.ok) {
@@ -3477,7 +3586,7 @@
         try {
           const res = await fetch(`${API_BASE}/api/runs/complete`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: this._authHeaders(),
             body: JSON.stringify({
               nickname: this.nickname,
               ...runStats
@@ -3544,8 +3653,22 @@
     const gameHud = document.getElementById("game-hud");
     const modalLevelUp = document.getElementById("levelup-modal");
     const modalGameOver = document.getElementById("gameover-modal");
-    const inputNick = document.getElementById("player-nickname");
-    const btnSaveNick = document.getElementById("btn-save-nick");
+    const elNicknameDisplay = document.getElementById("player-nickname-display");
+    const elAccountBadge = document.getElementById("account-status-badge");
+    const btnSwitchAccount = document.getElementById("btn-switch-account");
+    const authModal = document.getElementById("auth-modal");
+    const authTabBtnLogin = document.getElementById("auth-tab-btn-login");
+    const authTabBtnRegister = document.getElementById("auth-tab-btn-register");
+    const authAlert = document.getElementById("auth-alert");
+    const formLogin = document.getElementById("form-login");
+    const formRegister = document.getElementById("form-register");
+    const inputLoginUser = document.getElementById("login-username");
+    const inputLoginPass = document.getElementById("login-password");
+    const inputRegUser = document.getElementById("register-username");
+    const inputRegEmail = document.getElementById("register-email");
+    const inputRegPass = document.getElementById("register-password");
+    const inputRegPassConfirm = document.getElementById("register-password-confirm");
+    const btnContinueGuest = document.getElementById("btn-continue-guest");
     const elMenuGold = document.getElementById("menu-gold");
     const elStatRuns = document.getElementById("stat-runs");
     const elStatKills = document.getElementById("stat-kills");
@@ -3618,9 +3741,20 @@
       const secs = Math.floor(totalSeconds % 60);
       return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
     }
-    async function refreshProfile(nickname = inputNick.value) {
+    async function refreshProfile(nickname = API.currentUser ? API.currentUser.username : API.nickname) {
       currentProfile = await API.getProfile(nickname || "Mago-" + Math.floor(1e3 + Math.random() * 9e3));
-      inputNick.value = currentProfile.nickname;
+      if (elNicknameDisplay) {
+        elNicknameDisplay.textContent = currentProfile.nickname;
+      }
+      if (elAccountBadge) {
+        if (API.isGuest) {
+          elAccountBadge.textContent = "\u26A0\uFE0F Ospite (Non Salvato Online)";
+          elAccountBadge.className = "badge-guest";
+        } else {
+          elAccountBadge.textContent = "\u{1F6E1}\uFE0F Account Online Connesso";
+          elAccountBadge.className = "badge-account";
+        }
+      }
       elMenuGold.textContent = `${currentProfile.gold}`;
       elStatRuns.textContent = `${currentProfile.totalRuns || 0}`;
       elStatKills.textContent = `${currentProfile.totalKills || 0}`;
@@ -3841,9 +3975,104 @@
     tabBtnBlacksmith.addEventListener("click", () => switchTab(tabBtnBlacksmith, tabBlacksmith, renderWeaponsGrid));
     tabBtnInventory.addEventListener("click", () => switchTab(tabBtnInventory, tabInventory, renderInventoryGrid));
     tabBtnLeaderboard.addEventListener("click", () => switchTab(tabBtnLeaderboard, tabLeaderboard, renderLeaderboard));
-    btnSaveNick.addEventListener("click", () => {
-      refreshProfile(inputNick.value);
-    });
+    function showAuthAlert(msg, isError = true) {
+      if (!authAlert) return;
+      authAlert.textContent = msg;
+      authAlert.className = `auth-alert ${isError ? "error" : "success"}`;
+      authAlert.classList.remove("hidden");
+    }
+    function hideAuthAlert() {
+      if (!authAlert) return;
+      authAlert.classList.add("hidden");
+    }
+    function openAuthModal(initialTab = "login") {
+      hideAuthAlert();
+      authModal.classList.remove("hidden");
+      switchAuthTab(initialTab);
+    }
+    function closeAuthModal() {
+      authModal.classList.add("hidden");
+    }
+    function switchAuthTab(tab) {
+      hideAuthAlert();
+      if (tab === "login") {
+        authTabBtnLogin?.classList.add("active");
+        authTabBtnRegister?.classList.remove("active");
+        formLogin?.classList.remove("hidden");
+        formRegister?.classList.add("hidden");
+        if (inputLoginUser) inputLoginUser.focus();
+      } else {
+        authTabBtnRegister?.classList.add("active");
+        authTabBtnLogin?.classList.remove("active");
+        formRegister?.classList.remove("hidden");
+        formLogin?.classList.add("hidden");
+        if (inputRegUser) inputRegUser.focus();
+      }
+    }
+    if (authTabBtnLogin) authTabBtnLogin.addEventListener("click", () => switchAuthTab("login"));
+    if (authTabBtnRegister) authTabBtnRegister.addEventListener("click", () => switchAuthTab("register"));
+    if (btnSwitchAccount) {
+      btnSwitchAccount.addEventListener("click", () => {
+        openAuthModal("login");
+      });
+    }
+    if (btnContinueGuest) {
+      btnContinueGuest.addEventListener("click", () => {
+        API.isGuest = true;
+        closeAuthModal();
+        refreshProfile();
+      });
+    }
+    if (formLogin) {
+      formLogin.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        hideAuthAlert();
+        const user = inputLoginUser.value.trim();
+        const pass = inputLoginPass.value;
+        if (!user || !pass) {
+          showAuthAlert("Inserisci nome utente e password.");
+          return;
+        }
+        try {
+          showAuthAlert("Accesso in corso...", false);
+          const res = await API.login(user, pass);
+          closeAuthModal();
+          await refreshProfile(res.user.username);
+        } catch (err) {
+          showAuthAlert(err.message || "Errore durante l'accesso.", true);
+        }
+      });
+    }
+    if (formRegister) {
+      formRegister.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        hideAuthAlert();
+        const user = inputRegUser.value.trim();
+        const email = inputRegEmail.value.trim();
+        const pass = inputRegPass.value;
+        const passConfirm = inputRegPassConfirm.value;
+        if (!user || user.length < 3) {
+          showAuthAlert("Il nome deve contenere almeno 3 caratteri.", true);
+          return;
+        }
+        if (pass.length < 4) {
+          showAuthAlert("La password deve contenere almeno 4 caratteri.", true);
+          return;
+        }
+        if (pass !== passConfirm) {
+          showAuthAlert("Le due password non corrispondono!", true);
+          return;
+        }
+        try {
+          showAuthAlert("Creazione account in corso...", false);
+          const res = await API.register(user, pass, email);
+          closeAuthModal();
+          await refreshProfile(res.user.username);
+        } catch (err) {
+          showAuthAlert(err.message || "Errore durante la registrazione.", true);
+        }
+      });
+    }
     function showWeaponNotification(text) {
       if (!weaponNotification) return;
       weaponNotification.textContent = text;
@@ -4293,7 +4522,13 @@
       }
       requestAnimationFrame(loop);
     }
-    await refreshProfile();
+    const session = await API.restoreSession();
+    if (session && session.user) {
+      await refreshProfile(session.user.username);
+    } else {
+      await refreshProfile();
+      openAuthModal("login");
+    }
     requestAnimationFrame(loop);
   });
 })();

@@ -1,9 +1,10 @@
 /**
- * server/db.js - Database persistente per Aether Survivor
- * Salva i profili, l'inventario artefatti/materiali, le armi forgiate, i talenti e la classifica in un file JSON atomico.
+ * server/db.js - Database persistente per Aether Survivor con Sistema Account,
+ * Autenticazione crittografica (salt + scrypt), salvataggio progressi e predisposizione In-App Purchases
  */
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,9 +15,23 @@ const DB_FILE = path.join(DATA_DIR, 'database.json');
 import { TALENTS_DEF } from '../src/core/talents.js';
 import { WEAPONS_DEF, MATERIALS_DEF } from '../src/core/crafting.js';
 
+// Funzioni crittografiche sicure basate sulle API native di Node.js
+function generateSalt() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
+function hashPassword(password, salt) {
+  return crypto.scryptSync(password, salt, 64).toString('hex');
+}
+
+function generateToken() {
+  return 'aeth_' + crypto.randomBytes(32).toString('hex');
+}
+
 class Database {
   constructor() {
-    this.profiles = new Map();
+    this.accounts = new Map(); // key = usernameLower -> account obj
+    this.profiles = new Map(); // key = usernameLower -> profile obj
     this.leaderboard = [];
     this.init();
   }
@@ -30,11 +45,22 @@ class Database {
       try {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         const data = JSON.parse(raw);
+
+        // 1. Carica Account
+        if (data.accounts) {
+          for (const [k, v] of Object.entries(data.accounts)) {
+            this.accounts.set(k.toLowerCase(), v);
+          }
+        }
+
+        // 2. Carica Profili di gioco
         if (data.profiles) {
           for (const [k, v] of Object.entries(data.profiles)) {
             this.profiles.set(k.toLowerCase(), v);
           }
         }
+
+        // 3. Carica Classifica
         if (Array.isArray(data.leaderboard)) {
           this.leaderboard = data.leaderboard;
         }
@@ -47,6 +73,7 @@ class Database {
   save() {
     try {
       const obj = {
+        accounts: Object.fromEntries(this.accounts.entries()),
         profiles: Object.fromEntries(this.profiles.entries()),
         leaderboard: this.leaderboard
       };
@@ -55,6 +82,176 @@ class Database {
       console.error('Errore durante il salvataggio su disco del database:', err);
     }
   }
+
+  // =========================================================================
+  // GESTIONE ACCOUNT & AUTENTICAZIONE (Pronto per Supabase e In-App Purchases)
+  // =========================================================================
+
+  /**
+   * Registra un nuovo account giocatore con password protetta da salt + hash
+   */
+  registerAccount(rawUsername, rawPassword, rawEmail = '') {
+    const username = (rawUsername || '').trim();
+    const password = (rawPassword || '').trim();
+    const email = (rawEmail || '').trim().toLowerCase();
+
+    if (!username || username.length < 3) {
+      throw new Error('Il nome utente deve contenere almeno 3 caratteri.');
+    }
+    if (username.length > 20) {
+      throw new Error('Il nome utente non può superare i 20 caratteri.');
+    }
+    if (!/^[a-zA-Z0-9_\-]+$/.test(username)) {
+      throw new Error('Il nome utente può contenere solo lettere, numeri, trattini e underscore.');
+    }
+    if (!password || password.length < 4) {
+      throw new Error('La password deve contenere almeno 4 caratteri.');
+    }
+
+    const key = username.toLowerCase();
+    if (this.accounts.has(key)) {
+      throw new Error(`L'account "${username}" esiste già! Scegli un altro nome o accedi.`);
+    }
+
+    if (email) {
+      for (const acc of this.accounts.values()) {
+        if (acc.email && acc.email.toLowerCase() === email) {
+          throw new Error('Questa email è già associata a un altro account.');
+        }
+      }
+    }
+
+    const salt = generateSalt();
+    const passwordHash = hashPassword(password, salt);
+    const token = generateToken();
+    const id = 'usr_' + crypto.randomBytes(8).toString('hex');
+
+    const account = {
+      id,
+      username,
+      email,
+      passwordHash,
+      salt,
+      token,
+      createdAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+      inAppPurchases: [], // Array per salvare transazioni, bundle, skin o pass futuri
+      inventorySlots: 32
+    };
+
+    this.accounts.set(key, account);
+
+    // Crea o collega il profilo di gioco
+    const profile = this.getOrCreateProfile(username);
+    profile.accountId = id;
+
+    this.save();
+
+    return {
+      token,
+      user: {
+        id: account.id,
+        username: account.username,
+        email: account.email,
+        createdAt: account.createdAt,
+        inAppPurchases: account.inAppPurchases
+      },
+      profile
+    };
+  }
+
+  /**
+   * Effettua il login verificando le credenziali
+   */
+  loginAccount(rawIdentifier, rawPassword) {
+    const identifier = (rawIdentifier || '').trim().toLowerCase();
+    const password = (rawPassword || '').trim();
+
+    if (!identifier || !password) {
+      throw new Error('Nome utente e password sono obbligatori.');
+    }
+
+    // Ricerca per username o per email
+    let account = this.accounts.get(identifier);
+    if (!account) {
+      for (const acc of this.accounts.values()) {
+        if (acc.email && acc.email.toLowerCase() === identifier) {
+          account = acc;
+          break;
+        }
+      }
+    }
+
+    if (!account) {
+      throw new Error('Account non trovato. Controlla il nome utente o registrati.');
+    }
+
+    const testHash = hashPassword(password, account.salt);
+    if (testHash !== account.passwordHash) {
+      throw new Error('Password errata. Riprova.');
+    }
+
+    // Rinnova token di sessione
+    account.token = generateToken();
+    account.lastLogin = new Date().toISOString();
+    this.save();
+
+    const profile = this.getOrCreateProfile(account.username);
+    profile.accountId = account.id;
+
+    return {
+      token: account.token,
+      user: {
+        id: account.id,
+        username: account.username,
+        email: account.email,
+        createdAt: account.createdAt,
+        inAppPurchases: account.inAppPurchases || []
+      },
+      profile
+    };
+  }
+
+  /**
+   * Trova l'account e il profilo corrispondente al token di sessione
+   */
+  getAccountByToken(token) {
+    if (!token) return null;
+    for (const acc of this.accounts.values()) {
+      if (acc.token && acc.token === token) {
+        const profile = this.getOrCreateProfile(acc.username);
+        return {
+          user: {
+            id: acc.id,
+            username: acc.username,
+            email: acc.email,
+            createdAt: acc.createdAt,
+            inAppPurchases: acc.inAppPurchases || []
+          },
+          profile
+        };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Disconnette l'account invalidando il token di sessione
+   */
+  logoutAccount(token) {
+    if (!token) return;
+    for (const acc of this.accounts.values()) {
+      if (acc.token && acc.token === token) {
+        acc.token = null;
+        this.save();
+        break;
+      }
+    }
+  }
+
+  // =========================================================================
+  // GESTIONE PROFILO DI GIOCO, TALENTI, FORGIA & CLASSIFICA
+  // =========================================================================
 
   getCostForTalent(talentId, currentRank) {
     const def = TALENTS_DEF[talentId];
@@ -106,7 +303,8 @@ class Database {
           sword: 0, // Da forgiare dal fabbro
           bow: 0    // Da forgiare dal fabbro
         },
-        equippedWeapon: 'staff'
+        equippedWeapon: 'staff',
+        inAppPurchases: []
       };
       this.profiles.set(key, newProfile);
       this.save();
@@ -114,7 +312,7 @@ class Database {
 
     const p = this.profiles.get(key);
 
-    // Garanzia di retrocompatibilità se il profilo esisteva prima di questo aggiornamento
+    // Garanzia di retrocompatibilità
     if (!p.inventory) {
       p.inventory = {
         slime_gel: 4,
@@ -131,6 +329,9 @@ class Database {
     }
     if (!p.equippedWeapon) {
       p.equippedWeapon = 'staff';
+    }
+    if (!p.inAppPurchases) {
+      p.inAppPurchases = [];
     }
 
     // Catalogo armi e stato di forgiatura
@@ -235,7 +436,6 @@ class Database {
     let materialsCost = {};
 
     if (currentLevel === 0) {
-      // Sblocco dell'arma
       if (!def.unlockCost) {
         p.weapons[weaponId] = 1;
         this.save();
@@ -244,7 +444,6 @@ class Database {
       goldCost = def.unlockCost.gold || 0;
       materialsCost = def.unlockCost.materials || {};
     } else {
-      // Potenziamento
       const nextUp = def.upgrades.find(u => u.level === currentLevel + 1);
       if (!nextUp) {
         throw new Error('Nessun potenziamento disponibile');
@@ -253,12 +452,10 @@ class Database {
       materialsCost = nextUp.materials || {};
     }
 
-    // Verifica oro
     if (p.gold < goldCost) {
       throw new Error(`Oro insufficiente: servono ${goldCost} oro ma ne possiedi ${p.gold}`);
     }
 
-    // Verifica materiali nell'inventario
     for (const [matId, reqAmount] of Object.entries(materialsCost)) {
       const owned = p.inventory[matId] || 0;
       if (owned < reqAmount) {
@@ -267,7 +464,6 @@ class Database {
       }
     }
 
-    // Deduci oro e materiali
     p.gold -= goldCost;
     for (const [matId, reqAmount] of Object.entries(materialsCost)) {
       p.inventory[matId] = Math.max(0, (p.inventory[matId] || 0) - reqAmount);
@@ -310,7 +506,6 @@ class Database {
     const survivalSeconds = Number(runData.survivalSeconds) || 0;
     const rawGold = Number(runData.goldEarned) || 0;
 
-    // Moltiplicatore oro del talento
     const goldMultiplier = 1 + (profile.talents.gold_gain || 0) * TALENTS_DEF.gold_gain.bonusPerRank;
     const finalGold = Math.round(rawGold * goldMultiplier);
 
@@ -321,7 +516,6 @@ class Database {
     p.highestLevel = Math.max(p.highestLevel, level);
     p.bestSurvivalSeconds = Math.max(p.bestSurvivalSeconds, survivalSeconds);
 
-    // Salva gli artefatti e materiali raccolti nell'inventario del profilo
     if (runData.collectedItems && typeof runData.collectedItems === 'object') {
       p.inventory = p.inventory || {};
       for (const [itemId, count] of Object.entries(runData.collectedItems)) {
@@ -329,7 +523,6 @@ class Database {
       }
     }
 
-    // Registra nella classifica
     const score = kills * 50 + level * 200 + Math.floor(survivalSeconds * 10);
     this.leaderboard.push({
       nickname: nick,

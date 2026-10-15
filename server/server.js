@@ -1,5 +1,6 @@
 /**
  * server/server.js - Server Backend REST API & Static Hosting per Aether Survivor
+ * Include autenticazione account (Registrazione / Login), sessioni e salvataggio dei progressi
  */
 import express from 'express';
 import cors from 'cors';
@@ -17,12 +18,87 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Helper per estrarre il token bearer dalle richieste
+function extractToken(req) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7).trim();
+  }
+  return req.body?.token || req.query?.token || null;
+}
+
 // 1. Endpoint di stato
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', game: 'Aether Survivor', time: new Date().toISOString() });
 });
 
-// 2. Profilo giocatore e talenti
+// =========================================================================
+// ROTTE DI AUTENTICAZIONE ACCOUNT
+// =========================================================================
+
+// Registrazione nuovo Account
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'Nome utente e password sono obbligatori' });
+    }
+    const result = db.registerAccount(username, password, email);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Login Account
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'Nome utente e password sono obbligatori' });
+    }
+    const result = db.loginAccount(username, password);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Verifica Sessione Attuale
+app.get('/api/auth/me', (req, res) => {
+  try {
+    const token = extractToken(req);
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'Nessun token di autenticazione fornito' });
+    }
+    const data = db.getAccountByToken(token);
+    if (!data) {
+      return res.status(401).json({ success: false, error: 'Sessione scaduta o non valida' });
+    }
+    res.json({ success: true, ...data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Logout Account
+app.post('/api/auth/logout', (req, res) => {
+  try {
+    const token = extractToken(req);
+    if (token) {
+      db.logoutAccount(token);
+    }
+    res.json({ success: true, message: 'Disconnesso con successo' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =========================================================================
+// ROTTE DI GIOCO & PROGRESSIONE
+// =========================================================================
+
+// Profilo giocatore e talenti
 app.get('/api/profile/:nickname', (req, res) => {
   try {
     const profile = db.getOrCreateProfile(req.params.nickname);
@@ -32,10 +108,20 @@ app.get('/api/profile/:nickname', (req, res) => {
   }
 });
 
-// 3. Acquisto e potenziamento talenti
+// Acquisto e potenziamento talenti
 app.post('/api/talents/upgrade', (req, res) => {
   try {
-    const { nickname, talentId } = req.body;
+    const token = extractToken(req);
+    let nickname = req.body.nickname;
+
+    if (token) {
+      const auth = db.getAccountByToken(token);
+      if (auth && auth.user) {
+        nickname = auth.user.username;
+      }
+    }
+
+    const { talentId } = req.body;
     if (!nickname || !talentId) {
       return res.status(400).json({ success: false, error: 'Nickname e talentId sono obbligatori' });
     }
@@ -46,10 +132,20 @@ app.post('/api/talents/upgrade', (req, res) => {
   }
 });
 
-// 4. Fine partita e registrazione statistiche con materiali raccolti
+// Fine partita e registrazione statistiche con materiali raccolti
 app.post('/api/runs/complete', (req, res) => {
   try {
-    const { nickname, kills, level, survivalSeconds, goldEarned, collectedItems } = req.body;
+    const token = extractToken(req);
+    let nickname = req.body.nickname;
+
+    if (token) {
+      const auth = db.getAccountByToken(token);
+      if (auth && auth.user) {
+        nickname = auth.user.username;
+      }
+    }
+
+    const { kills, level, survivalSeconds, goldEarned, collectedItems } = req.body;
     if (!nickname) {
       return res.status(400).json({ success: false, error: 'Nickname obbligatorio' });
     }
@@ -60,10 +156,20 @@ app.post('/api/runs/complete', (req, res) => {
   }
 });
 
-// 5. Forgiatura e Potenziamento Armi dal Fabbro
+// Forgiatura e Potenziamento Armi dal Fabbro
 app.post('/api/blacksmith/craft', (req, res) => {
   try {
-    const { nickname, weaponId } = req.body;
+    const token = extractToken(req);
+    let nickname = req.body.nickname;
+
+    if (token) {
+      const auth = db.getAccountByToken(token);
+      if (auth && auth.user) {
+        nickname = auth.user.username;
+      }
+    }
+
+    const { weaponId } = req.body;
     if (!nickname || !weaponId) {
       return res.status(400).json({ success: false, error: 'Nickname e weaponId sono obbligatori' });
     }
@@ -74,10 +180,20 @@ app.post('/api/blacksmith/craft', (req, res) => {
   }
 });
 
-// 6. Equipaggia Arma per la spedizione
+// Equipaggia Arma per la spedizione
 app.post('/api/weapons/equip', (req, res) => {
   try {
-    const { nickname, weaponId } = req.body;
+    const token = extractToken(req);
+    let nickname = req.body.nickname;
+
+    if (token) {
+      const auth = db.getAccountByToken(token);
+      if (auth && auth.user) {
+        nickname = auth.user.username;
+      }
+    }
+
+    const { weaponId } = req.body;
     if (!nickname || !weaponId) {
       return res.status(400).json({ success: false, error: 'Nickname e weaponId sono obbligatori' });
     }
@@ -88,7 +204,7 @@ app.post('/api/weapons/equip', (req, res) => {
   }
 });
 
-// 5. Classifica Globale
+// Classifica Globale
 app.get('/api/leaderboard', (req, res) => {
   try {
     const leaderboard = db.getLeaderboard();
@@ -98,7 +214,7 @@ app.get('/api/leaderboard', (req, res) => {
   }
 });
 
-// 6. Hosting statico del client di gioco (bundle.js, index.html, assets) senza cache del browser
+// Hosting statico del client di gioco senza cache del browser
 app.use(express.static(ROOT_DIR, {
   etag: false,
   setHeaders: (res) => {

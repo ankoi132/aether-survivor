@@ -12,6 +12,77 @@
   </div>
 
   <!-- =========================================================================
+       MODALE ACCESSO / REGISTRAZIONE ACCOUNT
+       ========================================================================= -->
+  <div id="auth-modal" class="hidden overlay-screen" style="z-index: 120;">
+    <div class="menu-box auth-box">
+      <div class="menu-header">
+        <div class="menu-logo">✨ AETHER SURVIVOR ✨</div>
+        <div class="menu-subtitle">Accesso Personaggio & Salvataggio Progressi Cloud</div>
+      </div>
+
+      <!-- Schede Accedi / Registrati -->
+      <div class="menu-tabs auth-tabs">
+        <button type="button" id="auth-tab-btn-login" class="tab-btn active">🔑 Accedi</button>
+        <button type="button" id="auth-tab-btn-register" class="tab-btn">✨ Crea Account</button>
+      </div>
+
+      <!-- Box Messaggio di Errore / Notifica -->
+      <div id="auth-alert" class="auth-alert hidden"></div>
+
+      <!-- Form 1: Login -->
+      <form id="form-login" class="auth-form">
+        <div class="form-group">
+          <label for="login-username">Nome Utente o Email:</label>
+          <input type="text" id="login-username" placeholder="Inserisci il tuo nome mago" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password:</label>
+          <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <div class="auth-benefits">
+          🔒 Accedendo con il tuo account sincronizzi il tuo eroe, proteggi i progressi ed hai accesso ai tuoi salvataggi da qualsiasi dispositivo.
+        </div>
+        <button type="submit" id="btn-submit-login" class="btn-primary" style="width: 100%; margin-top: 8px;">
+          🔑 ACCEDI AL TUO PERSONAGGIO
+        </button>
+      </form>
+
+      <!-- Form 2: Registrazione -->
+      <form id="form-register" class="auth-form hidden">
+        <div class="form-group">
+          <label for="register-username">Nome Mago / Username (min. 3 caratteri):</label>
+          <input type="text" id="register-username" placeholder="Es: Gandalf_99" maxlength="20" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="register-email">Email (opzionale, per recupero e acquisti in-app):</label>
+          <input type="email" id="register-email" placeholder="mago@arcano.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="register-password">Password (min. 4 caratteri):</label>
+          <input type="password" id="register-password" placeholder="••••••••" required autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label for="register-password-confirm">Conferma Password:</label>
+          <input type="password" id="register-password-confirm" placeholder="••••••••" required autocomplete="new-password">
+        </div>
+        <div class="auth-benefits">
+          ✨ Creando un account riceverai subito <b>150 Oro</b> di benvenuto, sbloccherai il salvataggio sicuro e tutti i tuoi acquisti e artefatti rimarranno tuoi per sempre!
+        </div>
+        <button type="submit" id="btn-submit-register" class="btn-primary" style="width: 100%; margin-top: 8px;">
+          ✨ REGISTRATI E CREA IL TUO MAGO
+        </button>
+      </form>
+
+      <!-- Opzione Ospite (Fallback rapido) -->
+      <div class="auth-footer-guest">
+        <span>Oppure vuoi fare solo una prova veloce?</span>
+        <button type="button" id="btn-continue-guest" class="btn-text-guest">🎮 Continua come Ospite Locale (Senza Account)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
        MENU PRINCIPALE & SANTUARIO DEI TALENTI (Meta-Progressione Backend)
        ========================================================================= -->
   <div id="main-menu" class="overlay-screen">
@@ -21,17 +92,21 @@
         <div class="menu-subtitle">Il Santuario dei Maghi e la Meta-Progressione</div>
       </div>
 
-      <!-- Barra Profilo Giocatore -->
+      <!-- Barra Profilo Giocatore & Account -->
       <div class="profile-card">
         <div class="profile-row">
           <div class="nick-field">
-            <label for="player-nickname">Mago:</label>
-            <input type="text" id="player-nickname" maxlength="16" placeholder="Il tuo nome">
-            <button id="btn-save-nick" class="btn-small">Salva</button>
+            <span class="user-avatar-icon">🧙‍♂️</span>
+            <div class="user-info-text">
+              <span class="user-label">Personaggio / Account:</span>
+              <b id="player-nickname-display" class="user-name-bold">Caricamento...</b>
+            </div>
+            <span id="account-status-badge" class="badge-account">🛡️ Account Connesso</span>
+            <button id="btn-switch-account" class="btn-auth-toggle">🔑 Cambia Account</button>
           </div>
           <div class="profile-gold">
             <span class="gold-icon">🪙</span>
-            <span id="menu-gold" class="gold-amount">100</span> Oro Permanente
+            <span id="menu-gold" class="gold-amount">150</span> Oro Permanente
           </div>
         </div>
 
@@ -280,6 +355,6 @@
     </div>
   </div>
 
-  <script defer src="bundle.js?v=0.4.2"></script>
+  <script defer src="bundle.js?v=0.4.3"></script>
 </body>
 </html>

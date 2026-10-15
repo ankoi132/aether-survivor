@@ -1,6 +1,6 @@
 /**
- * core/api.js - Client API Bridge con Fallback Offline Automatico
- * Comunica con il server REST di Aether Survivor o usa il salvataggio locale se offline.
+ * core/api.js - Client API Bridge con Autenticazione Account, Token di Sessione
+ * e Fallback Offline Automatico per Aether Survivor
  */
 import { TALENTS_DEF } from './talents.js';
 import { WEAPONS_DEF, MATERIALS_DEF } from './crafting.js';
@@ -9,7 +9,10 @@ const API_BASE = window.location.protocol.startsWith('http') ? '' : 'http://loca
 
 class GameAPI {
   constructor() {
+    this.token = localStorage.getItem('aether_auth_token') || null;
     this.nickname = localStorage.getItem('aether_nickname') || 'Mago-' + Math.floor(1000 + Math.random() * 9000);
+    this.currentUser = null;
+    this.isGuest = !this.token;
     this.isOnline = false;
     this.checkHealth();
   }
@@ -25,7 +28,124 @@ class GameAPI {
     }
   }
 
-  // --- LOGICA OFFLINE LOCALSTORAGE ---
+  _authHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+    return headers;
+  }
+
+  // =========================================================================
+  // METODI DI AUTENTICAZIONE ACCOUNT
+  // =========================================================================
+
+  /**
+   * Registra un nuovo account
+   */
+  async register(username, password, email = '') {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, email })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Errore durante la registrazione');
+    }
+
+    this.token = data.token;
+    this.currentUser = data.user;
+    this.nickname = data.user.username;
+    this.isGuest = false;
+
+    localStorage.setItem('aether_auth_token', this.token);
+    localStorage.setItem('aether_nickname', this.nickname);
+
+    return data;
+  }
+
+  /**
+   * Effettua l'accesso a un account esistente
+   */
+  async login(username, password) {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Errore durante l\'accesso');
+    }
+
+    this.token = data.token;
+    this.currentUser = data.user;
+    this.nickname = data.user.username;
+    this.isGuest = false;
+
+    localStorage.setItem('aether_auth_token', this.token);
+    localStorage.setItem('aether_nickname', this.nickname);
+
+    return data;
+  }
+
+  /**
+   * Disconnette l'account e torna in modalità ospite
+   */
+  async logout() {
+    if (this.token) {
+      try {
+        await fetch(`${API_BASE}/api/auth/logout`, {
+          method: 'POST',
+          headers: this._authHeaders()
+        });
+      } catch {}
+    }
+
+    this.token = null;
+    this.currentUser = null;
+    this.isGuest = true;
+    localStorage.removeItem('aether_auth_token');
+  }
+
+  /**
+   * Tenta di ripristinare la sessione attiva salvata in localStorage
+   */
+  async restoreSession() {
+    if (!this.token) {
+      this.isGuest = true;
+      return null;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/me`, {
+        method: 'GET',
+        headers: this._authHeaders()
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.user) {
+          this.currentUser = data.user;
+          this.nickname = data.user.username;
+          this.isGuest = false;
+          localStorage.setItem('aether_nickname', this.nickname);
+          return data;
+        }
+      }
+    } catch {}
+
+    // Token scaduto o server non raggiungibile
+    return null;
+  }
+
+  // =========================================================================
+  // LOGICA OFFLINE LOCALSTORAGE (Per ospiti o assenza di connessione)
+  // =========================================================================
+
   _getLocalProfile(nickname) {
     const key = `aether_profile_${nickname.toLowerCase()}`;
     const raw = localStorage.getItem(key);
@@ -65,12 +185,12 @@ class GameAPI {
           sword: 0,
           bow: 0
         },
-        equippedWeapon: 'staff'
+        equippedWeapon: 'staff',
+        inAppPurchases: []
       };
       localStorage.setItem(key, JSON.stringify(p));
     }
 
-    // Default per retrocompatibilità
     if (!p.inventory) {
       p.inventory = {
         slime_gel: 4,
@@ -87,6 +207,9 @@ class GameAPI {
     }
     if (!p.equippedWeapon) {
       p.equippedWeapon = 'staff';
+    }
+    if (!p.inAppPurchases) {
+      p.inAppPurchases = [];
     }
 
     return p;
@@ -156,13 +279,17 @@ class GameAPI {
     };
   }
 
-  // --- METODI PUBBLICI ---
-  async getProfile(nickname) {
+  // =========================================================================
+  // METODI PUBBLICI DI GIOCO
+  // =========================================================================
+
+  async getProfile(nickname = this.nickname) {
     this.nickname = nickname;
     localStorage.setItem('aether_nickname', nickname);
 
     try {
-      const res = await fetch(`${API_BASE}/api/profile/${encodeURIComponent(nickname)}`);
+      const headers = this._authHeaders();
+      const res = await fetch(`${API_BASE}/api/profile/${encodeURIComponent(nickname)}`, { headers });
       if (res.ok) {
         const json = await res.json();
         if (json.success) {
@@ -183,7 +310,7 @@ class GameAPI {
       try {
         const res = await fetch(`${API_BASE}/api/talents/upgrade`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this._authHeaders(),
           body: JSON.stringify({ nickname: this.nickname, talentId })
         });
         if (res.ok) {
@@ -213,7 +340,7 @@ class GameAPI {
       try {
         const res = await fetch(`${API_BASE}/api/blacksmith/craft`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this._authHeaders(),
           body: JSON.stringify({ nickname: this.nickname, weaponId })
         });
         if (res.ok) {
@@ -267,7 +394,7 @@ class GameAPI {
       try {
         const res = await fetch(`${API_BASE}/api/weapons/equip`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this._authHeaders(),
           body: JSON.stringify({ nickname: this.nickname, weaponId })
         });
         if (res.ok) {
@@ -292,7 +419,7 @@ class GameAPI {
       try {
         const res = await fetch(`${API_BASE}/api/runs/complete`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this._authHeaders(),
           body: JSON.stringify({
             nickname: this.nickname,
             ...runStats

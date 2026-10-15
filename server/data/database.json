@@ -1,4 +1,18 @@
 {
+  "accounts": {
+    "testmago": {
+      "id": "usr_0f9694218389f553",
+      "username": "TestMago",
+      "email": "test@mago.com",
+      "passwordHash": "5000c5150107147b9cf65e55fb0205d71e082bbb317859639252081b124b8235de43d1787c76f9d87ae212a548b83d7c9454d91ff88b43ce6ace141c5e13ee5d",
+      "salt": "2b751113fe18208c98371f36d9c61d83",
+      "token": "aeth_aa395541ecac232cc35a9d04ec3bc639c97c6786acc71eb096c4847f142be179",
+      "createdAt": "2026-10-15T16:20:08.425Z",
+      "lastLogin": "2026-10-15T16:20:14.273Z",
+      "inAppPurchases": [],
+      "inventorySlots": 32
+    }
+  },
   "profiles": {
     "magodemo": {
       "nickname": "MagoDemo",
@@ -78,6 +92,69 @@
         "bow": 0
       },
       "equippedWeapon": "staff"
+    },
+    "mago-8598": {
+      "nickname": "Mago-8598",
+      "createdAt": "2026-10-14T20:02:22.373Z",
+      "gold": 25,
+      "totalRuns": 0,
+      "totalKills": 0,
+      "highestLevel": 1,
+      "bestSurvivalSeconds": 0,
+      "talents": {
+        "max_hp": 1,
+        "damage": 1,
+        "speed": 0,
+        "magnet": 0,
+        "gold_gain": 0
+      },
+      "inventory": {
+        "slime_gel": 4,
+        "ice_crystal": 0,
+        "sun_amber": 0,
+        "magma_core": 0,
+        "ancient_bone": 3,
+        "iron_scrap": 4,
+        "arcane_rune": 1
+      },
+      "weapons": {
+        "staff": 1,
+        "sword": 0,
+        "bow": 0
+      },
+      "equippedWeapon": "staff"
+    },
+    "testmago": {
+      "nickname": "TestMago",
+      "createdAt": "2026-10-15T16:20:08.425Z",
+      "gold": 150,
+      "totalRuns": 0,
+      "totalKills": 0,
+      "highestLevel": 1,
+      "bestSurvivalSeconds": 0,
+      "talents": {
+        "max_hp": 0,
+        "damage": 0,
+        "speed": 0,
+        "magnet": 0,
+        "gold_gain": 0
+      },
+      "inventory": {
+        "slime_gel": 4,
+        "ice_crystal": 0,
+        "sun_amber": 0,
+        "magma_core": 0,
+        "ancient_bone": 3,
+        "iron_scrap": 4,
+        "arcane_rune": 1
+      },
+      "weapons": {
+        "staff": 1,
+        "sword": 0,
+        "bow": 0
+      },
+      "equippedWeapon": "staff",
+      "inAppPurchases": []
     }
   },
   "leaderboard": [

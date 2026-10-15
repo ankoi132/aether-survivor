@@ -21,9 +21,26 @@ window.addEventListener('DOMContentLoaded', async () => {
   const modalLevelUp = document.getElementById('levelup-modal');
   const modalGameOver = document.getElementById('gameover-modal');
 
-  // Elementi Profilo & Menu
-  const inputNick = document.getElementById('player-nickname');
-  const btnSaveNick = document.getElementById('btn-save-nick');
+  // Elementi Profilo & Account
+  const elNicknameDisplay = document.getElementById('player-nickname-display');
+  const elAccountBadge = document.getElementById('account-status-badge');
+  const btnSwitchAccount = document.getElementById('btn-switch-account');
+
+  // Elementi Modale Autenticazione (Login & Registrazione)
+  const authModal = document.getElementById('auth-modal');
+  const authTabBtnLogin = document.getElementById('auth-tab-btn-login');
+  const authTabBtnRegister = document.getElementById('auth-tab-btn-register');
+  const authAlert = document.getElementById('auth-alert');
+  const formLogin = document.getElementById('form-login');
+  const formRegister = document.getElementById('form-register');
+  const inputLoginUser = document.getElementById('login-username');
+  const inputLoginPass = document.getElementById('login-password');
+  const inputRegUser = document.getElementById('register-username');
+  const inputRegEmail = document.getElementById('register-email');
+  const inputRegPass = document.getElementById('register-password');
+  const inputRegPassConfirm = document.getElementById('register-password-confirm');
+  const btnContinueGuest = document.getElementById('btn-continue-guest');
+
   const elMenuGold = document.getElementById('menu-gold');
   const elStatRuns = document.getElementById('stat-runs');
   const elStatKills = document.getElementById('stat-kills');
@@ -115,9 +132,22 @@ window.addEventListener('DOMContentLoaded', async () => {
   // =========================================================================
   // GESTIONE PROFILO, TALENTI & CLASSIFICA (API / BACKEND)
   // =========================================================================
-  async function refreshProfile(nickname = inputNick.value) {
+  async function refreshProfile(nickname = (API.currentUser ? API.currentUser.username : API.nickname)) {
     currentProfile = await API.getProfile(nickname || 'Mago-' + Math.floor(1000 + Math.random() * 9000));
-    inputNick.value = currentProfile.nickname;
+
+    if (elNicknameDisplay) {
+      elNicknameDisplay.textContent = currentProfile.nickname;
+    }
+
+    if (elAccountBadge) {
+      if (API.isGuest) {
+        elAccountBadge.textContent = '⚠️ Ospite (Non Salvato Online)';
+        elAccountBadge.className = 'badge-guest';
+      } else {
+        elAccountBadge.textContent = '🛡️ Account Online Connesso';
+        elAccountBadge.className = 'badge-account';
+      }
+    }
 
     elMenuGold.textContent = `${currentProfile.gold}`;
     elStatRuns.textContent = `${currentProfile.totalRuns || 0}`;
@@ -372,9 +402,118 @@ window.addEventListener('DOMContentLoaded', async () => {
   tabBtnInventory.addEventListener('click', () => switchTab(tabBtnInventory, tabInventory, renderInventoryGrid));
   tabBtnLeaderboard.addEventListener('click', () => switchTab(tabBtnLeaderboard, tabLeaderboard, renderLeaderboard));
 
-  btnSaveNick.addEventListener('click', () => {
-    refreshProfile(inputNick.value);
-  });
+  // =========================================================================
+  // GESTIONE AUTENTICAZIONE ACCOUNT (LOGIN & REGISTRAZIONE)
+  // =========================================================================
+  function showAuthAlert(msg, isError = true) {
+    if (!authAlert) return;
+    authAlert.textContent = msg;
+    authAlert.className = `auth-alert ${isError ? 'error' : 'success'}`;
+    authAlert.classList.remove('hidden');
+  }
+
+  function hideAuthAlert() {
+    if (!authAlert) return;
+    authAlert.classList.add('hidden');
+  }
+
+  function openAuthModal(initialTab = 'login') {
+    hideAuthAlert();
+    authModal.classList.remove('hidden');
+    switchAuthTab(initialTab);
+  }
+
+  function closeAuthModal() {
+    authModal.classList.add('hidden');
+  }
+
+  function switchAuthTab(tab) {
+    hideAuthAlert();
+    if (tab === 'login') {
+      authTabBtnLogin?.classList.add('active');
+      authTabBtnRegister?.classList.remove('active');
+      formLogin?.classList.remove('hidden');
+      formRegister?.classList.add('hidden');
+      if (inputLoginUser) inputLoginUser.focus();
+    } else {
+      authTabBtnRegister?.classList.add('active');
+      authTabBtnLogin?.classList.remove('active');
+      formRegister?.classList.remove('hidden');
+      formLogin?.classList.add('hidden');
+      if (inputRegUser) inputRegUser.focus();
+    }
+  }
+
+  if (authTabBtnLogin) authTabBtnLogin.addEventListener('click', () => switchAuthTab('login'));
+  if (authTabBtnRegister) authTabBtnRegister.addEventListener('click', () => switchAuthTab('register'));
+
+  if (btnSwitchAccount) {
+    btnSwitchAccount.addEventListener('click', () => {
+      openAuthModal('login');
+    });
+  }
+
+  if (btnContinueGuest) {
+    btnContinueGuest.addEventListener('click', () => {
+      API.isGuest = true;
+      closeAuthModal();
+      refreshProfile();
+    });
+  }
+
+  if (formLogin) {
+    formLogin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAuthAlert();
+      const user = inputLoginUser.value.trim();
+      const pass = inputLoginPass.value;
+      if (!user || !pass) {
+        showAuthAlert('Inserisci nome utente e password.');
+        return;
+      }
+      try {
+        showAuthAlert('Accesso in corso...', false);
+        const res = await API.login(user, pass);
+        closeAuthModal();
+        await refreshProfile(res.user.username);
+      } catch (err) {
+        showAuthAlert(err.message || 'Errore durante l\'accesso.', true);
+      }
+    });
+  }
+
+  if (formRegister) {
+    formRegister.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAuthAlert();
+      const user = inputRegUser.value.trim();
+      const email = inputRegEmail.value.trim();
+      const pass = inputRegPass.value;
+      const passConfirm = inputRegPassConfirm.value;
+
+      if (!user || user.length < 3) {
+        showAuthAlert('Il nome deve contenere almeno 3 caratteri.', true);
+        return;
+      }
+      if (pass.length < 4) {
+        showAuthAlert('La password deve contenere almeno 4 caratteri.', true);
+        return;
+      }
+      if (pass !== passConfirm) {
+        showAuthAlert('Le due password non corrispondono!', true);
+        return;
+      }
+
+      try {
+        showAuthAlert('Creazione account in corso...', false);
+        const res = await API.register(user, pass, email);
+        closeAuthModal();
+        await refreshProfile(res.user.username);
+      } catch (err) {
+        showAuthAlert(err.message || 'Errore durante la registrazione.', true);
+      }
+    });
+  }
 
   // =========================================================================
   // GESTIONE INVENTARIO & ARMERIA IN-GAME (Tasto I o pulsante Zaino)
@@ -949,7 +1088,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     requestAnimationFrame(loop);
   }
 
-  // Inizializza il profilo utente all'avvio
-  await refreshProfile();
+  // Inizializza la sessione utente all'avvio
+  const session = await API.restoreSession();
+  if (session && session.user) {
+    await refreshProfile(session.user.username);
+  } else {
+    await refreshProfile();
+    openAuthModal('login');
+  }
+
   requestAnimationFrame(loop);
 });
