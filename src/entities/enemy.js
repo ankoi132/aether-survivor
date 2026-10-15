@@ -232,9 +232,10 @@ export class Enemy {
         }
       }
     } else if (this.state === 'CHASE') {
-      if (dist > this.aggroRadius * 1.7) {
+      // Se il giocatore è entrato in una Safe Zone protetta (città/villaggio), il mob non può entrare e interrompe l'inseguimento
+      if (world.isSafeZone(player.x, player.y) || dist > this.aggroRadius * 1.7) {
         this.state = 'WANDER';
-        this.wanderTimer = 2.0;
+        this.wanderTimer = 2.5;
         this.isWanderMoving = false;
       } else if (dist > 18) {
         const angle = Math.atan2(dy, dx);
@@ -242,7 +243,9 @@ export class Enemy {
 
         let spd = this.baseSpd;
         if (world.isLiquid(this.x, this.y)) {
-          spd *= 0.65;
+          spd *= 0.55;
+        } else if (world.isShallowWater(this.x, this.y)) {
+          spd *= 0.85;
         }
 
         this.x += Math.cos(angle) * spd * dt;

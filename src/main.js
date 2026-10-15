@@ -8,7 +8,7 @@
  */
 import { Input } from './core/input.js';
 import { Camera } from './core/camera.js';
-import { World } from './world/world.js';
+import { World, SETTLEMENTS } from './world/world.js';
 import { Player } from './entities/player.js';
 import { Enemy } from './entities/enemy.js';
 import { CombatSystem } from './systems/combat.js';
@@ -179,14 +179,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   function getBiomeInfo(worldX, worldY) {
+    const sz = world.getSafeZone(worldX, worldY);
+    if (sz) {
+      return { key: 'village', name: `🏰 ${sz.name}`, color: sz.color };
+    }
     const tx = world.tileOf(worldX);
     const ty = world.tileOf(worldY);
     const biomeKey = world.getBiome(tx, ty);
     switch (biomeKey) {
-      case 'village': return { key: 'village', name: '🏰 Villaggio', color: '#64748b' };
+      case 'river': return { key: 'river', name: '🌊 Fiume & Cascate', color: '#06b6d4' };
       case 'snow': return { key: 'snow', name: '❄️ Vette Innevate', color: '#7dd3fc' };
-      case 'desert': return { key: 'desert', name: '🏜️ Deserto', color: '#f59e0b' };
-      case 'volcano': return { key: 'volcano', name: '🌋 Vulcano', color: '#ef4444' };
+      case 'desert': return { key: 'desert', name: '🏜️ Deserto delle Dune', color: '#f59e0b' };
+      case 'volcano': return { key: 'volcano', name: '🌋 Caldera Vulcanica', color: '#ef4444' };
       case 'forest':
       default:
         return { key: 'forest', name: '🌲 Bosco Silvano', color: '#22c55e' };
@@ -803,7 +807,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const cx = w / 2;
     const cy = h / 2;
 
-    const mapExtent = (world.MAP_RADIUS * world.TS) * 2; // 3200 px
+    const mapExtent = (world.MAP_RADIUS * world.TS) * 2; // 7680 px
     const scale = w / mapExtent;
 
     minimapCtx.clearRect(0, 0, w, h);
@@ -812,53 +816,87 @@ window.addEventListener('DOMContentLoaded', async () => {
     minimapCtx.fillStyle = '#080c14';
     minimapCtx.fillRect(0, 0, w, h);
 
-    const vSize = 512 * scale;
-    const vLeft = cx - vSize / 2;
-    const vTop = cy - vSize / 2;
+    // 1. Grandi quadranti sfumati dei Biomi
+    // Nord: Neve
+    minimapCtx.fillStyle = 'rgba(125, 211, 252, 0.35)';
+    minimapCtx.fillRect(0, 0, w, cy - 25 * world.TS * scale);
 
-    // 1. Neve (Nord)
-    minimapCtx.fillStyle = 'rgba(125, 211, 252, 0.45)';
-    minimapCtx.fillRect(0, 0, w, cy - vSize / 2);
+    // Sud-Ovest: Deserto
+    minimapCtx.fillStyle = 'rgba(217, 119, 6, 0.35)';
+    minimapCtx.fillRect(0, cy + 20 * world.TS * scale, cx, h);
 
-    // 2. Deserto (Sud Ovest)
-    minimapCtx.fillStyle = 'rgba(217, 119, 6, 0.45)';
-    minimapCtx.fillRect(0, cy + vSize / 2, cx, h - (cy + vSize / 2));
+    // Est: Vulcano
+    minimapCtx.fillStyle = 'rgba(185, 28, 28, 0.35)';
+    minimapCtx.fillRect(cx + 18 * world.TS * scale, cy - 15 * world.TS * scale, cx, h);
 
-    // 3. Vulcano (Est / Sud Est)
-    minimapCtx.fillStyle = 'rgba(185, 28, 28, 0.45)';
-    minimapCtx.fillRect(cx, cy - vSize / 2, cx, h - (cy - vSize / 2));
+    // Ovest: Bosco
+    minimapCtx.fillStyle = 'rgba(22, 101, 52, 0.4)';
+    minimapCtx.fillRect(0, cy - 25 * world.TS * scale, cx + 18 * world.TS * scale, 45 * world.TS * scale);
 
-    // 4. Bosco (Ovest)
-    minimapCtx.fillStyle = 'rgba(22, 101, 52, 0.55)';
-    minimapCtx.fillRect(0, cy - vSize / 2, cx - vSize / 2, vSize);
+    // 2. Fiume serpeggiante in blu cielo
+    minimapCtx.strokeStyle = '#0284c7';
+    minimapCtx.lineWidth = 2.5;
+    minimapCtx.beginPath();
+    for (let ty = -world.MAP_RADIUS; ty <= world.MAP_RADIUS; ty += 4) {
+      const rx = world.getRiverCenterX(ty) * world.TS;
+      const ry = ty * world.TS;
+      const mx = cx + rx * scale;
+      const my = cy + ry * scale;
+      if (ty === -world.MAP_RADIUS) minimapCtx.moveTo(mx, my);
+      else minimapCtx.lineTo(mx, my);
+    }
+    minimapCtx.stroke();
 
-    // 5. Villaggio (Centro)
-    minimapCtx.fillStyle = '#475569';
-    minimapCtx.fillRect(vLeft, vTop, vSize, vSize);
-    minimapCtx.strokeStyle = '#94a3b8';
+    // 3. Strade di collegamento tra città (linee dorate tenui)
+    minimapCtx.strokeStyle = 'rgba(245, 158, 11, 0.45)';
     minimapCtx.lineWidth = 1;
-    minimapCtx.strokeRect(vLeft, vTop, vSize, vSize);
+    for (const s of SETTLEMENTS) {
+      if (s.id === 'citadel') continue;
+      minimapCtx.beginPath();
+      minimapCtx.moveTo(cx, cy);
+      minimapCtx.lineTo(cx + s.centerTx * world.TS * scale, cy + s.centerTy * world.TS * scale);
+      minimapCtx.stroke();
+    }
 
-    // Nemici come puntini rossi
+    // 4. Città e Insediamenti con perimetro Safe Zone protetto
+    for (const s of SETTLEMENTS) {
+      const sx = cx + s.centerTx * world.TS * scale;
+      const sy = cy + s.centerTy * world.TS * scale;
+      const sr = s.radiusTiles * world.TS * scale;
+
+      // Perimetro Safe Zone
+      minimapCtx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+      minimapCtx.beginPath();
+      minimapCtx.arc(sx, sy, sr, 0, Math.PI * 2);
+      minimapCtx.fill();
+
+      // Centro città
+      minimapCtx.fillStyle = s.color || '#38bdf8';
+      minimapCtx.beginPath();
+      minimapCtx.arc(sx, sy, s.id === 'citadel' ? 3.5 : 2.5, 0, Math.PI * 2);
+      minimapCtx.fill();
+    }
+
+    // 5. Nemici come puntini rossi (esclusi dalle città)
     minimapCtx.fillStyle = '#f87171';
     for (const en of combat.enemies) {
       const mx = cx + en.x * scale;
       const my = cy + en.y * scale;
       if (mx >= 0 && mx < w && my >= 0 && my < h) {
-        minimapCtx.fillRect(mx - 1, my - 1, 2, 2);
+        minimapCtx.fillRect(mx - 0.75, my - 0.75, 1.5, 1.5);
       }
     }
 
-    // Giocatore come punto ciano pulsante
+    // 6. Giocatore come punto ciano pulsante
     const px = cx + player.x * scale;
     const py = cy + player.y * scale;
 
-    minimapCtx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+    minimapCtx.fillStyle = 'rgba(56, 189, 248, 0.4)';
     minimapCtx.beginPath();
     minimapCtx.arc(px, py, 4, 0, Math.PI * 2);
     minimapCtx.fill();
 
-    minimapCtx.fillStyle = '#38bdf8';
+    minimapCtx.fillStyle = '#ffffff';
     minimapCtx.beginPath();
     minimapCtx.arc(px, py, 2, 0, Math.PI * 2);
     minimapCtx.fill();
@@ -868,7 +906,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     minimapCtx.lineWidth = 1.5;
     minimapCtx.strokeRect(0, 0, w, h);
 
-    // Etichetta del bioma corrente
+    // Etichetta del bioma/città corrente
     const curB = getBiomeInfo(player.x, player.y);
     if (minimapBiomeName) {
       minimapBiomeName.textContent = curB.name;
@@ -881,7 +919,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const h = expandedCanvas.height;
     const cx = w / 2;
     const cy = h / 2;
-    const mapExtent = (world.MAP_RADIUS * world.TS) * 2;
+    const mapExtent = (world.MAP_RADIUS * world.TS) * 2; // 7680 px
     const scale = w / mapExtent;
 
     expandedCtx.clearRect(0, 0, w, h);
@@ -906,66 +944,126 @@ window.addEventListener('DOMContentLoaded', async () => {
       expandedCtx.stroke();
     }
 
-    const vSize = 512 * scale;
-    const vLeft = cx - vSize / 2;
-    const vTop = cy - vSize / 2;
-
-    // 1. Neve (Nord)
-    expandedCtx.fillStyle = 'rgba(125, 211, 252, 0.3)';
-    expandedCtx.fillRect(0, 0, w, cy - vSize / 2);
+    // Zone Biomi Sfumate
+    // Neve (Nord)
+    expandedCtx.fillStyle = 'rgba(125, 211, 252, 0.22)';
+    expandedCtx.fillRect(0, 0, w, cy - 25 * world.TS * scale);
     expandedCtx.fillStyle = '#7dd3fc';
-    expandedCtx.font = 'bold 11px sans-serif';
-    expandedCtx.fillText('❄️ VETTE INNEVATE', 20, 30);
-
-    // 2. Bosco Silvano (Ovest)
-    expandedCtx.fillStyle = 'rgba(22, 101, 52, 0.4)';
-    expandedCtx.fillRect(0, cy - vSize / 2, cx - vSize / 2, vSize);
-    expandedCtx.fillStyle = '#4ade80';
-    expandedCtx.fillText('🌲 BOSCO SILVANO', 15, cy);
-
-    // 3. Deserto delle Dune (Sud Ovest)
-    expandedCtx.fillStyle = 'rgba(217, 119, 6, 0.35)';
-    expandedCtx.fillRect(0, cy + vSize / 2, cx, h - (cy + vSize / 2));
-    expandedCtx.fillStyle = '#fde047';
-    expandedCtx.fillText('🏜️ DESERTO DELLE DUNE', 20, h - 25);
-
-    // 4. Caldera Vulcanica (Est / Sud Est)
-    expandedCtx.fillStyle = 'rgba(185, 28, 28, 0.35)';
-    expandedCtx.fillRect(cx, cy - vSize / 2, cx, h - (cy - vSize / 2));
-    expandedCtx.fillStyle = '#f87171';
-    expandedCtx.fillText('🌋 CALDERA VULCANICA', cx + 30, cy + 40);
-
-    // 5. Villaggio Centrale
-    expandedCtx.fillStyle = '#334155';
-    expandedCtx.fillRect(vLeft, vTop, vSize, vSize);
-    expandedCtx.strokeStyle = '#94a3b8';
-    expandedCtx.lineWidth = 1.5;
-    expandedCtx.strokeRect(vLeft, vTop, vSize, vSize);
-    expandedCtx.fillStyle = '#f8fafc';
     expandedCtx.font = 'bold 10px sans-serif';
-    expandedCtx.textAlign = 'center';
-    expandedCtx.fillText('🏰 VILLAGGIO', cx, cy - 8);
-    expandedCtx.font = '9px sans-serif';
-    expandedCtx.fillStyle = '#38bdf8';
-    expandedCtx.fillText('Zona Protetta', cx, cy + 6);
-    expandedCtx.textAlign = 'left';
+    expandedCtx.fillText('❄️ VETTE INNEVATE', 20, 25);
 
-    // Edifici del villaggio
-    const bScale = world.TS * scale;
-    expandedCtx.fillStyle = '#64748b';
-    expandedCtx.fillRect(cx + (-7 * bScale), cy + (-6 * bScale), 4 * bScale, 3 * bScale);
-    expandedCtx.fillRect(cx + (3 * bScale), cy + (-6 * bScale), 4 * bScale, 3 * bScale);
-    expandedCtx.fillRect(cx + (-7 * bScale), cy + (3 * bScale), 4 * bScale, 3 * bScale);
-    expandedCtx.fillRect(cx + (3 * bScale), cy + (3 * bScale), 4 * bScale, 3 * bScale);
+    // Bosco (Ovest)
+    expandedCtx.fillStyle = 'rgba(22, 101, 52, 0.25)';
+    expandedCtx.fillRect(0, cy - 25 * world.TS * scale, cx, 50 * world.TS * scale);
+    expandedCtx.fillStyle = '#4ade80';
+    expandedCtx.fillText('🌲 BOSCO SILVANO', 20, cy - 15);
 
-    // Nemici
+    // Deserto (Sud-Ovest)
+    expandedCtx.fillStyle = 'rgba(217, 119, 6, 0.25)';
+    expandedCtx.fillRect(0, cy + 25 * world.TS * scale, cx + 10, h - (cy + 25 * world.TS * scale));
+    expandedCtx.fillStyle = '#fde047';
+    expandedCtx.fillText('🏜️ DESERTO DELLE DUNE', 20, h - 20);
+
+    // Vulcano (Est / Sud-Est)
+    expandedCtx.fillStyle = 'rgba(185, 28, 28, 0.25)';
+    expandedCtx.fillRect(cx + 20 * world.TS * scale, cy - 20 * world.TS * scale, cx, h);
+    expandedCtx.fillStyle = '#f87171';
+    expandedCtx.fillText('🌋 CALDERA VULCANICA', cx + 45, cy + 50);
+
+    // Fiume Serpeggiante e Cascate (Nastro azzurro)
+    expandedCtx.strokeStyle = '#0284c7';
+    expandedCtx.lineWidth = 7;
+    expandedCtx.beginPath();
+    for (let ty = -world.MAP_RADIUS; ty <= world.MAP_RADIUS; ty += 2) {
+      const rx = world.getRiverCenterX(ty) * world.TS;
+      const ry = ty * world.TS;
+      const mx = cx + rx * scale;
+      const my = cy + ry * scale;
+      if (ty === -world.MAP_RADIUS) expandedCtx.moveTo(mx, my);
+      else expandedCtx.lineTo(mx, my);
+    }
+    expandedCtx.stroke();
+
+    expandedCtx.strokeStyle = '#7dd3fc';
+    expandedCtx.lineWidth = 3;
+    expandedCtx.stroke();
+
+    // Simbolo Cascate sul Fiume
+    const wfX = cx + (-40 * world.TS) * scale;
+    const wfY = cy + (22 * world.TS) * scale;
+    expandedCtx.fillStyle = '#ffffff';
+    expandedCtx.font = 'bold 9px sans-serif';
+    expandedCtx.fillText('🌊 CASCATE', wfX - 18, wfY - 14);
+
+    // Rete Stradale (Linee dorate tratteggiate)
+    expandedCtx.strokeStyle = 'rgba(245, 158, 11, 0.7)';
+    expandedCtx.lineWidth = 1.5;
+    expandedCtx.setLineDash([4, 3]);
+    for (const s of SETTLEMENTS) {
+      if (s.id === 'citadel') continue;
+      expandedCtx.beginPath();
+      expandedCtx.moveTo(cx, cy);
+      expandedCtx.lineTo(cx + s.centerTx * world.TS * scale, cy + s.centerTy * world.TS * scale);
+      expandedCtx.stroke();
+    }
+    // Tratta Cascate -> Al Zahir e Cascate -> Sylva
+    const wfSettlement = SETTLEMENTS.find(s => s.id === 'waterfall_village');
+    const azSettlement = SETTLEMENTS.find(s => s.id === 'oasis');
+    const sylvaSettlement = SETTLEMENTS.find(s => s.id === 'sylva');
+    if (wfSettlement && azSettlement) {
+      expandedCtx.beginPath();
+      expandedCtx.moveTo(cx + wfSettlement.centerTx * world.TS * scale, cy + wfSettlement.centerTy * world.TS * scale);
+      expandedCtx.lineTo(cx + azSettlement.centerTx * world.TS * scale, cy + azSettlement.centerTy * world.TS * scale);
+      expandedCtx.stroke();
+    }
+    if (wfSettlement && sylvaSettlement) {
+      expandedCtx.beginPath();
+      expandedCtx.moveTo(cx + wfSettlement.centerTx * world.TS * scale, cy + wfSettlement.centerTy * world.TS * scale);
+      expandedCtx.lineTo(cx + sylvaSettlement.centerTx * world.TS * scale, cy + sylvaSettlement.centerTy * world.TS * scale);
+      expandedCtx.stroke();
+    }
+    expandedCtx.setLineDash([]); // Ripristina linea continua
+
+    // Città e Villaggi Fortificati (Safe Zones)
+    for (const s of SETTLEMENTS) {
+      const sx = cx + s.centerTx * world.TS * scale;
+      const sy = cy + s.centerTy * world.TS * scale;
+      const sr = s.radiusTiles * world.TS * scale;
+
+      // Cerchio Safe Zone con bagliore
+      expandedCtx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+      expandedCtx.beginPath();
+      expandedCtx.arc(sx, sy, sr, 0, Math.PI * 2);
+      expandedCtx.fill();
+
+      expandedCtx.strokeStyle = s.color || '#38bdf8';
+      expandedCtx.lineWidth = 1.5;
+      expandedCtx.stroke();
+
+      // Icona ed etichetta città
+      expandedCtx.fillStyle = '#ffffff';
+      expandedCtx.beginPath();
+      expandedCtx.arc(sx, sy, 3, 0, Math.PI * 2);
+      expandedCtx.fill();
+
+      expandedCtx.font = 'bold 9px sans-serif';
+      expandedCtx.fillStyle = s.color || '#38bdf8';
+      expandedCtx.textAlign = 'center';
+      expandedCtx.fillText(s.name, sx, sy - sr - 3);
+      expandedCtx.font = '8px sans-serif';
+      expandedCtx.fillStyle = '#94a3b8';
+      expandedCtx.fillText('🛡️ Safe Zone', sx, sy + sr + 9);
+      expandedCtx.textAlign = 'left';
+    }
+
+    // Nemici come punti rossi
     expandedCtx.fillStyle = '#ef4444';
     for (const en of combat.enemies) {
       const ex = cx + en.x * scale;
       const ey = cy + en.y * scale;
       if (ex >= 0 && ex < w && ey >= 0 && ey < h) {
         expandedCtx.beginPath();
-        expandedCtx.arc(ex, ey, 2.5, 0, Math.PI * 2);
+        expandedCtx.arc(ex, ey, 2, 0, Math.PI * 2);
         expandedCtx.fill();
       }
     }
@@ -977,20 +1075,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     expandedCtx.strokeStyle = '#38bdf8';
     expandedCtx.lineWidth = 2;
     expandedCtx.beginPath();
-    expandedCtx.arc(px, py, 9, 0, Math.PI * 2);
+    expandedCtx.arc(px, py, 8, 0, Math.PI * 2);
     expandedCtx.stroke();
 
-    expandedCtx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+    expandedCtx.fillStyle = 'rgba(56, 189, 248, 0.35)';
     expandedCtx.beginPath();
-    expandedCtx.arc(px, py, 14, 0, Math.PI * 2);
+    expandedCtx.arc(px, py, 12, 0, Math.PI * 2);
     expandedCtx.fill();
 
     expandedCtx.fillStyle = '#ffffff';
     expandedCtx.beginPath();
-    expandedCtx.arc(px, py, 3.5, 0, Math.PI * 2);
+    expandedCtx.arc(px, py, 3, 0, Math.PI * 2);
     expandedCtx.fill();
 
-    // Bordo
+    // Bordo cornice
     expandedCtx.strokeStyle = '#38bdf8';
     expandedCtx.lineWidth = 2;
     expandedCtx.strokeRect(0, 0, w, h);
@@ -1178,31 +1276,41 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (elWeaponIcon) elWeaponIcon.textContent = combat.weaponId === 'sword' ? '🗡️' : (combat.weaponId === 'bow' ? '🏹' : '🪄');
     if (elWeaponName) elWeaponName.textContent = combat.weaponName;
 
-    // 3. Popola i mostri nei rispettivi biomi della mappa
+    // 3. Popola i mostri nei rispettivi biomi della vasta mappa
     combat.enemies.push(new Enemy(140, -170, 'slime_forest'));
     combat.enemies.push(new Enemy(180, -190, 'slime_forest'));
     combat.enemies.push(new Enemy(-160, -170, 'slime_ice'));
     combat.enemies.push(new Enemy(-180, 150, 'slime_sand'));
     combat.enemies.push(new Enemy(170, 160, 'skeleton'));
 
-    for (let i = 0; i < 10; i++) {
-      const pt = world.findValidSpawn(300, 1300, 'forest');
+    // Bosco Silvano
+    for (let i = 0; i < 14; i++) {
+      const pt = world.findValidSpawn(350, 2600, 'forest');
       combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_forest'));
     }
-    for (let i = 0; i < 10; i++) {
-      const pt = world.findValidSpawn(300, 1300, 'snow');
+    // Vette Innevate
+    for (let i = 0; i < 14; i++) {
+      const pt = world.findValidSpawn(350, 2600, 'snow');
       combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_ice'));
     }
-    for (let i = 0; i < 10; i++) {
-      const pt = world.findValidSpawn(300, 1300, 'desert');
+    // Deserto delle Dune
+    for (let i = 0; i < 14; i++) {
+      const pt = world.findValidSpawn(350, 2600, 'desert');
       combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_sand'));
     }
-    for (let i = 0; i < 10; i++) {
-      const pt = world.findValidSpawn(300, 1300, 'volcano');
+    // Caldera Vulcanica
+    for (let i = 0; i < 14; i++) {
+      const pt = world.findValidSpawn(350, 2600, 'volcano');
       combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_magma'));
     }
-    for (let i = 0; i < 14; i++) {
-      const pt = world.findValidSpawn(350, 1400);
+    // Fiume e Cascate (Slime d'Acqua)
+    for (let i = 0; i < 12; i++) {
+      const pt = world.findValidSpawn(350, 2600, 'river');
+      combat.enemies.push(new Enemy(pt.x, pt.y, 'slime_water'));
+    }
+    // Scheletri guardiani erranti ai confini e rovine
+    for (let i = 0; i < 20; i++) {
+      const pt = world.findValidSpawn(400, 2800);
       combat.enemies.push(new Enemy(pt.x, pt.y, 'skeleton'));
     }
 
@@ -1370,6 +1478,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   let fpsTimer = 0;
   let currentFps = 60;
   let minimapTimer = 0;
+  let enemyRespawnTimer = 0;
+
+  function spawnEnemyForLocation(x, y) {
+    const tx = world.tileOf(x);
+    const ty = world.tileOf(y);
+    const b = world.getBiome(tx, ty);
+    let kind = 'slime_forest';
+    if (b === 'river') kind = 'slime_water';
+    else if (b === 'snow') kind = 'slime_ice';
+    else if (b === 'desert') kind = 'slime_sand';
+    else if (b === 'volcano') kind = 'slime_magma';
+    else if (Math.random() < 0.28) kind = 'skeleton';
+    return new Enemy(x, y, kind);
+  }
 
   function loop(currentTime) {
     try {
@@ -1398,6 +1520,16 @@ window.addEventListener('DOMContentLoaded', async () => {
           player.update(dt, Input, world);
           combat.update(dt, player, world, camera);
           camera.follow(player.x, player.y, dt);
+
+          // Generazione periodica dinamica di mostri attorno all'eroe (MAI in Safe Zone)
+          enemyRespawnTimer += dt;
+          if (enemyRespawnTimer >= 3.0 && combat.enemies.length < 75) {
+            enemyRespawnTimer = 0;
+            const pt = world.findValidSpawn(460, 950, null, player.x, player.y);
+            if (!world.isSafeZone(pt.x, pt.y)) {
+              combat.enemies.push(spawnEnemyForLocation(pt.x, pt.y));
+            }
+          }
         }
       }
 

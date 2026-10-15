@@ -136,6 +136,22 @@ export const Tiles = (() => {
       liqDeep: '#0369a1',
       foam: '#e0f2fe',
       shore: '#475569'
+    },
+    river: {
+      floor: ['#16a34a', '#22c55e', '#15803d'], // Sponde verdi e fresche del fiume
+      dirt: ['#0284c7', '#0369a1', '#38bdf8'],  // Rive sabbiose e fondale
+      speck: '#14532d',
+      light: '#4ade80',
+      flowers: ['#38bdf8', '#67e8f9', '#f472b6', '#ffffff'], // Ninfee e cannette fiorite
+      wallTop: ['#475569', '#64748b', '#334155'], // Scogliere della cascata
+      wallLight: '#94a3b8',
+      wallEdge: '#1e293b',
+      wallFace: ['#334155', '#1e293b'],
+      wallFaceDark: '#0f172a',
+      liq: '#0284c7',
+      liqDeep: '#0369a1',
+      foam: '#ffffff', // Schiuma bianca spumeggiante della cascata
+      shore: '#15803d'
     }
   };
 
@@ -178,6 +194,61 @@ export const Tiles = (() => {
   }
 
   function paintFloor(P, C, ox, oy, tx, ty, dirtAt, at, biome) {
+    const kind = at(tx, ty);
+
+    // 1. Ponte in legno attraversabile sopra il fiume
+    if (kind === 'bridge') {
+      const cWoodDark = pack('#3e2723');
+      const cWoodMid = pack('#5d4037');
+      const cWoodLight = pack('#8d6e63');
+      const cNail = pack('#1e293b');
+      for (let y = 0; y < T; y++) {
+        for (let x = 0; x < T; x++) {
+          const isPlankEdge = (y % 4 === 0) || (x === 0 || x === T - 1);
+          let col = isPlankEdge ? cWoodDark : (hash(tx * T + x, ty * T + y, 5) > 0.5 ? cWoodMid : cWoodLight);
+          if ((x === 2 || x === T - 3) && (y % 4 === 2)) col = cNail;
+          P.set(ox + x, oy + y, col);
+        }
+      }
+      return;
+    }
+
+    // 2. Strade principali e sentieri battuti di collegamento
+    if (kind === 'road') {
+      const cCobbleBase = pack('#64748b');
+      const cCobbleLight = pack('#94a3b8');
+      const cCobbleDark = pack('#334155');
+      const cEarth = pack('#475569');
+      for (let y = 0; y < T; y++) {
+        for (let x = 0; x < T; x++) {
+          const gx = tx * T + x, gy = ty * T + y;
+          const isPebbleEdge = (gx % 5 === 0 || gy % 5 === 0);
+          let col = isPebbleEdge ? cCobbleDark : (hash(gx, gy, 8) > 0.4 ? cCobbleLight : cCobbleBase);
+          if (hash(gx >> 1, gy >> 1, 9) < 0.2) col = cEarth;
+          P.set(ox + x, oy + y, col);
+        }
+      }
+      return;
+    }
+
+    // 3. Guadi e acque basse attraversabili del fiume
+    if (kind === 'shallow') {
+      const cSand = pack('#0284c7');
+      const cWater1 = pack('#38bdf8');
+      const cWater2 = pack('#7dd3fc');
+      const cFoam = pack('#e0f2fe');
+      for (let y = 0; y < T; y++) {
+        for (let x = 0; x < T; x++) {
+          const gx = tx * T + x, gy = ty * T + y;
+          const wave = hash(gx >> 1, gy >> 1, 19);
+          let col = wave > 0.6 ? cWater2 : (wave > 0.25 ? cWater1 : cSand);
+          if (hash(gx, gy, 20) < 0.08) col = cFoam;
+          P.set(ox + x, oy + y, col);
+        }
+      }
+      return;
+    }
+
     let dirtCount = 0;
     const isVillage = biome === 'village';
 

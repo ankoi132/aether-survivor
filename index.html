@@ -178,7 +178,7 @@
 
     <!-- Widget Minimappa Interagibile (In Alto a Destra) -->
     <div id="minimap-widget" title="Clicca per ingrandire la mappa o premi [M]">
-      <canvas id="minimap-canvas" width="130" height="130"></canvas>
+      <canvas id="minimap-canvas" width="100" height="100"></canvas>
       <div class="minimap-overlay-tag">
         <span id="minimap-biome-name">📍 Villaggio</span>
         <button id="btn-expand-minimap" class="minimap-expand-btn" title="Ingrandisci Mappa [M]">🔍</button>
@@ -237,50 +237,57 @@
           </div>
         </div>
 
-        <!-- Legenda e Dettaglio Biomi -->
+        <!-- Legenda e Dettaglio Biomi & Città Fortificate -->
         <div class="tactical-legend-panel">
-          <div class="legend-title">Biomi & Risorse</div>
+          <div class="legend-title">Città Fortificate & Biomi</div>
           <div class="legend-list">
             <div class="legend-item">
-              <span class="legend-color-box" style="background: #475569; border-color: #94a3b8;"></span>
+              <span class="legend-color-box" style="background: #38bdf8; border-color: #bae6fd;"></span>
               <div>
-                <b>🏰 Villaggio dell'Aether (Centro)</b>
-                <p>Zona sicura con Fabbro, Taverna e Manichini da prova.</p>
+                <b>🏰 Cittadella dell'Aether (Centro)</b>
+                <p>Safe Zone protetta con Fabbro, Taverna, Torre e Manichini da prova.</p>
               </div>
             </div>
             <div class="legend-item">
-              <span class="legend-color-box" style="background: #166534; border-color: #22c55e;"></span>
+              <span class="legend-color-box" style="background: #0284c7; border-color: #67e8f9;"></span>
               <div>
-                <b>🌲 Bosco Silvano (Ovest)</b>
-                <p>Slime verdi. Rilasciano Gel Silvano 🧪</p>
+                <b>🌊 Borgo delle Cascate & Fiume (Ovest)</b>
+                <p>Safe Zone su scogliera fluviale, cascata, mulino e guadi attraversabili a piedi.</p>
               </div>
             </div>
             <div class="legend-item">
               <span class="legend-color-box" style="background: #e2e8f0; border-color: #38bdf8;"></span>
               <div>
-                <b>❄️ Vette Innevate (Nord)</b>
-                <p>Slime di ghiaccio. Rilasciano Cristalli Gelidi ❄️</p>
+                <b>❄️ Vette Innevate & Avamposto Frostpeak (Nord)</b>
+                <p>Safe Zone montuosa. Slime di ghiaccio e Cristalli Gelidi ❄️</p>
               </div>
             </div>
             <div class="legend-item">
               <span class="legend-color-box" style="background: #d97706; border-color: #fde047;"></span>
               <div>
-                <b>🏜️ Deserto delle Dune (Sud-Ovest)</b>
-                <p>Slime delle sabbie. Rilasciano Ambra Solare ☀️</p>
+                <b>🏜️ Deserto delle Dune & Oasi Al-Zahir (Sud-Ovest)</b>
+                <p>Safe Zone carovaniera. Slime sabbiosi e Ambra Solare ☀️</p>
               </div>
             </div>
             <div class="legend-item">
               <span class="legend-color-box" style="background: #7f1d1d; border-color: #ef4444;"></span>
               <div>
-                <b>🌋 Caldera Vulcanica (Est / Sud-Est)</b>
-                <p>Slime di magma. Rilasciano Nuclei di Lava 🔥</p>
+                <b>🌋 Caldera Vulcanica & Rocca di Cineris (Est)</b>
+                <p>Safe Zone ardente. Slime di lava e Nuclei Magmatici 🔥</p>
               </div>
             </div>
             <div class="legend-item">
-              <span class="legend-color-box" style="background: #334155; border-color: #cbd5e1;"></span>
+              <span class="legend-color-box" style="background: #166534; border-color: #22c55e;"></span>
               <div>
-                <b>💀 Cimitero & Rovine (Ai Confini)</b>
-                <p>Scheletri Guardiani. Rilasciano Ossa Antiche 🦴</p>
+                <b>🌲 Bosco Silvano & Borgo di Sylva (Ovest)</b>
+                <p>Safe Zone degli erboristi. Slime verdi e Gel Silvano 🧪</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box" style="background: #64748b; border-color: #fde047;"></span>
+              <div>
+                <b>🛣️ Strade Maestre & Ponti in Legno</b>
+                <p>Percorsi pavimentati e ponti che collegano tutti i villaggi in sicurezza.</p>
               </div>
             </div>
           </div>

@@ -65,7 +65,10 @@ export class Player {
       this.dir = Sprites.dirFromAngle(this.moveAngle);
 
       // Movimento fluido integrato con delta time
-      const spd = this.currentSpeed;
+      let spd = this.currentSpeed;
+      if (world.isShallowWater(this.x, this.y)) {
+        spd *= 0.85; // Leggero rallentamento realistico nei guadi
+      }
       this.x += ax * spd * dt;
       this.y += ay * spd * dt;
 
@@ -83,6 +86,7 @@ export class Player {
 
     // Rilevamento terreno speciale
     this.inLiquid = world.isLiquid(this.x, this.y);
+    this.inShallowWater = world.isShallowWater(this.x, this.y);
   }
 
   draw(ctx) {
@@ -105,9 +109,9 @@ export class Player {
       Math.round(this.y - sh + 8)
     );
 
-    // 3. Effetto particelle schizzo se è in acqua
-    if (this.inLiquid && this.walking) {
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.7)';
+    // 3. Effetto particelle schizzo se è in acqua o guado
+    if ((this.inLiquid || this.inShallowWater) && this.walking) {
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
       const splashX = this.x + (Math.random() * 16 - 8);
       const splashY = this.y + (Math.random() * 6 - 3);
       ctx.fillRect(Math.round(splashX), Math.round(splashY), 3, 3);

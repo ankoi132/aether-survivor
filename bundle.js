@@ -257,6 +257,27 @@
         liqDeep: "#0369a1",
         foam: "#e0f2fe",
         shore: "#475569"
+      },
+      river: {
+        floor: ["#16a34a", "#22c55e", "#15803d"],
+        // Sponde verdi e fresche del fiume
+        dirt: ["#0284c7", "#0369a1", "#38bdf8"],
+        // Rive sabbiose e fondale
+        speck: "#14532d",
+        light: "#4ade80",
+        flowers: ["#38bdf8", "#67e8f9", "#f472b6", "#ffffff"],
+        // Ninfee e cannette fiorite
+        wallTop: ["#475569", "#64748b", "#334155"],
+        // Scogliere della cascata
+        wallLight: "#94a3b8",
+        wallEdge: "#1e293b",
+        wallFace: ["#334155", "#1e293b"],
+        wallFaceDark: "#0f172a",
+        liq: "#0284c7",
+        liqDeep: "#0369a1",
+        foam: "#ffffff",
+        // Schiuma bianca spumeggiante della cascata
+        shore: "#15803d"
       }
     };
     const PALETTES = {};
@@ -295,6 +316,54 @@
       return (x, y) => mask[(y + 1) * W + x] === 1;
     }
     function paintFloor(P, C, ox, oy, tx, ty, dirtAt, at, biome) {
+      const kind = at(tx, ty);
+      if (kind === "bridge") {
+        const cWoodDark = pack("#3e2723");
+        const cWoodMid = pack("#5d4037");
+        const cWoodLight = pack("#8d6e63");
+        const cNail = pack("#1e293b");
+        for (let y = 0; y < T; y++) {
+          for (let x = 0; x < T; x++) {
+            const isPlankEdge = y % 4 === 0 || (x === 0 || x === T - 1);
+            let col = isPlankEdge ? cWoodDark : hash(tx * T + x, ty * T + y, 5) > 0.5 ? cWoodMid : cWoodLight;
+            if ((x === 2 || x === T - 3) && y % 4 === 2) col = cNail;
+            P.set(ox + x, oy + y, col);
+          }
+        }
+        return;
+      }
+      if (kind === "road") {
+        const cCobbleBase = pack("#64748b");
+        const cCobbleLight = pack("#94a3b8");
+        const cCobbleDark = pack("#334155");
+        const cEarth = pack("#475569");
+        for (let y = 0; y < T; y++) {
+          for (let x = 0; x < T; x++) {
+            const gx = tx * T + x, gy = ty * T + y;
+            const isPebbleEdge = gx % 5 === 0 || gy % 5 === 0;
+            let col = isPebbleEdge ? cCobbleDark : hash(gx, gy, 8) > 0.4 ? cCobbleLight : cCobbleBase;
+            if (hash(gx >> 1, gy >> 1, 9) < 0.2) col = cEarth;
+            P.set(ox + x, oy + y, col);
+          }
+        }
+        return;
+      }
+      if (kind === "shallow") {
+        const cSand = pack("#0284c7");
+        const cWater1 = pack("#38bdf8");
+        const cWater2 = pack("#7dd3fc");
+        const cFoam = pack("#e0f2fe");
+        for (let y = 0; y < T; y++) {
+          for (let x = 0; x < T; x++) {
+            const gx = tx * T + x, gy = ty * T + y;
+            const wave = hash(gx >> 1, gy >> 1, 19);
+            let col = wave > 0.6 ? cWater2 : wave > 0.25 ? cWater1 : cSand;
+            if (hash(gx, gy, 20) < 0.08) col = cFoam;
+            P.set(ox + x, oy + y, col);
+          }
+        }
+        return;
+      }
       let dirtCount = 0;
       const isVillage = biome === "village";
       for (let y = 0; y < T; y++) {
@@ -1022,19 +1091,155 @@
   })();
 
   // src/world/world.js
-  var VILLAGE_BUILDINGS = [
-    { type: "house_red", tx: -7, ty: -6, wTiles: 4, hTiles: 3, name: "Taverna del Viandante" },
-    { type: "house_blue", tx: 3, ty: -6, wTiles: 4, hTiles: 3, name: "Torre dell'Arcimago" },
-    { type: "house_blue", tx: -7, ty: 3, wTiles: 4, hTiles: 3, name: "Bottega delle Pozioni" },
-    { type: "house_red", tx: 3, ty: 3, wTiles: 4, hTiles: 3, name: "Fucina & Armeria" }
+  var SETTLEMENTS = [
+    {
+      id: "citadel",
+      name: "Cittadella dell'Aether",
+      title: "Capitale Elementale",
+      type: "capital",
+      centerTx: 0,
+      centerTy: 0,
+      radiusTiles: 12,
+      // ~384px raggio di protezione
+      color: "#38bdf8",
+      buildings: [
+        { type: "house_red", tx: -7, ty: -6, wTiles: 4, hTiles: 3, name: "Taverna del Viandante" },
+        { type: "house_blue", tx: 3, ty: -6, wTiles: 4, hTiles: 3, name: "Torre dell'Arcimago" },
+        { type: "house_blue", tx: -7, ty: 3, wTiles: 4, hTiles: 3, name: "Bottega delle Pozioni" },
+        { type: "house_red", tx: 3, ty: 3, wTiles: 4, hTiles: 3, name: "Fucina & Armeria" }
+      ],
+      props: [
+        { type: "well", tx: 0, ty: -1 },
+        { type: "lamppost", tx: -3, ty: -3 },
+        { type: "lamppost", tx: 3, ty: -3 },
+        { type: "lamppost", tx: -3, ty: 2 },
+        { type: "lamppost", tx: 3, ty: 2 }
+      ]
+    },
+    {
+      id: "waterfall_village",
+      name: "Borgo delle Cascate",
+      title: "Villaggio del Fiume & Mulino",
+      type: "river_town",
+      centerTx: -40,
+      centerTy: 22,
+      radiusTiles: 11,
+      color: "#06b6d4",
+      buildings: [
+        { type: "house_blue", tx: -44, ty: 18, wTiles: 4, hTiles: 3, name: "Locanda della Cascata" },
+        { type: "house_blue", tx: -36, ty: 18, wTiles: 4, hTiles: 3, name: "Bottega dei Pescatori" },
+        { type: "house_red", tx: -42, ty: 25, wTiles: 4, hTiles: 3, name: "Mulino ad Acqua" }
+      ],
+      props: [
+        { type: "well", tx: -40, ty: 22 },
+        { type: "lamppost", tx: -43, ty: 21 },
+        { type: "lamppost", tx: -37, ty: 21 },
+        { type: "lamppost", tx: -40, ty: 26 }
+      ]
+    },
+    {
+      id: "frostpeak",
+      name: "Avamposto di Frostpeak",
+      title: "Rifugio delle Vette Innevate",
+      type: "snow_outpost",
+      centerTx: 20,
+      centerTy: -75,
+      radiusTiles: 10,
+      color: "#7dd3fc",
+      buildings: [
+        { type: "house_red", tx: 16, ty: -79, wTiles: 4, hTiles: 3, name: "Rifugio dei Ghiacci" },
+        { type: "house_blue", tx: 22, ty: -79, wTiles: 4, hTiles: 3, name: "Osservatorio Astrale" }
+      ],
+      props: [
+        { type: "well", tx: 20, ty: -75 },
+        { type: "lamppost", tx: 17, ty: -74 },
+        { type: "lamppost", tx: 23, ty: -74 }
+      ]
+    },
+    {
+      id: "oasis",
+      name: "Oasi di Al-Zahir",
+      title: "Carovana delle Dune",
+      type: "desert_oasis",
+      centerTx: -70,
+      centerTy: 65,
+      radiusTiles: 10,
+      color: "#f59e0b",
+      buildings: [
+        { type: "house_red", tx: -74, ty: 61, wTiles: 4, hTiles: 3, name: "Bazaar delle Spezie" },
+        { type: "house_blue", tx: -66, ty: 61, wTiles: 4, hTiles: 3, name: "Tenda del Califfo" }
+      ],
+      props: [
+        { type: "well", tx: -70, ty: 65 },
+        { type: "lamppost", tx: -72, ty: 64 },
+        { type: "lamppost", tx: -68, ty: 64 }
+      ]
+    },
+    {
+      id: "cineris",
+      name: "Rocca di Cineris",
+      title: "Fortezza del Fuoco",
+      type: "volcano_fort",
+      centerTx: 70,
+      centerTy: 45,
+      radiusTiles: 10,
+      color: "#ef4444",
+      buildings: [
+        { type: "house_red", tx: 66, ty: 41, wTiles: 4, hTiles: 3, name: "Fucina di Magma" },
+        { type: "house_blue", tx: 72, ty: 41, wTiles: 4, hTiles: 3, name: "Torre di Guardia" }
+      ],
+      props: [
+        { type: "well", tx: 70, ty: 45 },
+        { type: "lamppost", tx: 67, ty: 44 },
+        { type: "lamppost", tx: 73, ty: 44 }
+      ]
+    },
+    {
+      id: "sylva",
+      name: "Borgo di Sylva",
+      title: "Santuario Silvano",
+      type: "forest_haven",
+      centerTx: -75,
+      centerTy: -35,
+      radiusTiles: 10,
+      color: "#22c55e",
+      buildings: [
+        { type: "house_blue", tx: -79, ty: -39, wTiles: 4, hTiles: 3, name: "Bottega degli Antidoti" },
+        { type: "house_red", tx: -71, ty: -39, wTiles: 4, hTiles: 3, name: "Locanda della Quercia" }
+      ],
+      props: [
+        { type: "well", tx: -75, ty: -35 },
+        { type: "lamppost", tx: -77, ty: -34 },
+        { type: "lamppost", tx: -73, ty: -34 }
+      ]
+    }
   ];
-  var VILLAGE_PROPS = [
-    { type: "well", tx: 0, ty: -1 },
-    { type: "lamppost", tx: -2, ty: -3 },
-    { type: "lamppost", tx: 2, ty: -3 },
-    { type: "lamppost", tx: -2, ty: 1 },
-    { type: "lamppost", tx: 2, ty: 1 }
+  var ROAD_SEGMENTS = [
+    { x1: 0, y1: 0, x2: 20, y2: -75 },
+    // Cittadella -> Frostpeak (Nord)
+    { x1: 0, y1: 0, x2: -40, y2: 22 },
+    // Cittadella -> Borgo delle Cascate (Ovest/Sud-Ovest)
+    { x1: 0, y1: 0, x2: 70, y2: 45 },
+    // Cittadella -> Cineris (Est)
+    { x1: 0, y1: 0, x2: -70, y2: 65 },
+    // Cittadella -> Al-Zahir (Sud-Ovest)
+    { x1: 0, y1: 0, x2: -75, y2: -35 },
+    // Cittadella -> Sylva (Ovest)
+    { x1: -40, y1: 22, x2: -70, y2: 65 },
+    // Borgo delle Cascate -> Al-Zahir
+    { x1: -40, y1: 22, x2: -75, y2: -35 }
+    // Borgo delle Cascate -> Sylva
   ];
+  function distToSegment(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+    const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lenSq));
+    const projX = x1 + t * dx;
+    const projY = y1 + t * dy;
+    return Math.hypot(px - projX, py - projY);
+  }
   var World = class {
     constructor(seed = 2026) {
       this.seed = seed;
@@ -1052,7 +1257,10 @@
       this.TILE_CACTUS = 6;
       this.TILE_VOLCANO_ROCK = 7;
       this.TILE_SAND_ROCK = 8;
-      this.MAP_RADIUS = 50;
+      this.TILE_BRIDGE = 9;
+      this.TILE_SHALLOW_WATER = 10;
+      this.TILE_ROAD = 11;
+      this.MAP_RADIUS = 120;
       this.minTile = -this.MAP_RADIUS;
       this.maxTile = this.MAP_RADIUS;
       this.minX = (this.minTile + 2) * this.TS;
@@ -1071,40 +1279,93 @@
       return Math.floor(worldCoord / this.TS);
     }
     /**
-     * Determina a quale dei 5 biomi appartiene una coordinata di mappa:
-     * 1. 'village': Paesino e Santuario centrale (|tx| <= 8, |ty| <= 8)
-     * 2. 'snow': Montagne Innevate a Nord (ty < -8)
-     * 3. 'desert': Deserto e Canyon di Sabbia a Sud-Ovest (tx < 0, ty > 8)
-     * 4. 'volcano': Caldera Vulcanica e Lava a Sud-Est / Est (tx >= 0, ty > 8 o tx > 8)
-     * 5. 'forest': Bosco e Radure Silvane a Ovest (tx < -8, -8 <= ty <= 8)
+     * Verifica se una coordinata si trova all'interno di una Safe Zone protetta
+     */
+    isSafeZone(worldX, worldY) {
+      for (const s of SETTLEMENTS) {
+        const sx = s.centerTx * this.TS;
+        const sy = s.centerTy * this.TS;
+        const r = s.radiusTiles * this.TS;
+        if (Math.hypot(worldX - sx, worldY - sy) <= r) {
+          return true;
+        }
+      }
+      return false;
+    }
+    getSafeZone(worldX, worldY) {
+      for (const s of SETTLEMENTS) {
+        const sx = s.centerTx * this.TS;
+        const sy = s.centerTy * this.TS;
+        const r = s.radiusTiles * this.TS;
+        if (Math.hypot(worldX - sx, worldY - sy) <= r) {
+          return s;
+        }
+      }
+      return null;
+    }
+    /**
+     * Calcola la posizione centrale del grande Fiume serpeggiante ad una data Y
+     */
+    getRiverCenterX(ty) {
+      return Math.sin(ty * 0.038) * 44 - 18 + Math.cos(ty * 0.08) * 9;
+    }
+    /**
+     * Verifica se un tile fa parte di una strada principale
+     */
+    isRoad(tx, ty) {
+      for (const seg of ROAD_SEGMENTS) {
+        const d = distToSegment(tx, ty, seg.x1, seg.y1, seg.x2, seg.y2);
+        if (d <= 1.45) {
+          return true;
+        }
+      }
+      return false;
+    }
+    /**
+     * Determina a quale bioma appartiene una coordinata con transizioni organiche e sfumate:
+     * 1. 'village': dentro qualsiasi insediamento o città fortificata
+     * 2. 'river': lungo il corso del fiume principale e cascate
+     * 3. 'snow': a Nord tra le vette montane
+     * 4. 'desert': a Sud-Ovest tra le dune sabbiose
+     * 5. 'volcano': a Est/Sud-Est presso le terre ardenti
+     * 6. 'forest': altrove tra radure, fitti boschi e querce
      */
     getBiome(tx, ty) {
-      if (Math.abs(tx) <= 8 && Math.abs(ty) <= 8) {
+      const wx = tx * this.TS;
+      const wy = ty * this.TS;
+      if (this.isSafeZone(wx, wy)) {
         return "village";
       }
-      if (ty < -8) {
+      const riverCx = this.getRiverCenterX(ty);
+      const distRiver = Math.abs(tx - riverCx);
+      if (distRiver <= 6.5) {
+        return "river";
+      }
+      const warp = Math.sin(ty * 0.042) * 14 + Math.cos(tx * 0.042) * 12 + Math.sin((tx + ty) * 0.02) * 8;
+      const effTx = tx + warp;
+      const effTy = ty + warp;
+      if (effTy < -32) {
         return "snow";
       }
-      if (tx < 0 && ty > 8) {
-        return "desert";
-      }
-      if (tx > 8 || tx >= 0 && ty > 8) {
+      if (effTx > 28 && effTy > -20) {
         return "volcano";
+      }
+      if (effTy > 30 && effTx < 22) {
+        return "desert";
       }
       return "forest";
     }
     isBuildingSolid(tx, ty) {
-      for (const b of VILLAGE_BUILDINGS) {
-        if (tx >= b.tx && tx < b.tx + b.wTiles && ty >= b.ty + 1 && ty < b.ty + b.hTiles) {
-          return true;
+      for (const s of SETTLEMENTS) {
+        for (const b of s.buildings) {
+          if (tx >= b.tx && tx < b.tx + b.wTiles && ty >= b.ty + 1 && ty < b.ty + b.hTiles) {
+            return true;
+          }
         }
-      }
-      for (const p of VILLAGE_PROPS) {
-        if (p.type === "well" && p.tx === tx && p.ty === ty) {
-          return true;
-        }
-        if (p.type === "lamppost" && p.tx === tx && p.ty === ty) {
-          return true;
+        for (const p of s.props) {
+          if ((p.type === "well" || p.type === "lamppost") && p.tx === tx && p.ty === ty) {
+            return true;
+          }
         }
       }
       return false;
@@ -1113,68 +1374,105 @@
       if (Math.abs(tx) >= this.MAP_RADIUS - 3 || Math.abs(ty) >= this.MAP_RADIUS - 3) {
         return this.TILE_WALL;
       }
+      const wx = tx * this.TS;
+      const wy = ty * this.TS;
+      const sz = this.getSafeZone(wx, wy);
+      if (sz) {
+        return this.TILE_FLOOR;
+      }
+      const onRoad = this.isRoad(tx, ty);
+      const riverCx = this.getRiverCenterX(ty);
+      const distRiver = Math.abs(tx - riverCx);
+      if (onRoad && distRiver <= 2.8) {
+        return this.TILE_BRIDGE;
+      }
+      if (onRoad) {
+        return this.TILE_ROAD;
+      }
+      if (distRiver <= 2.4) {
+        const isFord = Math.abs(ty - 22) <= 3 && Math.abs(tx - -40) <= 14 || Math.floor(Math.abs(ty) / 16) % 3 === 0 && distRiver <= 1.6;
+        if (isFord) {
+          return this.TILE_SHALLOW_WATER;
+        }
+        return this.TILE_WATER;
+      }
       const biome = this.getBiome(tx, ty);
-      if (biome === "village") {
-        return this.TILE_FLOOR;
-      }
       const wallNoise = this.hash2D(tx, ty, 42);
-      const waterNoise = this.hash2D(Math.floor(tx / 3), Math.floor(ty / 3), 101);
+      const lakeNoise = this.hash2D(Math.floor(tx / 3), Math.floor(ty / 3), 101);
       const propNoise = this.hash2D(tx, ty, 77);
+      if (biome === "river") {
+        if (propNoise > 0.84) return this.TILE_TREE;
+        if (propNoise > 0.8) return this.TILE_ROCK;
+        return this.TILE_FLOOR;
+      }
       if (biome === "snow") {
-        if (wallNoise > 0.81) return this.TILE_WALL;
-        if (waterNoise > 0.82) return this.TILE_WATER;
-        if (propNoise > 0.77) return this.TILE_PINE;
-        if (propNoise > 0.73) return this.TILE_ROCK;
-        return this.TILE_FLOOR;
-      }
-      if (biome === "desert") {
-        if (wallNoise > 0.83) return this.TILE_WALL;
-        if (waterNoise > 0.9) return this.TILE_WATER;
-        if (propNoise > 0.81) return this.TILE_CACTUS;
-        if (propNoise > 0.77) return this.TILE_SAND_ROCK;
-        return this.TILE_FLOOR;
-      }
-      if (biome === "volcano") {
-        if (wallNoise > 0.8) return this.TILE_WALL;
-        if (waterNoise > 0.74) return this.TILE_WATER;
-        if (propNoise > 0.78) return this.TILE_VOLCANO_ROCK;
+        if (wallNoise > 0.82) return this.TILE_WALL;
+        if (lakeNoise > 0.84) return this.TILE_WATER;
+        if (propNoise > 0.78) return this.TILE_PINE;
         if (propNoise > 0.74) return this.TILE_ROCK;
         return this.TILE_FLOOR;
       }
+      if (biome === "desert") {
+        if (wallNoise > 0.84) return this.TILE_WALL;
+        if (lakeNoise > 0.91) return this.TILE_WATER;
+        if (propNoise > 0.82) return this.TILE_CACTUS;
+        if (propNoise > 0.78) return this.TILE_SAND_ROCK;
+        return this.TILE_FLOOR;
+      }
+      if (biome === "volcano") {
+        if (wallNoise > 0.81) return this.TILE_WALL;
+        if (lakeNoise > 0.76) return this.TILE_WATER;
+        if (propNoise > 0.79) return this.TILE_VOLCANO_ROCK;
+        if (propNoise > 0.75) return this.TILE_ROCK;
+        return this.TILE_FLOOR;
+      }
       if (wallNoise > 0.86) return this.TILE_WALL;
-      if (waterNoise > 0.77) return this.TILE_WATER;
-      if (propNoise > 0.76) return this.TILE_TREE;
-      if (propNoise > 0.72) return this.TILE_ROCK;
+      if (lakeNoise > 0.82) return this.TILE_WATER;
+      if (propNoise > 0.77) return this.TILE_TREE;
+      if (propNoise > 0.73) return this.TILE_ROCK;
       return this.TILE_FLOOR;
     }
     getKind(tx, ty) {
       const t = this.getTileType(tx, ty);
       if (t === this.TILE_WALL) return "wall";
       if (t === this.TILE_WATER) return "liquid";
+      if (t === this.TILE_BRIDGE) return "bridge";
+      if (t === this.TILE_ROAD) return "road";
+      if (t === this.TILE_SHALLOW_WATER) return "shallow";
       return "floor";
     }
     isSolid(tx, ty) {
       const t = this.getTileType(tx, ty);
+      if (t === this.TILE_BRIDGE || t === this.TILE_SHALLOW_WATER || t === this.TILE_ROAD) {
+        return false;
+      }
       return t === this.TILE_WALL || t === this.TILE_WATER || t === this.TILE_TREE || t === this.TILE_PINE || t === this.TILE_CACTUS || t === this.TILE_VOLCANO_ROCK || t === this.TILE_SAND_ROCK || t === this.TILE_ROCK || this.isBuildingSolid(tx, ty);
     }
     isLiquid(x, y) {
       const tx = this.tileOf(x);
       const ty = this.tileOf(y);
-      return this.getTileType(tx, ty) === this.TILE_WATER;
+      const t = this.getTileType(tx, ty);
+      return t === this.TILE_WATER;
+    }
+    isShallowWater(x, y) {
+      const tx = this.tileOf(x);
+      const ty = this.tileOf(y);
+      return this.getTileType(tx, ty) === this.TILE_SHALLOW_WATER;
     }
     /**
-     * Trova una posizione valida e sicura (non solida, non in acqua/lava)
-     * con supporto opzionale per bioma specifico.
+     * Trova una posizione valida di spawn.
+     * GARANZIA CRITICA: Non spawna MAI all'interno di alcuna Safe Zone!
      */
-    findValidSpawn(minDist = 250, maxDist = 1350, targetBiome = null) {
-      for (let attempts = 0; attempts < 60; attempts++) {
+    findValidSpawn(minDist = 300, maxDist = 2800, targetBiome = null, originX = 0, originY = 0) {
+      for (let attempts = 0; attempts < 100; attempts++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = minDist + Math.random() * (maxDist - minDist);
-        const px = Math.cos(angle) * dist;
-        const py = Math.sin(angle) * dist;
+        const px = originX + Math.cos(angle) * dist;
+        const py = originY + Math.sin(angle) * dist;
         const tx = this.tileOf(px);
         const ty = this.tileOf(py);
-        if (Math.abs(tx) < this.MAP_RADIUS - 5 && Math.abs(ty) < this.MAP_RADIUS - 5) {
+        if (Math.abs(tx) < this.MAP_RADIUS - 6 && Math.abs(ty) < this.MAP_RADIUS - 6) {
+          if (this.isSafeZone(px, py)) continue;
           if (!this.isSolid(tx, ty) && !this.isLiquid(px, py)) {
             const currentBiome = this.getBiome(tx, ty);
             if (targetBiome) {
@@ -1189,14 +1487,39 @@
           }
         }
       }
-      return { x: 320, y: 320 };
+      const fallbackX = originX !== 0 ? originX + 500 : 500;
+      const fallbackY = originY !== 0 ? originY + 500 : 500;
+      if (!this.isSafeZone(fallbackX, fallbackY)) {
+        return { x: fallbackX, y: fallbackY };
+      }
+      return { x: 500, y: 500 };
     }
     /**
-     * Risolve le collisioni (cerchio vs AABB) in due passaggi per scivolamento continuo
+     * Risolve le collisioni (cerchio vs AABB) e APPLICA LA BARRIERA PROTETTIVA
+     * delle Safe Zone: i mob non possono MAI entrare nelle città e villaggi!
      */
     collide(entity) {
       const r = entity.r;
       let collided = false;
+      const isEnemy = !!entity.kind;
+      if (isEnemy) {
+        for (const s of SETTLEMENTS) {
+          const sx = s.centerTx * this.TS;
+          const sy = s.centerTy * this.TS;
+          const safeR = s.radiusTiles * this.TS;
+          const dx = entity.x - sx;
+          const dy = entity.y - sy;
+          const dist = Math.hypot(dx, dy);
+          if (dist < safeR + entity.r) {
+            collided = true;
+            const angle = dist > 1e-4 ? Math.atan2(dy, dx) : Math.random() * Math.PI * 2;
+            entity.x = sx + Math.cos(angle) * (safeR + entity.r + 2);
+            entity.y = sy + Math.sin(angle) * (safeR + entity.r + 2);
+            entity.vx = Math.cos(angle) * 70;
+            entity.vy = Math.sin(angle) * 70;
+          }
+        }
+      }
       for (let pass = 0; pass < 2; pass++) {
         const minTx = this.tileOf(entity.x - r);
         const maxTx = this.tileOf(entity.x + r);
@@ -1239,7 +1562,7 @@
       return collided;
     }
     /**
-     * Restituisce il canvas del chunk renderizzato con il vero motore di autotiling 16-bit
+     * Genera e memorizza il canvas del chunk con autotiling
      */
     getChunkCanvas(cx, cy) {
       const key = `${cx},${cy}`;
@@ -1276,30 +1599,29 @@
           }
         }
       }
-      for (const b of VILLAGE_BUILDINGS) {
-        const anchorX = (b.tx + b.wTiles / 2) * this.TS;
-        const anchorY = (b.ty + b.hTiles) * this.TS;
-        const bChunkX = Math.floor(anchorX / this.CW);
-        const bChunkY = Math.floor(anchorY / this.CW);
-        if (bChunkX === cx && bChunkY === cy) {
-          props.push({ type: b.type, x: anchorX, y: anchorY });
+      for (const s of SETTLEMENTS) {
+        for (const b of s.buildings) {
+          const anchorX = (b.tx + b.wTiles / 2) * this.TS;
+          const anchorY = (b.ty + b.hTiles) * this.TS;
+          const bChunkX = Math.floor(anchorX / this.CW);
+          const bChunkY = Math.floor(anchorY / this.CW);
+          if (bChunkX === cx && bChunkY === cy) {
+            props.push({ type: b.type, x: anchorX, y: anchorY });
+          }
         }
-      }
-      for (const p of VILLAGE_PROPS) {
-        const anchorX = p.tx * this.TS + this.TS / 2;
-        const anchorY = p.ty * this.TS + this.TS;
-        const pChunkX = Math.floor(anchorX / this.CW);
-        const pChunkY = Math.floor(anchorY / this.CW);
-        if (pChunkX === cx && pChunkY === cy) {
-          props.push({ type: p.type, x: anchorX, y: anchorY });
+        for (const p of s.props) {
+          const anchorX = p.tx * this.TS + this.TS / 2;
+          const anchorY = p.ty * this.TS + this.TS;
+          const pChunkX = Math.floor(anchorX / this.CW);
+          const pChunkY = Math.floor(anchorY / this.CW);
+          if (pChunkX === cx && pChunkY === cy) {
+            props.push({ type: p.type, x: anchorX, y: anchorY });
+          }
         }
       }
       this.chunkProps.set(key, props);
       return canvas;
     }
-    /**
-     * Disegna il terreno autotiled
-     */
     drawGround(ctx, camera) {
       const startCx = Math.floor(camera.left() / this.CW);
       const endCx = Math.floor((camera.left() + camera.w) / this.CW);
@@ -1318,9 +1640,6 @@
         }
       }
     }
-    /**
-     * Disegna oggetti dello scenario ed entità con ordinamento Y (profondità visiva top-down 2.5D)
-     */
     drawEntitiesAndProps(ctx, camera, entities = []) {
       const startCx = Math.floor((camera.left() - 80) / this.CW);
       const endCx = Math.floor((camera.left() + camera.w + 80) / this.CW);
@@ -1450,7 +1769,10 @@
       if (this.walking) {
         this.moveAngle = Math.atan2(ay, ax);
         this.dir = Sprites.dirFromAngle(this.moveAngle);
-        const spd = this.currentSpeed;
+        let spd = this.currentSpeed;
+        if (world.isShallowWater(this.x, this.y)) {
+          spd *= 0.85;
+        }
         this.x += ax * spd * dt;
         this.y += ay * spd * dt;
         this.animTimer += dt * 8;
@@ -1461,6 +1783,7 @@
       }
       world.collide(this);
       this.inLiquid = world.isLiquid(this.x, this.y);
+      this.inShallowWater = world.isShallowWater(this.x, this.y);
     }
     draw(ctx) {
       if (this.invulnerableTimer > 0 && Math.floor(this.invulnerableTimer * 20) % 2 === 0) {
@@ -1475,8 +1798,8 @@
         Math.round(this.x - sw / 2),
         Math.round(this.y - sh + 8)
       );
-      if (this.inLiquid && this.walking) {
-        ctx.fillStyle = "rgba(56, 189, 248, 0.7)";
+      if ((this.inLiquid || this.inShallowWater) && this.walking) {
+        ctx.fillStyle = "rgba(56, 189, 248, 0.75)";
         const splashX = this.x + (Math.random() * 16 - 8);
         const splashY = this.y + (Math.random() * 6 - 3);
         ctx.fillRect(Math.round(splashX), Math.round(splashY), 3, 3);
@@ -2000,16 +2323,18 @@
           }
         }
       } else if (this.state === "CHASE") {
-        if (dist > this.aggroRadius * 1.7) {
+        if (world.isSafeZone(player.x, player.y) || dist > this.aggroRadius * 1.7) {
           this.state = "WANDER";
-          this.wanderTimer = 2;
+          this.wanderTimer = 2.5;
           this.isWanderMoving = false;
         } else if (dist > 18) {
           const angle = Math.atan2(dy, dx);
           this.dir = Sprites.dirFromAngle(angle);
           let spd = this.baseSpd;
           if (world.isLiquid(this.x, this.y)) {
-            spd *= 0.65;
+            spd *= 0.55;
+          } else if (world.isShallowWater(this.x, this.y)) {
+            spd *= 0.85;
           }
           this.x += Math.cos(angle) * spd * dt;
           this.y += Math.sin(angle) * spd * dt;
@@ -3783,18 +4108,22 @@
       return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
     }
     function getBiomeInfo(worldX, worldY) {
+      const sz = world.getSafeZone(worldX, worldY);
+      if (sz) {
+        return { key: "village", name: `\u{1F3F0} ${sz.name}`, color: sz.color };
+      }
       const tx = world.tileOf(worldX);
       const ty = world.tileOf(worldY);
       const biomeKey = world.getBiome(tx, ty);
       switch (biomeKey) {
-        case "village":
-          return { key: "village", name: "\u{1F3F0} Villaggio", color: "#64748b" };
+        case "river":
+          return { key: "river", name: "\u{1F30A} Fiume & Cascate", color: "#06b6d4" };
         case "snow":
           return { key: "snow", name: "\u2744\uFE0F Vette Innevate", color: "#7dd3fc" };
         case "desert":
-          return { key: "desert", name: "\u{1F3DC}\uFE0F Deserto", color: "#f59e0b" };
+          return { key: "desert", name: "\u{1F3DC}\uFE0F Deserto delle Dune", color: "#f59e0b" };
         case "volcano":
-          return { key: "volcano", name: "\u{1F30B} Vulcano", color: "#ef4444" };
+          return { key: "volcano", name: "\u{1F30B} Caldera Vulcanica", color: "#ef4444" };
         case "forest":
         default:
           return { key: "forest", name: "\u{1F332} Bosco Silvano", color: "#22c55e" };
@@ -4320,37 +4649,63 @@
       minimapCtx.clearRect(0, 0, w, h);
       minimapCtx.fillStyle = "#080c14";
       minimapCtx.fillRect(0, 0, w, h);
-      const vSize = 512 * scale;
-      const vLeft = cx - vSize / 2;
-      const vTop = cy - vSize / 2;
-      minimapCtx.fillStyle = "rgba(125, 211, 252, 0.45)";
-      minimapCtx.fillRect(0, 0, w, cy - vSize / 2);
-      minimapCtx.fillStyle = "rgba(217, 119, 6, 0.45)";
-      minimapCtx.fillRect(0, cy + vSize / 2, cx, h - (cy + vSize / 2));
-      minimapCtx.fillStyle = "rgba(185, 28, 28, 0.45)";
-      minimapCtx.fillRect(cx, cy - vSize / 2, cx, h - (cy - vSize / 2));
-      minimapCtx.fillStyle = "rgba(22, 101, 52, 0.55)";
-      minimapCtx.fillRect(0, cy - vSize / 2, cx - vSize / 2, vSize);
-      minimapCtx.fillStyle = "#475569";
-      minimapCtx.fillRect(vLeft, vTop, vSize, vSize);
-      minimapCtx.strokeStyle = "#94a3b8";
+      minimapCtx.fillStyle = "rgba(125, 211, 252, 0.35)";
+      minimapCtx.fillRect(0, 0, w, cy - 25 * world.TS * scale);
+      minimapCtx.fillStyle = "rgba(217, 119, 6, 0.35)";
+      minimapCtx.fillRect(0, cy + 20 * world.TS * scale, cx, h);
+      minimapCtx.fillStyle = "rgba(185, 28, 28, 0.35)";
+      minimapCtx.fillRect(cx + 18 * world.TS * scale, cy - 15 * world.TS * scale, cx, h);
+      minimapCtx.fillStyle = "rgba(22, 101, 52, 0.4)";
+      minimapCtx.fillRect(0, cy - 25 * world.TS * scale, cx + 18 * world.TS * scale, 45 * world.TS * scale);
+      minimapCtx.strokeStyle = "#0284c7";
+      minimapCtx.lineWidth = 2.5;
+      minimapCtx.beginPath();
+      for (let ty = -world.MAP_RADIUS; ty <= world.MAP_RADIUS; ty += 4) {
+        const rx = world.getRiverCenterX(ty) * world.TS;
+        const ry = ty * world.TS;
+        const mx = cx + rx * scale;
+        const my = cy + ry * scale;
+        if (ty === -world.MAP_RADIUS) minimapCtx.moveTo(mx, my);
+        else minimapCtx.lineTo(mx, my);
+      }
+      minimapCtx.stroke();
+      minimapCtx.strokeStyle = "rgba(245, 158, 11, 0.45)";
       minimapCtx.lineWidth = 1;
-      minimapCtx.strokeRect(vLeft, vTop, vSize, vSize);
+      for (const s of SETTLEMENTS) {
+        if (s.id === "citadel") continue;
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(cx, cy);
+        minimapCtx.lineTo(cx + s.centerTx * world.TS * scale, cy + s.centerTy * world.TS * scale);
+        minimapCtx.stroke();
+      }
+      for (const s of SETTLEMENTS) {
+        const sx = cx + s.centerTx * world.TS * scale;
+        const sy = cy + s.centerTy * world.TS * scale;
+        const sr = s.radiusTiles * world.TS * scale;
+        minimapCtx.fillStyle = "rgba(56, 189, 248, 0.2)";
+        minimapCtx.beginPath();
+        minimapCtx.arc(sx, sy, sr, 0, Math.PI * 2);
+        minimapCtx.fill();
+        minimapCtx.fillStyle = s.color || "#38bdf8";
+        minimapCtx.beginPath();
+        minimapCtx.arc(sx, sy, s.id === "citadel" ? 3.5 : 2.5, 0, Math.PI * 2);
+        minimapCtx.fill();
+      }
       minimapCtx.fillStyle = "#f87171";
       for (const en of combat.enemies) {
         const mx = cx + en.x * scale;
         const my = cy + en.y * scale;
         if (mx >= 0 && mx < w && my >= 0 && my < h) {
-          minimapCtx.fillRect(mx - 1, my - 1, 2, 2);
+          minimapCtx.fillRect(mx - 0.75, my - 0.75, 1.5, 1.5);
         }
       }
       const px = cx + player.x * scale;
       const py = cy + player.y * scale;
-      minimapCtx.fillStyle = "rgba(56, 189, 248, 0.35)";
+      minimapCtx.fillStyle = "rgba(56, 189, 248, 0.4)";
       minimapCtx.beginPath();
       minimapCtx.arc(px, py, 4, 0, Math.PI * 2);
       minimapCtx.fill();
-      minimapCtx.fillStyle = "#38bdf8";
+      minimapCtx.fillStyle = "#ffffff";
       minimapCtx.beginPath();
       minimapCtx.arc(px, py, 2, 0, Math.PI * 2);
       minimapCtx.fill();
@@ -4387,52 +4742,100 @@
         expandedCtx.lineTo(w, y);
         expandedCtx.stroke();
       }
-      const vSize = 512 * scale;
-      const vLeft = cx - vSize / 2;
-      const vTop = cy - vSize / 2;
-      expandedCtx.fillStyle = "rgba(125, 211, 252, 0.3)";
-      expandedCtx.fillRect(0, 0, w, cy - vSize / 2);
+      expandedCtx.fillStyle = "rgba(125, 211, 252, 0.22)";
+      expandedCtx.fillRect(0, 0, w, cy - 25 * world.TS * scale);
       expandedCtx.fillStyle = "#7dd3fc";
-      expandedCtx.font = "bold 11px sans-serif";
-      expandedCtx.fillText("\u2744\uFE0F VETTE INNEVATE", 20, 30);
-      expandedCtx.fillStyle = "rgba(22, 101, 52, 0.4)";
-      expandedCtx.fillRect(0, cy - vSize / 2, cx - vSize / 2, vSize);
-      expandedCtx.fillStyle = "#4ade80";
-      expandedCtx.fillText("\u{1F332} BOSCO SILVANO", 15, cy);
-      expandedCtx.fillStyle = "rgba(217, 119, 6, 0.35)";
-      expandedCtx.fillRect(0, cy + vSize / 2, cx, h - (cy + vSize / 2));
-      expandedCtx.fillStyle = "#fde047";
-      expandedCtx.fillText("\u{1F3DC}\uFE0F DESERTO DELLE DUNE", 20, h - 25);
-      expandedCtx.fillStyle = "rgba(185, 28, 28, 0.35)";
-      expandedCtx.fillRect(cx, cy - vSize / 2, cx, h - (cy - vSize / 2));
-      expandedCtx.fillStyle = "#f87171";
-      expandedCtx.fillText("\u{1F30B} CALDERA VULCANICA", cx + 30, cy + 40);
-      expandedCtx.fillStyle = "#334155";
-      expandedCtx.fillRect(vLeft, vTop, vSize, vSize);
-      expandedCtx.strokeStyle = "#94a3b8";
-      expandedCtx.lineWidth = 1.5;
-      expandedCtx.strokeRect(vLeft, vTop, vSize, vSize);
-      expandedCtx.fillStyle = "#f8fafc";
       expandedCtx.font = "bold 10px sans-serif";
-      expandedCtx.textAlign = "center";
-      expandedCtx.fillText("\u{1F3F0} VILLAGGIO", cx, cy - 8);
-      expandedCtx.font = "9px sans-serif";
-      expandedCtx.fillStyle = "#38bdf8";
-      expandedCtx.fillText("Zona Protetta", cx, cy + 6);
-      expandedCtx.textAlign = "left";
-      const bScale = world.TS * scale;
-      expandedCtx.fillStyle = "#64748b";
-      expandedCtx.fillRect(cx + -7 * bScale, cy + -6 * bScale, 4 * bScale, 3 * bScale);
-      expandedCtx.fillRect(cx + 3 * bScale, cy + -6 * bScale, 4 * bScale, 3 * bScale);
-      expandedCtx.fillRect(cx + -7 * bScale, cy + 3 * bScale, 4 * bScale, 3 * bScale);
-      expandedCtx.fillRect(cx + 3 * bScale, cy + 3 * bScale, 4 * bScale, 3 * bScale);
+      expandedCtx.fillText("\u2744\uFE0F VETTE INNEVATE", 20, 25);
+      expandedCtx.fillStyle = "rgba(22, 101, 52, 0.25)";
+      expandedCtx.fillRect(0, cy - 25 * world.TS * scale, cx, 50 * world.TS * scale);
+      expandedCtx.fillStyle = "#4ade80";
+      expandedCtx.fillText("\u{1F332} BOSCO SILVANO", 20, cy - 15);
+      expandedCtx.fillStyle = "rgba(217, 119, 6, 0.25)";
+      expandedCtx.fillRect(0, cy + 25 * world.TS * scale, cx + 10, h - (cy + 25 * world.TS * scale));
+      expandedCtx.fillStyle = "#fde047";
+      expandedCtx.fillText("\u{1F3DC}\uFE0F DESERTO DELLE DUNE", 20, h - 20);
+      expandedCtx.fillStyle = "rgba(185, 28, 28, 0.25)";
+      expandedCtx.fillRect(cx + 20 * world.TS * scale, cy - 20 * world.TS * scale, cx, h);
+      expandedCtx.fillStyle = "#f87171";
+      expandedCtx.fillText("\u{1F30B} CALDERA VULCANICA", cx + 45, cy + 50);
+      expandedCtx.strokeStyle = "#0284c7";
+      expandedCtx.lineWidth = 7;
+      expandedCtx.beginPath();
+      for (let ty = -world.MAP_RADIUS; ty <= world.MAP_RADIUS; ty += 2) {
+        const rx = world.getRiverCenterX(ty) * world.TS;
+        const ry = ty * world.TS;
+        const mx = cx + rx * scale;
+        const my = cy + ry * scale;
+        if (ty === -world.MAP_RADIUS) expandedCtx.moveTo(mx, my);
+        else expandedCtx.lineTo(mx, my);
+      }
+      expandedCtx.stroke();
+      expandedCtx.strokeStyle = "#7dd3fc";
+      expandedCtx.lineWidth = 3;
+      expandedCtx.stroke();
+      const wfX = cx + -40 * world.TS * scale;
+      const wfY = cy + 22 * world.TS * scale;
+      expandedCtx.fillStyle = "#ffffff";
+      expandedCtx.font = "bold 9px sans-serif";
+      expandedCtx.fillText("\u{1F30A} CASCATE", wfX - 18, wfY - 14);
+      expandedCtx.strokeStyle = "rgba(245, 158, 11, 0.7)";
+      expandedCtx.lineWidth = 1.5;
+      expandedCtx.setLineDash([4, 3]);
+      for (const s of SETTLEMENTS) {
+        if (s.id === "citadel") continue;
+        expandedCtx.beginPath();
+        expandedCtx.moveTo(cx, cy);
+        expandedCtx.lineTo(cx + s.centerTx * world.TS * scale, cy + s.centerTy * world.TS * scale);
+        expandedCtx.stroke();
+      }
+      const wfSettlement = SETTLEMENTS.find((s) => s.id === "waterfall_village");
+      const azSettlement = SETTLEMENTS.find((s) => s.id === "oasis");
+      const sylvaSettlement = SETTLEMENTS.find((s) => s.id === "sylva");
+      if (wfSettlement && azSettlement) {
+        expandedCtx.beginPath();
+        expandedCtx.moveTo(cx + wfSettlement.centerTx * world.TS * scale, cy + wfSettlement.centerTy * world.TS * scale);
+        expandedCtx.lineTo(cx + azSettlement.centerTx * world.TS * scale, cy + azSettlement.centerTy * world.TS * scale);
+        expandedCtx.stroke();
+      }
+      if (wfSettlement && sylvaSettlement) {
+        expandedCtx.beginPath();
+        expandedCtx.moveTo(cx + wfSettlement.centerTx * world.TS * scale, cy + wfSettlement.centerTy * world.TS * scale);
+        expandedCtx.lineTo(cx + sylvaSettlement.centerTx * world.TS * scale, cy + sylvaSettlement.centerTy * world.TS * scale);
+        expandedCtx.stroke();
+      }
+      expandedCtx.setLineDash([]);
+      for (const s of SETTLEMENTS) {
+        const sx = cx + s.centerTx * world.TS * scale;
+        const sy = cy + s.centerTy * world.TS * scale;
+        const sr = s.radiusTiles * world.TS * scale;
+        expandedCtx.fillStyle = "rgba(56, 189, 248, 0.15)";
+        expandedCtx.beginPath();
+        expandedCtx.arc(sx, sy, sr, 0, Math.PI * 2);
+        expandedCtx.fill();
+        expandedCtx.strokeStyle = s.color || "#38bdf8";
+        expandedCtx.lineWidth = 1.5;
+        expandedCtx.stroke();
+        expandedCtx.fillStyle = "#ffffff";
+        expandedCtx.beginPath();
+        expandedCtx.arc(sx, sy, 3, 0, Math.PI * 2);
+        expandedCtx.fill();
+        expandedCtx.font = "bold 9px sans-serif";
+        expandedCtx.fillStyle = s.color || "#38bdf8";
+        expandedCtx.textAlign = "center";
+        expandedCtx.fillText(s.name, sx, sy - sr - 3);
+        expandedCtx.font = "8px sans-serif";
+        expandedCtx.fillStyle = "#94a3b8";
+        expandedCtx.fillText("\u{1F6E1}\uFE0F Safe Zone", sx, sy + sr + 9);
+        expandedCtx.textAlign = "left";
+      }
       expandedCtx.fillStyle = "#ef4444";
       for (const en of combat.enemies) {
         const ex = cx + en.x * scale;
         const ey = cy + en.y * scale;
         if (ex >= 0 && ex < w && ey >= 0 && ey < h) {
           expandedCtx.beginPath();
-          expandedCtx.arc(ex, ey, 2.5, 0, Math.PI * 2);
+          expandedCtx.arc(ex, ey, 2, 0, Math.PI * 2);
           expandedCtx.fill();
         }
       }
@@ -4441,15 +4844,15 @@
       expandedCtx.strokeStyle = "#38bdf8";
       expandedCtx.lineWidth = 2;
       expandedCtx.beginPath();
-      expandedCtx.arc(px, py, 9, 0, Math.PI * 2);
+      expandedCtx.arc(px, py, 8, 0, Math.PI * 2);
       expandedCtx.stroke();
-      expandedCtx.fillStyle = "rgba(56, 189, 248, 0.4)";
+      expandedCtx.fillStyle = "rgba(56, 189, 248, 0.35)";
       expandedCtx.beginPath();
-      expandedCtx.arc(px, py, 14, 0, Math.PI * 2);
+      expandedCtx.arc(px, py, 12, 0, Math.PI * 2);
       expandedCtx.fill();
       expandedCtx.fillStyle = "#ffffff";
       expandedCtx.beginPath();
-      expandedCtx.arc(px, py, 3.5, 0, Math.PI * 2);
+      expandedCtx.arc(px, py, 3, 0, Math.PI * 2);
       expandedCtx.fill();
       expandedCtx.strokeStyle = "#38bdf8";
       expandedCtx.lineWidth = 2;
@@ -4611,24 +5014,28 @@
       combat.enemies.push(new Enemy(-160, -170, "slime_ice"));
       combat.enemies.push(new Enemy(-180, 150, "slime_sand"));
       combat.enemies.push(new Enemy(170, 160, "skeleton"));
-      for (let i = 0; i < 10; i++) {
-        const pt = world.findValidSpawn(300, 1300, "forest");
+      for (let i = 0; i < 14; i++) {
+        const pt = world.findValidSpawn(350, 2600, "forest");
         combat.enemies.push(new Enemy(pt.x, pt.y, "slime_forest"));
       }
-      for (let i = 0; i < 10; i++) {
-        const pt = world.findValidSpawn(300, 1300, "snow");
+      for (let i = 0; i < 14; i++) {
+        const pt = world.findValidSpawn(350, 2600, "snow");
         combat.enemies.push(new Enemy(pt.x, pt.y, "slime_ice"));
       }
-      for (let i = 0; i < 10; i++) {
-        const pt = world.findValidSpawn(300, 1300, "desert");
+      for (let i = 0; i < 14; i++) {
+        const pt = world.findValidSpawn(350, 2600, "desert");
         combat.enemies.push(new Enemy(pt.x, pt.y, "slime_sand"));
       }
-      for (let i = 0; i < 10; i++) {
-        const pt = world.findValidSpawn(300, 1300, "volcano");
+      for (let i = 0; i < 14; i++) {
+        const pt = world.findValidSpawn(350, 2600, "volcano");
         combat.enemies.push(new Enemy(pt.x, pt.y, "slime_magma"));
       }
-      for (let i = 0; i < 14; i++) {
-        const pt = world.findValidSpawn(350, 1400);
+      for (let i = 0; i < 12; i++) {
+        const pt = world.findValidSpawn(350, 2600, "river");
+        combat.enemies.push(new Enemy(pt.x, pt.y, "slime_water"));
+      }
+      for (let i = 0; i < 20; i++) {
+        const pt = world.findValidSpawn(400, 2800);
         combat.enemies.push(new Enemy(pt.x, pt.y, "skeleton"));
       }
       closeIngameInventory();
@@ -4749,6 +5156,19 @@
     let fpsTimer = 0;
     let currentFps = 60;
     let minimapTimer = 0;
+    let enemyRespawnTimer = 0;
+    function spawnEnemyForLocation(x, y) {
+      const tx = world.tileOf(x);
+      const ty = world.tileOf(y);
+      const b = world.getBiome(tx, ty);
+      let kind = "slime_forest";
+      if (b === "river") kind = "slime_water";
+      else if (b === "snow") kind = "slime_ice";
+      else if (b === "desert") kind = "slime_sand";
+      else if (b === "volcano") kind = "slime_magma";
+      else if (Math.random() < 0.28) kind = "skeleton";
+      return new Enemy(x, y, kind);
+    }
     function loop(currentTime) {
       try {
         const rawDt = (currentTime - lastTime) / 1e3;
@@ -4771,6 +5191,14 @@
             player.update(dt, Input, world);
             combat.update(dt, player, world, camera);
             camera.follow(player.x, player.y, dt);
+            enemyRespawnTimer += dt;
+            if (enemyRespawnTimer >= 3 && combat.enemies.length < 75) {
+              enemyRespawnTimer = 0;
+              const pt = world.findValidSpawn(460, 950, null, player.x, player.y);
+              if (!world.isSafeZone(pt.x, pt.y)) {
+                combat.enemies.push(spawnEnemyForLocation(pt.x, pt.y));
+              }
+            }
           }
         }
         ctx.save();
