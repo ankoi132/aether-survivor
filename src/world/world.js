@@ -542,6 +542,14 @@ export class World {
       return this.TILE_FLOOR;
     }
 
+    // 2b. Arene dei Boss e Punti d'Interesse: pavimento pulito e sgombro per arena e forzieri
+    for (const poi of POINTS_OF_INTEREST) {
+      const dPoi = Math.hypot(tx - poi.tx, ty - poi.ty);
+      if (dPoi <= 4.8) {
+        return this.TILE_FLOOR;
+      }
+    }
+
     // 3. Fiume, Cascate, Ponti e Guadi
     const onRoad = this.isRoad(tx, ty);
     const onTrail = this.isTrail(tx, ty);

@@ -126,6 +126,17 @@
       const ty = -this.top() + this.shakeY;
       ctx.translate(Math.round(tx), Math.round(ty));
     }
+    /**
+     * Converte le coordinate schermo/mouse (clientX, clientY) in coordinate assolute del mondo di gioco
+     */
+    screenToWorld(clientX, clientY, canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const canvasX = (clientX - rect.left) * (canvas.width / rect.width);
+      const canvasY = (clientY - rect.top) * (canvas.height / rect.height);
+      const worldX = canvasX / this.scale + this.left() - this.shakeX;
+      const worldY = canvasY / this.scale + this.top() - this.shakeY;
+      return { x: worldX, y: worldY };
+    }
   };
 
   // src/world/tiles.js
@@ -2005,6 +2016,12 @@
       if (sz) {
         return this.TILE_FLOOR;
       }
+      for (const poi of POINTS_OF_INTEREST) {
+        const dPoi = Math.hypot(tx - poi.tx, ty - poi.ty);
+        if (dPoi <= 4.8) {
+          return this.TILE_FLOOR;
+        }
+      }
       const onRoad = this.isRoad(tx, ty);
       const onTrail = this.isTrail(tx, ty);
       const riverCx = this.getRiverCenterX(ty);
@@ -3546,19 +3563,42 @@
       FX.floatingText(this.x, this.y - 32, `+${this.loot.gold} \u{1FA99}`, "#fde047");
       return true;
     }
+    canInteract(playerX, playerY, maxDist = 85) {
+      if (this.isOpen) return false;
+      const d = Math.hypot(this.x - playerX, this.y - playerY);
+      return d <= maxDist;
+    }
+    hitTest(worldX, worldY, padding = 26) {
+      return Math.abs(worldX - this.x) <= padding && (worldY >= this.y - 36 - padding && worldY <= this.y + padding);
+    }
     update(dt, player) {
       this.pulseTimer += dt;
     }
     draw(ctx) {
-      Sprites.drawShadow(ctx, this.x, this.y + 2, 14);
+      Sprites.drawShadow(ctx, this.x, this.y + 2, 16);
       if (!this.isLocked && !this.isOpen) {
-        const pulse = 0.5 + Math.sin(this.pulseTimer * 4) * 0.3;
-        const glow = ctx.createRadialGradient(this.x, this.y - 6, 4, this.x, this.y - 6, 32);
-        glow.addColorStop(0, `rgba(250, 204, 21, ${0.4 * pulse})`);
+        const pulse = 0.65 + Math.sin(this.pulseTimer * 4.5) * 0.35;
+        ctx.save();
+        const beamGrad = ctx.createLinearGradient(this.x, this.y, this.x, this.y - 140);
+        beamGrad.addColorStop(0, `rgba(250, 204, 21, ${0.45 * pulse})`);
+        beamGrad.addColorStop(0.4, `rgba(253, 224, 71, ${0.25 * pulse})`);
+        beamGrad.addColorStop(1, "rgba(250, 204, 21, 0)");
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(this.x - 14, this.y);
+        ctx.lineTo(this.x + 14, this.y);
+        ctx.lineTo(this.x + 28, this.y - 140);
+        ctx.lineTo(this.x - 28, this.y - 140);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        const glow = ctx.createRadialGradient(this.x, this.y - 6, 6, this.x, this.y - 6, 44);
+        glow.addColorStop(0, `rgba(250, 204, 21, ${0.5 * pulse})`);
+        glow.addColorStop(0.6, `rgba(245, 158, 11, ${0.25 * pulse})`);
         glow.addColorStop(1, "rgba(250, 204, 21, 0)");
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(this.x, this.y - 6, 32, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y - 6, 44, 0, Math.PI * 2);
         ctx.fill();
       }
       const spriteType = this.isOpen ? "chest_open" : "chest_closed";
@@ -3575,18 +3615,22 @@
         ctx.fillStyle = "#94a3b8";
         ctx.fillText("\u2713 Forziere Riscattato", Math.round(this.x), Math.round(this.y - 24));
       } else if (this.isLocked) {
-        ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
-        ctx.fillRect(Math.round(this.x - 48), Math.round(this.y - 34), 96, 14);
-        ctx.fillStyle = "#ef4444";
-        ctx.fillText(`\u{1F512} ${this.poi.title}`, Math.round(this.x), Math.round(this.y - 23));
-      } else {
-        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
-        ctx.fillRect(Math.round(this.x - 44), Math.round(this.y - 36), 88, 16);
-        ctx.strokeStyle = "#f59e0b";
+        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+        ctx.fillRect(Math.round(this.x - 52), Math.round(this.y - 36), 104, 16);
+        ctx.strokeStyle = "#ef4444";
         ctx.lineWidth = 1;
-        ctx.strokeRect(Math.round(this.x - 44), Math.round(this.y - 36), 88, 16);
+        ctx.strokeRect(Math.round(this.x - 52), Math.round(this.y - 36), 104, 16);
+        ctx.fillStyle = "#f87171";
+        ctx.fillText(`\u{1F512} ${this.poi.title || this.name}`, Math.round(this.x), Math.round(this.y - 24));
+      } else {
+        const pulseY = Math.sin(this.pulseTimer * 5) * 3;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+        ctx.fillRect(Math.round(this.x - 50), Math.round(this.y - 42 + pulseY), 100, 18);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(Math.round(this.x - 50), Math.round(this.y - 42 + pulseY), 100, 18);
         ctx.fillStyle = "#fde047";
-        ctx.fillText("\u2B50 [E] Apri Forziere", Math.round(this.x), Math.round(this.y - 24));
+        ctx.fillText("\u2B50 [E] o Clicca per Aprire!", Math.round(this.x), Math.round(this.y - 29 + pulseY));
       }
       ctx.restore();
     }
@@ -3991,27 +4035,43 @@
       }
       return drops;
     }
-    update(dt, player, world, camera) {
-      this.currentTarget = this.findNearestTarget(player);
+    findTargetNearAim(aimWorld, player) {
+      if (!aimWorld) return this.findNearestTarget(player);
+      let best = null;
+      let bestDist2 = 95 * 95;
+      for (const target of this.getAllTargets()) {
+        if (target.dead || target.isDying) continue;
+        const dx = target.x - aimWorld.x;
+        const dy = target.y - aimWorld.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bestDist2) {
+          bestDist2 = d2;
+          best = target;
+        }
+      }
+      return best || this.findNearestTarget(player);
+    }
+    update(dt, player, world, camera, isAttacking = false, aimWorld = null) {
+      this.currentTarget = this.findTargetNearAim(aimWorld, player);
       if (this.cooldownTimer > 0) {
         this.cooldownTimer -= dt;
       }
-      if (this.cooldownTimer <= 0) {
+      if (isAttacking && this.cooldownTimer <= 0) {
+        let aimAngle = player.facingAngle || 0;
+        if (aimWorld) {
+          aimAngle = Math.atan2(aimWorld.y - (player.y - 10), aimWorld.x - player.x);
+          player.facing = Math.cos(aimAngle) < 0 ? "left" : "right";
+          player.facingAngle = aimAngle;
+        }
         if (this.weaponId === "sword") {
-          if (this.currentTarget) {
-            this.performSwordCleave(player, this.currentTarget, camera);
-            this.cooldownTimer = this.baseCooldown;
-          }
+          this.performSwordCleave(player, aimWorld, camera, aimAngle);
+          this.cooldownTimer = this.baseCooldown;
         } else if (this.weaponId === "bow") {
-          if (this.currentTarget) {
-            this.fireBowArrows(player, this.currentTarget);
-            this.cooldownTimer = this.baseCooldown;
-          }
+          this.fireBowArrows(player, aimWorld, aimAngle);
+          this.cooldownTimer = this.baseCooldown;
         } else {
-          if (this.currentTarget) {
-            this.fireArcaneDarts(player, this.currentTarget);
-            this.cooldownTimer = this.baseCooldown;
-          }
+          this.fireArcaneDarts(player, aimWorld, aimAngle);
+          this.cooldownTimer = this.baseCooldown;
         }
       }
       for (let i = this.slashes.length - 1; i >= 0; i--) {
@@ -4135,21 +4195,25 @@
       FX.update(dt);
     }
     /**
-     * Attacco Spada: fendente ravvicinato ad area che colpisce tutti i nemici nell'arco
+     * Attacco Spada: fendente ravvicinato ad area orientato verso il cursore del mouse
      */
-    performSwordCleave(player, target, camera) {
-      let angle = player.moveAngle || Math.PI / 2;
-      if (target) {
-        angle = Math.atan2(target.y - player.y, target.x - player.x);
+    performSwordCleave(player, aimWorld, camera, aimAngle = null) {
+      let angle = aimAngle;
+      if (angle === null || angle === void 0) {
+        if (aimWorld) {
+          angle = Math.atan2(aimWorld.y - player.y, aimWorld.x - player.x);
+        } else {
+          angle = player.moveAngle || Math.PI / 2;
+        }
       }
-      const range = this.swordRange || 92;
+      const range = this.swordRange || 96;
       const arc = this.swordArc || Math.PI * 0.95;
       const dmg = Math.round(this.swordDamage * this.damageMultiplier);
-      const knockback = this.swordKnockback || 180;
+      const knockback = this.swordKnockback || 200;
       this.slashes.push(new SlashEffect(player.x, player.y - 6, angle, range, arc));
       camera.kick(0.18);
       for (const t of this.getAllTargets()) {
-        if (t.dead) continue;
+        if (t.dead || t.isDying) continue;
         const dx = t.x - player.x;
         const dy = t.y - (player.y - 6);
         const dist = Math.hypot(dx, dy);
@@ -4157,50 +4221,29 @@
           const enemyAngle = Math.atan2(dy, dx);
           let diff = Math.abs(enemyAngle - angle);
           while (diff > Math.PI) diff = Math.abs(diff - Math.PI * 2);
-          if (arc >= Math.PI * 1.9 || diff <= arc / 2 + 0.18) {
+          if (arc >= Math.PI * 1.9 || diff <= arc / 2 + 0.2) {
             t.takeDamage(dmg, enemyAngle, knockback, "slash");
-            FX.burst(t.x, t.y - 8, "#f8fafc", 4, 110);
+            FX.burst(t.x, t.y - 8, "#f8fafc", 5, 120);
+            FX.spark(t.x, t.y - 8, "#fde047", 4);
           }
         }
       }
     }
     /**
-     * Attacco Arco: frecce rapide e perforanti a lunga gittata
+     * Attacco Arco: frecce rapide e perforanti verso il cursore del mouse
      */
-    fireBowArrows(player, target) {
-      const dx = target.x - player.x;
-      const dy = target.y - (player.y - 12);
-      const baseAngle = Math.atan2(dy, dx);
+    fireBowArrows(player, aimWorld, aimAngle = null) {
+      let baseAngle = aimAngle;
+      if (baseAngle === null || baseAngle === void 0) {
+        if (aimWorld) {
+          baseAngle = Math.atan2(aimWorld.y - (player.y - 12), aimWorld.x - player.x);
+        } else {
+          baseAngle = player.facingAngle || 0;
+        }
+      }
       const dmg = Math.round(this.bowDamage * this.damageMultiplier);
       const count = this.bowArrowsCount || 1;
       const spreadAngle = 0.14;
-      const startAngle = baseAngle - (count - 1) * spreadAngle / 2;
-      for (let i = 0; i < count; i++) {
-        const angle = startAngle + i * spreadAngle;
-        const spawnX = player.x + Math.cos(angle) * 10;
-        const spawnY = player.y - 12 + Math.sin(angle) * 10;
-        this.projectiles.push(
-          new Projectile(spawnX, spawnY, angle, {
-            type: "arrow",
-            dmg,
-            speed: this.bowSpeed || 520,
-            pierce: this.bowPierce || 2
-          })
-        );
-      }
-      FX.spark(player.x, player.y - 12, "#fef08a", 4);
-    }
-    /**
-     * Attacco Bastone: dardi arcani a ventaglio
-     */
-    fireArcaneDarts(player, target) {
-      const dx = target.x - player.x;
-      const dy = target.y - (player.y - 12);
-      const baseAngle = Math.atan2(dy, dx);
-      const baseDmg = (this.staffDamage || 18) + (player.permanentBonusDamage || 0);
-      const dmg = Math.round(baseDmg * this.damageMultiplier);
-      const count = this.projectilesPerShot;
-      const spreadAngle = 0.22;
       const startAngle = baseAngle - (count - 1) * spreadAngle / 2;
       for (let i = 0; i < count; i++) {
         const angle = startAngle + i * spreadAngle;
@@ -4208,13 +4251,45 @@
         const spawnY = player.y - 12 + Math.sin(angle) * 12;
         this.projectiles.push(
           new Projectile(spawnX, spawnY, angle, {
+            type: "arrow",
+            dmg,
+            speed: this.bowSpeed || 560,
+            pierce: this.bowPierce || 2
+          })
+        );
+      }
+      FX.spark(player.x, player.y - 12, "#fef08a", 5);
+    }
+    /**
+     * Attacco Bastone: dardi arcani a ventaglio verso il cursore del mouse
+     */
+    fireArcaneDarts(player, aimWorld, aimAngle = null) {
+      let baseAngle = aimAngle;
+      if (baseAngle === null || baseAngle === void 0) {
+        if (aimWorld) {
+          baseAngle = Math.atan2(aimWorld.y - (player.y - 12), aimWorld.x - player.x);
+        } else {
+          baseAngle = player.facingAngle || 0;
+        }
+      }
+      const baseDmg = (this.staffDamage || 18) + (player.permanentBonusDamage || 0);
+      const dmg = Math.round(baseDmg * this.damageMultiplier);
+      const count = this.projectilesPerShot;
+      const spreadAngle = 0.2;
+      const startAngle = baseAngle - (count - 1) * spreadAngle / 2;
+      for (let i = 0; i < count; i++) {
+        const angle = startAngle + i * spreadAngle;
+        const spawnX = player.x + Math.cos(angle) * 14;
+        const spawnY = player.y - 12 + Math.sin(angle) * 14;
+        this.projectiles.push(
+          new Projectile(spawnX, spawnY, angle, {
             type: "dart",
-            speed: 370,
+            speed: 400,
             dmg,
             r: 5
           })
         );
-        FX.burst(spawnX, spawnY, "#38bdf8", 3, 60);
+        FX.burst(spawnX, spawnY, "#38bdf8", 3, 70);
       }
     }
     get cooldownProgress() {
@@ -4979,6 +5054,26 @@
     let chests = [];
     let mysteryPillars = [];
     let notificationTimeout = null;
+    let mouseScreen = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    let isMouseDown = false;
+    window.addEventListener("mousemove", (e) => {
+      mouseScreen.x = e.clientX;
+      mouseScreen.y = e.clientY;
+    });
+    window.addEventListener("mousedown", (e) => {
+      if (e.button === 0) {
+        isMouseDown = true;
+        if (gameState === "PLAYING" && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
+          const aim = camera.screenToWorld(e.clientX, e.clientY, canvas);
+          handleWorldClickInteraction(aim);
+        }
+      }
+    });
+    window.addEventListener("mouseup", (e) => {
+      if (e.button === 0) {
+        isMouseDown = false;
+      }
+    });
     const camera = new Camera(768, 420);
     const world = new World(2026);
     const player = new Player(0, 0);
@@ -6094,10 +6189,15 @@
         }
       });
       combat.onBossKilled = (boss) => {
-        const matchChest = chests.find((c) => c.poi && c.poi.bossKind === boss.kind);
-        if (matchChest && matchChest.isLocked) {
+        const matchChest = chests.find((c) => {
+          if (!c.poi) return false;
+          if (c.poi.bossKind === boss.kind) return true;
+          const shortKind = boss.kind.replace("boss_", "");
+          return c.poi.id.includes(shortKind) || c.id && c.id.includes(shortKind);
+        });
+        if (matchChest) {
           matchChest.unlock();
-          camera.kick(0.42);
+          camera.kick(0.48);
           showWeaponNotification(`\u{1F451} ${boss.name} Sconfitto! ${matchChest.name} SBLOCCATO!`);
         }
       };
@@ -6137,7 +6237,64 @@
       menuScreen?.classList.add("hidden");
       gameHud?.classList.remove("hidden");
       modalGameOver?.classList.add("hidden");
-      showWeaponNotification("Tasto [E]: Interagisci \xB7 [I]: Zaino \xB7 [M]: Mappa \xB7 [ESC]: Menu \xB7 [1/2/3]: Armi");
+      showWeaponNotification("\u2694\uFE0F Clicca col MOUSE per attaccare! [E]: Interagisci \xB7 [1/2/3]: Armi \xB7 [I]: Zaino");
+    }
+    function handleWorldClickInteraction(aimWorld) {
+      if (!aimWorld || gameState !== "PLAYING") return false;
+      for (const ch of chests) {
+        if (ch.hitTest(aimWorld.x, aimWorld.y) || Math.hypot(aimWorld.x - ch.x, aimWorld.y - ch.y) <= 42) {
+          if (Math.hypot(player.x - ch.x, player.y - ch.y) <= 90) {
+            if (ch.isLocked && ch.poi && ch.poi.bossKind) {
+              const bossAlive = combat.enemies.some((e) => e.kind === ch.poi.bossKind && !e.dead && !e.isDying);
+              if (!bossAlive) {
+                ch.unlock();
+              }
+            }
+            if (ch.isLocked) {
+              showWeaponNotification(`\u{1F512} ${ch.name} \xE8 sigillato! Sconfiggi il Boss custode!`);
+            } else if (!ch.isOpen) {
+              const opened = ch.open(combat, player);
+              if (opened) {
+                camera.kick(0.35);
+                showWeaponNotification(`\u2728 Hai aperto ${ch.name}! Oro, XP e artefatti riscattati!`);
+                renderIngameLoot();
+                renderIngameForge();
+              }
+            }
+            return true;
+          }
+        }
+      }
+      const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 90);
+      if (nearbyBs) {
+        const bsWorldX = nearbyBs.tx * world.TS;
+        const bsWorldY = nearbyBs.ty * world.TS;
+        if (Math.hypot(aimWorld.x - bsWorldX, aimWorld.y - bsWorldY) <= 42) {
+          openBlacksmithModal(nearbyBs);
+          return true;
+        }
+      }
+      for (const p of mysteryPillars) {
+        if (Math.hypot(aimWorld.x - p.x, aimWorld.y - p.y) <= 38) {
+          if (Math.hypot(player.x - p.x, player.y - p.y) <= 85 && !p.activated) {
+            p.activate();
+            camera.kick(0.2);
+            const activeCount = mysteryPillars.filter((pil) => pil.activated).length;
+            if (activeCount === mysteryPillars.length) {
+              const wfChest = chests.find((c) => c.id === "chest_waterfall");
+              if (wfChest && wfChest.isLocked) {
+                wfChest.unlock();
+                camera.kick(0.48);
+                showWeaponNotification("\u{1F30A} Il Sigillo delle Tre Rune \xE8 infranto! Forziere Sommerso SBLOCCATO!");
+              }
+            } else {
+              showWeaponNotification(`\u{1F52E} Runa attivata (${activeCount}/${mysteryPillars.length})! Trova le altre rune della cascata!`);
+            }
+            return true;
+          }
+        }
+      }
+      return false;
     }
     function handleInteraction() {
       if (!currentNearbyInteractable || gameState !== "PLAYING") return;
@@ -6145,12 +6302,18 @@
         openBlacksmithModal(currentNearbyInteractable.data);
       } else if (currentNearbyInteractable.type === "chest") {
         const ch = currentNearbyInteractable.data;
+        if (ch.isLocked && ch.poi && ch.poi.bossKind) {
+          const bossAlive = combat.enemies.some((e) => e.kind === ch.poi.bossKind && !e.dead && !e.isDying);
+          if (!bossAlive) {
+            ch.unlock();
+          }
+        }
         if (ch.isLocked) {
           showWeaponNotification(`\u{1F512} ${ch.name} \xE8 sigillato! Sconfiggi il Boss custode!`);
         } else if (!ch.isOpen) {
           const opened = ch.open(combat, player);
           if (opened) {
-            camera.kick(0.3);
+            camera.kick(0.35);
             showWeaponNotification(`\u2728 Hai aperto ${ch.name}! Oro, XP e artefatti riscattati!`);
             renderIngameLoot();
             renderIngameForge();
@@ -6314,6 +6477,68 @@
       else if (Math.random() < 0.28) kind = "skeleton";
       return new Enemy(x, y, kind);
     }
+    function drawCrosshairHUD(ctx2, screenX, screenY, dpr = 1) {
+      const cx = screenX * dpr;
+      const cy = screenY * dpr;
+      const isLockedOn = Boolean(combat.currentTarget);
+      const isOverInteract = Boolean(currentNearbyInteractable);
+      const color = isOverInteract ? "#fde047" : isLockedOn ? "#ef4444" : "#38bdf8";
+      const cdProgress = combat.cooldownProgress;
+      const r = Math.round(13 * dpr);
+      ctx2.save();
+      ctx2.translate(cx, cy);
+      if (cdProgress < 1) {
+        ctx2.strokeStyle = "rgba(15, 23, 42, 0.7)";
+        ctx2.lineWidth = 3.5 * dpr;
+        ctx2.beginPath();
+        ctx2.arc(0, 0, r + 4.5 * dpr, 0, Math.PI * 2);
+        ctx2.stroke();
+        ctx2.strokeStyle = "#38bdf8";
+        ctx2.lineWidth = 2.4 * dpr;
+        ctx2.beginPath();
+        ctx2.arc(0, 0, r + 4.5 * dpr, -Math.PI / 2, -Math.PI / 2 + cdProgress * Math.PI * 2);
+        ctx2.stroke();
+      }
+      ctx2.strokeStyle = color;
+      ctx2.lineWidth = 1.6 * dpr;
+      ctx2.beginPath();
+      ctx2.arc(0, 0, r, 0, Math.PI * 2);
+      ctx2.stroke();
+      const gap = 3 * dpr;
+      const len = 5 * dpr;
+      ctx2.beginPath();
+      ctx2.moveTo(0, -(r + gap));
+      ctx2.lineTo(0, -(r + gap + len));
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(0, r + gap);
+      ctx2.lineTo(0, r + gap + len);
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(-(r + gap), 0);
+      ctx2.lineTo(-(r + gap + len), 0);
+      ctx2.stroke();
+      ctx2.beginPath();
+      ctx2.moveTo(r + gap, 0);
+      ctx2.lineTo(r + gap + len, 0);
+      ctx2.stroke();
+      ctx2.fillStyle = color;
+      if (isLockedOn) {
+        const dSize = 3 * dpr;
+        ctx2.beginPath();
+        ctx2.moveTo(0, -dSize);
+        ctx2.lineTo(dSize, 0);
+        ctx2.lineTo(0, dSize);
+        ctx2.lineTo(-dSize, 0);
+        ctx2.closePath();
+        ctx2.fill();
+      } else {
+        ctx2.beginPath();
+        ctx2.arc(0, 0, 2 * dpr, 0, Math.PI * 2);
+        ctx2.fill();
+      }
+      ctx2.restore();
+    }
     function loop(currentTime) {
       try {
         const rawDt = (currentTime - lastTime) / 1e3;
@@ -6334,10 +6559,12 @@
           if (!isPaused) {
             runSurvivalSeconds += dt;
             player.update(dt, Input, world);
-            combat.update(dt, player, world, camera);
+            const aimWorld = camera.screenToWorld(mouseScreen.x, mouseScreen.y, canvas);
+            const isAttacking = isMouseDown || Input.isDown("space");
+            combat.update(dt, player, world, camera, isAttacking, aimWorld);
             camera.follow(player.x, player.y, dt);
             let foundInteractable = null;
-            const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 75);
+            const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 85);
             if (nearbyBs) {
               foundInteractable = {
                 type: "blacksmith",
@@ -6348,7 +6575,13 @@
             if (!foundInteractable) {
               for (const ch of chests) {
                 const dist = Math.hypot(player.x - ch.x, player.y - ch.y);
-                if (dist <= 52 && !ch.isOpen) {
+                if (dist <= 85 && !ch.isOpen) {
+                  if (ch.isLocked && ch.poi && ch.poi.bossKind) {
+                    const bossStillAlive = combat.enemies.some((e) => e.kind === ch.poi.bossKind && !e.dead && !e.isDying);
+                    if (!bossStillAlive) {
+                      ch.unlock();
+                    }
+                  }
                   foundInteractable = {
                     type: "chest",
                     data: ch,
@@ -6361,7 +6594,7 @@
             if (!foundInteractable) {
               for (const p of mysteryPillars) {
                 const dist = Math.hypot(player.x - p.x, player.y - p.y);
-                if (dist <= 50 && !p.activated) {
+                if (dist <= 80 && !p.activated) {
                   foundInteractable = {
                     type: "mystery_pillar",
                     data: p,
@@ -6410,6 +6643,9 @@
         combat.drawFX(ctx);
         ctx.restore();
         world.drawVignette(ctx, canvas.width, canvas.height);
+        if (gameState === "PLAYING" && !isPaused) {
+          drawCrosshairHUD(ctx, mouseScreen.x, mouseScreen.y, camera.dpr);
+        }
         ctx.restore();
         if (gameState === "PLAYING") {
           minimapTimer += dt;

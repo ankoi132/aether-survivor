@@ -77,4 +77,16 @@ export class Camera {
     const ty = -this.top() + this.shakeY;
     ctx.translate(Math.round(tx), Math.round(ty));
   }
+
+  /**
+   * Converte le coordinate schermo/mouse (clientX, clientY) in coordinate assolute del mondo di gioco
+   */
+  screenToWorld(clientX, clientY, canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = (clientX - rect.left) * (canvas.width / rect.width);
+    const canvasY = (clientY - rect.top) * (canvas.height / rect.height);
+    const worldX = canvasX / this.scale + this.left() - this.shakeX;
+    const worldY = canvasY / this.scale + this.top() - this.shakeY;
+    return { x: worldX, y: worldY };
+  }
 }

@@ -185,6 +185,32 @@ window.addEventListener('DOMContentLoaded', async () => {
   let mysteryPillars = [];
   let notificationTimeout = null;
 
+  // Tracciamento Coordinate Mouse e Click Manuale
+  let mouseScreen = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  let isMouseDown = false;
+
+  window.addEventListener('mousemove', (e) => {
+    mouseScreen.x = e.clientX;
+    mouseScreen.y = e.clientY;
+  });
+
+  window.addEventListener('mousedown', (e) => {
+    if (e.button === 0) {
+      isMouseDown = true;
+      // Se clicchi sul canvas di gioco, verifica se stai cliccando su forziere, fabbro o runa
+      if (gameState === 'PLAYING' && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
+        const aim = camera.screenToWorld(e.clientX, e.clientY, canvas);
+        handleWorldClickInteraction(aim);
+      }
+    }
+  });
+
+  window.addEventListener('mouseup', (e) => {
+    if (e.button === 0) {
+      isMouseDown = false;
+    }
+  });
+
   // Istanze di gioco
   const camera = new Camera(768, 420);
   const world = new World(2026);
@@ -1546,12 +1572,18 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
-    // Callback sconfitta Boss: sblocco glorioso del forziere leggendario!
+    // Callback sconfitta Boss: sblocco glorioso e infallibile del forziere leggendario!
     combat.onBossKilled = (boss) => {
-      const matchChest = chests.find(c => c.poi && c.poi.bossKind === boss.kind);
-      if (matchChest && matchChest.isLocked) {
+      const matchChest = chests.find(c => {
+        if (!c.poi) return false;
+        if (c.poi.bossKind === boss.kind) return true;
+        const shortKind = boss.kind.replace('boss_', '');
+        return c.poi.id.includes(shortKind) || (c.id && c.id.includes(shortKind));
+      });
+
+      if (matchChest) {
         matchChest.unlock();
-        camera.kick(0.42);
+        camera.kick(0.48);
         showWeaponNotification(`👑 ${boss.name} Sconfitto! ${matchChest.name} SBLOCCATO!`);
       }
     };
@@ -1603,7 +1635,75 @@ window.addEventListener('DOMContentLoaded', async () => {
     gameHud?.classList.remove('hidden');
     modalGameOver?.classList.add('hidden');
 
-    showWeaponNotification("Tasto [E]: Interagisci · [I]: Zaino · [M]: Mappa · [ESC]: Menu · [1/2/3]: Armi");
+    showWeaponNotification("⚔️ Clicca col MOUSE per attaccare! [E]: Interagisci · [1/2/3]: Armi · [I]: Zaino");
+  }
+
+  // Interazione diretta cliccando col MOUSE su Forzieri, Fabbri o Rune nel mondo
+  function handleWorldClickInteraction(aimWorld) {
+    if (!aimWorld || gameState !== 'PLAYING') return false;
+
+    // 1. Click su Forziere
+    for (const ch of chests) {
+      if (ch.hitTest(aimWorld.x, aimWorld.y) || Math.hypot(aimWorld.x - ch.x, aimWorld.y - ch.y) <= 42) {
+        if (Math.hypot(player.x - ch.x, player.y - ch.y) <= 90) {
+          // Verifica fail-safe: se il forziere è marcato locked ma il boss è già morto, sbloccalo subito!
+          if (ch.isLocked && ch.poi && ch.poi.bossKind) {
+            const bossAlive = combat.enemies.some(e => e.kind === ch.poi.bossKind && !e.dead && !e.isDying);
+            if (!bossAlive) {
+              ch.unlock();
+            }
+          }
+
+          if (ch.isLocked) {
+            showWeaponNotification(`🔒 ${ch.name} è sigillato! Sconfiggi il Boss custode!`);
+          } else if (!ch.isOpen) {
+            const opened = ch.open(combat, player);
+            if (opened) {
+              camera.kick(0.35);
+              showWeaponNotification(`✨ Hai aperto ${ch.name}! Oro, XP e artefatti riscattati!`);
+              renderIngameLoot();
+              renderIngameForge();
+            }
+          }
+          return true; // Click assorbito per l'interazione
+        }
+      }
+    }
+
+    // 2. Click su Fabbro del Villaggio
+    const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 90);
+    if (nearbyBs) {
+      const bsWorldX = nearbyBs.tx * world.TS;
+      const bsWorldY = nearbyBs.ty * world.TS;
+      if (Math.hypot(aimWorld.x - bsWorldX, aimWorld.y - bsWorldY) <= 42) {
+        openBlacksmithModal(nearbyBs);
+        return true;
+      }
+    }
+
+    // 3. Click su Runa della Cascata
+    for (const p of mysteryPillars) {
+      if (Math.hypot(aimWorld.x - p.x, aimWorld.y - p.y) <= 38) {
+        if (Math.hypot(player.x - p.x, player.y - p.y) <= 85 && !p.activated) {
+          p.activate();
+          camera.kick(0.2);
+          const activeCount = mysteryPillars.filter(pil => pil.activated).length;
+          if (activeCount === mysteryPillars.length) {
+            const wfChest = chests.find(c => c.id === 'chest_waterfall');
+            if (wfChest && wfChest.isLocked) {
+              wfChest.unlock();
+              camera.kick(0.48);
+              showWeaponNotification('🌊 Il Sigillo delle Tre Rune è infranto! Forziere Sommerso SBLOCCATO!');
+            }
+          } else {
+            showWeaponNotification(`🔮 Runa attivata (${activeCount}/${mysteryPillars.length})! Trova le altre rune della cascata!`);
+          }
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   // Gestione dell'interazione con Fabbro, Forzieri e Rune con [E] o click sul prompt
@@ -1614,12 +1714,21 @@ window.addEventListener('DOMContentLoaded', async () => {
       openBlacksmithModal(currentNearbyInteractable.data);
     } else if (currentNearbyInteractable.type === 'chest') {
       const ch = currentNearbyInteractable.data;
+
+      // Fail-safe: se il forziere è marcato locked ma il boss è già morto, sbloccalo subito!
+      if (ch.isLocked && ch.poi && ch.poi.bossKind) {
+        const bossAlive = combat.enemies.some(e => e.kind === ch.poi.bossKind && !e.dead && !e.isDying);
+        if (!bossAlive) {
+          ch.unlock();
+        }
+      }
+
       if (ch.isLocked) {
         showWeaponNotification(`🔒 ${ch.name} è sigillato! Sconfiggi il Boss custode!`);
       } else if (!ch.isOpen) {
         const opened = ch.open(combat, player);
         if (opened) {
-          camera.kick(0.3);
+          camera.kick(0.35);
           showWeaponNotification(`✨ Hai aperto ${ch.name}! Oro, XP e artefatti riscattati!`);
           renderIngameLoot();
           renderIngameForge();
@@ -1831,6 +1940,70 @@ window.addEventListener('DOMContentLoaded', async () => {
     return new Enemy(x, y, kind);
   }
 
+  // Mirino Arcano Crosshair (con indicatore di mira e cooldown sul mouse)
+  function drawCrosshairHUD(ctx, screenX, screenY, dpr = 1) {
+    const cx = screenX * dpr;
+    const cy = screenY * dpr;
+
+    const isLockedOn = Boolean(combat.currentTarget);
+    const isOverInteract = Boolean(currentNearbyInteractable);
+    const color = isOverInteract ? '#fde047' : (isLockedOn ? '#ef4444' : '#38bdf8');
+    const cdProgress = combat.cooldownProgress;
+    const r = Math.round(13 * dpr);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // 1. Arco circolare indicatore di Cooldown dell'arma
+    if (cdProgress < 1.0) {
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.7)';
+      ctx.lineWidth = 3.5 * dpr;
+      ctx.beginPath();
+      ctx.arc(0, 0, r + 4.5 * dpr, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.4 * dpr;
+      ctx.beginPath();
+      ctx.arc(0, 0, r + 4.5 * dpr, -Math.PI / 2, -Math.PI / 2 + cdProgress * Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // 2. Cerchio del mirino
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.6 * dpr;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 3. Tacche cardinali
+    const gap = 3 * dpr;
+    const len = 5 * dpr;
+    ctx.beginPath(); ctx.moveTo(0, -(r + gap)); ctx.lineTo(0, -(r + gap + len)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, (r + gap)); ctx.lineTo(0, (r + gap + len)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-(r + gap), 0); ctx.lineTo(-(r + gap + len), 0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo((r + gap), 0); ctx.lineTo((r + gap + len), 0); ctx.stroke();
+
+    // 4. Puntino centrale o diamante se bersaglio agganciato
+    ctx.fillStyle = color;
+    if (isLockedOn) {
+      const dSize = 3 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(0, -dSize);
+      ctx.lineTo(dSize, 0);
+      ctx.lineTo(0, dSize);
+      ctx.lineTo(-dSize, 0);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(0, 0, 2 * dpr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   function loop(currentTime) {
     try {
       const rawDt = (currentTime - lastTime) / 1000;
@@ -1856,14 +2029,19 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (!isPaused) {
           runSurvivalSeconds += dt;
           player.update(dt, Input, world);
-          combat.update(dt, player, world, camera);
+
+          // Calcolo mira con il mouse nel mondo e trigger attacco manuale
+          const aimWorld = camera.screenToWorld(mouseScreen.x, mouseScreen.y, canvas);
+          const isAttacking = (isMouseDown || Input.isDown('space'));
+          combat.update(dt, player, world, camera, isAttacking, aimWorld);
+
           camera.follow(player.x, player.y, dt);
 
           // Rilevamento interazioni vicine (Fabbro, Forzieri, Monoliti delle Cascate)
           let foundInteractable = null;
 
-          // 1. Fabbro del villaggio più vicino
-          const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 75);
+          // 1. Fabbro del villaggio più vicino (entro 85px)
+          const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 85);
           if (nearbyBs) {
             foundInteractable = {
               type: 'blacksmith',
@@ -1872,11 +2050,19 @@ window.addEventListener('DOMContentLoaded', async () => {
             };
           }
 
-          // 2. Forzieri del Tesoro Ancestrali
+          // 2. Forzieri del Tesoro Ancestrali (entro 85px)
           if (!foundInteractable) {
             for (const ch of chests) {
               const dist = Math.hypot(player.x - ch.x, player.y - ch.y);
-              if (dist <= 52 && !ch.isOpen) {
+              if (dist <= 85 && !ch.isOpen) {
+                // Controllo fail-safe continuo: se il forziere è sigillato ma il boss dell'arena è già morto, sbloccalo subito!
+                if (ch.isLocked && ch.poi && ch.poi.bossKind) {
+                  const bossStillAlive = combat.enemies.some(e => e.kind === ch.poi.bossKind && !e.dead && !e.isDying);
+                  if (!bossStillAlive) {
+                    ch.unlock();
+                  }
+                }
+
                 foundInteractable = {
                   type: 'chest',
                   data: ch,
@@ -1887,11 +2073,11 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
           }
 
-          // 3. Monoliti Runici della Cascata
+          // 3. Monoliti Runici della Cascata (entro 80px)
           if (!foundInteractable) {
             for (const p of mysteryPillars) {
               const dist = Math.hypot(player.x - p.x, player.y - p.y);
-              if (dist <= 50 && !p.activated) {
+              if (dist <= 80 && !p.activated) {
                 foundInteractable = {
                   type: 'mystery_pillar',
                   data: p,
@@ -1959,8 +2145,14 @@ window.addEventListener('DOMContentLoaded', async () => {
 
       ctx.restore();
 
-      // Vignettatura
+      // Vignettatura d'atmosfera
       world.drawVignette(ctx, canvas.width, canvas.height);
+
+      // Mirino Arcano Crosshair con indicatore di Cooldown e puntamento manuale
+      if (gameState === 'PLAYING' && !isPaused) {
+        drawCrosshairHUD(ctx, mouseScreen.x, mouseScreen.y, camera.dpr);
+      }
+
       ctx.restore();
 
       // 3. MINIMAPPA LIVE E HUD

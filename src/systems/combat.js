@@ -176,37 +176,55 @@ export class CombatSystem {
     return drops;
   }
 
-  update(dt, player, world, camera) {
-    // 1. Cerca il bersaglio più vicino
-    this.currentTarget = this.findNearestTarget(player);
+  findTargetNearAim(aimWorld, player) {
+    if (!aimWorld) return this.findNearestTarget(player);
+    let best = null;
+    let bestDist2 = 95 * 95;
+    for (const target of this.getAllTargets()) {
+      if (target.dead || target.isDying) continue;
+      const dx = target.x - aimWorld.x;
+      const dy = target.y - aimWorld.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bestDist2) {
+        bestDist2 = d2;
+        best = target;
+      }
+    }
+    return best || this.findNearestTarget(player);
+  }
 
-    // 2. Cooldown e Attacco dell'Arma equipaggiata
+  update(dt, player, world, camera, isAttacking = false, aimWorld = null) {
+    // 1. Cerca il bersaglio in base alla posizione mirata con il mouse
+    this.currentTarget = this.findTargetNearAim(aimWorld, player);
+
+    // 2. Cooldown timer dell'arma
     if (this.cooldownTimer > 0) {
       this.cooldownTimer -= dt;
     }
 
-    if (this.cooldownTimer <= 0) {
+    // 3. Attacco manuale su CLICK DEL MOUSE o tasto fuoco (MAI più automatico!)
+    if (isAttacking && this.cooldownTimer <= 0) {
+      let aimAngle = player.facingAngle || 0;
+      if (aimWorld) {
+        aimAngle = Math.atan2(aimWorld.y - (player.y - 10), aimWorld.x - player.x);
+        player.facing = Math.cos(aimAngle) < 0 ? 'left' : 'right';
+        player.facingAngle = aimAngle;
+      }
+
       if (this.weaponId === 'sword') {
-        // Se c'è un nemico nel raggio o se ci sono nemici vicini, sferra il fendente!
-        if (this.currentTarget) {
-          this.performSwordCleave(player, this.currentTarget, camera);
-          this.cooldownTimer = this.baseCooldown;
-        }
+        this.performSwordCleave(player, aimWorld, camera, aimAngle);
+        this.cooldownTimer = this.baseCooldown;
       } else if (this.weaponId === 'bow') {
-        if (this.currentTarget) {
-          this.fireBowArrows(player, this.currentTarget);
-          this.cooldownTimer = this.baseCooldown;
-        }
+        this.fireBowArrows(player, aimWorld, aimAngle);
+        this.cooldownTimer = this.baseCooldown;
       } else {
         // staff
-        if (this.currentTarget) {
-          this.fireArcaneDarts(player, this.currentTarget);
-          this.cooldownTimer = this.baseCooldown;
-        }
+        this.fireArcaneDarts(player, aimWorld, aimAngle);
+        this.cooldownTimer = this.baseCooldown;
       }
     }
 
-    // 3. Aggiorna fendenti visivi
+    // 4. Aggiorna fendenti visivi
     for (let i = this.slashes.length - 1; i >= 0; i--) {
       const s = this.slashes[i];
       s.update(dt);
@@ -362,18 +380,22 @@ export class CombatSystem {
   }
 
   /**
-   * Attacco Spada: fendente ravvicinato ad area che colpisce tutti i nemici nell'arco
+   * Attacco Spada: fendente ravvicinato ad area orientato verso il cursore del mouse
    */
-  performSwordCleave(player, target, camera) {
-    let angle = player.moveAngle || (Math.PI / 2);
-    if (target) {
-      angle = Math.atan2(target.y - player.y, target.x - player.x);
+  performSwordCleave(player, aimWorld, camera, aimAngle = null) {
+    let angle = aimAngle;
+    if (angle === null || angle === undefined) {
+      if (aimWorld) {
+        angle = Math.atan2(aimWorld.y - player.y, aimWorld.x - player.x);
+      } else {
+        angle = player.moveAngle || (Math.PI / 2);
+      }
     }
 
-    const range = this.swordRange || 92;
+    const range = this.swordRange || 96;
     const arc = this.swordArc || (Math.PI * 0.95);
     const dmg = Math.round(this.swordDamage * this.damageMultiplier);
-    const knockback = this.swordKnockback || 180;
+    const knockback = this.swordKnockback || 200;
 
     // Genera l'effetto grafico dell'arco di taglio
     this.slashes.push(new SlashEffect(player.x, player.y - 6, angle, range, arc));
@@ -381,7 +403,7 @@ export class CombatSystem {
 
     // Applica danno e forte knockback a tutti i nemici nell'arco di taglio
     for (const t of this.getAllTargets()) {
-      if (t.dead) continue;
+      if (t.dead || t.isDying) continue;
       const dx = t.x - player.x;
       const dy = t.y - (player.y - 6);
       const dist = Math.hypot(dx, dy);
@@ -391,57 +413,31 @@ export class CombatSystem {
         let diff = Math.abs(enemyAngle - angle);
         while (diff > Math.PI) diff = Math.abs(diff - Math.PI * 2);
 
-        if (arc >= Math.PI * 1.9 || diff <= arc / 2 + 0.18) {
+        if (arc >= Math.PI * 1.9 || diff <= arc / 2 + 0.20) {
           t.takeDamage(dmg, enemyAngle, knockback, 'slash');
-          FX.burst(t.x, t.y - 8, '#f8fafc', 4, 110);
+          FX.burst(t.x, t.y - 8, '#f8fafc', 5, 120);
+          FX.spark(t.x, t.y - 8, '#fde047', 4);
         }
       }
     }
   }
 
   /**
-   * Attacco Arco: frecce rapide e perforanti a lunga gittata
+   * Attacco Arco: frecce rapide e perforanti verso il cursore del mouse
    */
-  fireBowArrows(player, target) {
-    const dx = target.x - player.x;
-    const dy = target.y - (player.y - 12);
-    const baseAngle = Math.atan2(dy, dx);
+  fireBowArrows(player, aimWorld, aimAngle = null) {
+    let baseAngle = aimAngle;
+    if (baseAngle === null || baseAngle === undefined) {
+      if (aimWorld) {
+        baseAngle = Math.atan2(aimWorld.y - (player.y - 12), aimWorld.x - player.x);
+      } else {
+        baseAngle = player.facingAngle || 0;
+      }
+    }
 
     const dmg = Math.round(this.bowDamage * this.damageMultiplier);
     const count = this.bowArrowsCount || 1;
     const spreadAngle = 0.14;
-    const startAngle = baseAngle - ((count - 1) * spreadAngle) / 2;
-
-    for (let i = 0; i < count; i++) {
-      const angle = startAngle + i * spreadAngle;
-      const spawnX = player.x + (Math.cos(angle) * 10);
-      const spawnY = (player.y - 12) + (Math.sin(angle) * 10);
-
-      this.projectiles.push(
-        new Projectile(spawnX, spawnY, angle, {
-          type: 'arrow',
-          dmg,
-          speed: this.bowSpeed || 520,
-          pierce: this.bowPierce || 2
-        })
-      );
-    }
-    FX.spark(player.x, player.y - 12, '#fef08a', 4);
-  }
-
-  /**
-   * Attacco Bastone: dardi arcani a ventaglio
-   */
-  fireArcaneDarts(player, target) {
-    const dx = target.x - player.x;
-    const dy = target.y - (player.y - 12);
-    const baseAngle = Math.atan2(dy, dx);
-
-    const baseDmg = (this.staffDamage || 18) + (player.permanentBonusDamage || 0);
-    const dmg = Math.round(baseDmg * this.damageMultiplier);
-    const count = this.projectilesPerShot;
-
-    const spreadAngle = 0.22;
     const startAngle = baseAngle - ((count - 1) * spreadAngle) / 2;
 
     for (let i = 0; i < count; i++) {
@@ -451,14 +447,51 @@ export class CombatSystem {
 
       this.projectiles.push(
         new Projectile(spawnX, spawnY, angle, {
+          type: 'arrow',
+          dmg,
+          speed: this.bowSpeed || 560,
+          pierce: this.bowPierce || 2
+        })
+      );
+    }
+    FX.spark(player.x, player.y - 12, '#fef08a', 5);
+  }
+
+  /**
+   * Attacco Bastone: dardi arcani a ventaglio verso il cursore del mouse
+   */
+  fireArcaneDarts(player, aimWorld, aimAngle = null) {
+    let baseAngle = aimAngle;
+    if (baseAngle === null || baseAngle === undefined) {
+      if (aimWorld) {
+        baseAngle = Math.atan2(aimWorld.y - (player.y - 12), aimWorld.x - player.x);
+      } else {
+        baseAngle = player.facingAngle || 0;
+      }
+    }
+
+    const baseDmg = (this.staffDamage || 18) + (player.permanentBonusDamage || 0);
+    const dmg = Math.round(baseDmg * this.damageMultiplier);
+    const count = this.projectilesPerShot;
+
+    const spreadAngle = 0.20;
+    const startAngle = baseAngle - ((count - 1) * spreadAngle) / 2;
+
+    for (let i = 0; i < count; i++) {
+      const angle = startAngle + i * spreadAngle;
+      const spawnX = player.x + (Math.cos(angle) * 14);
+      const spawnY = (player.y - 12) + (Math.sin(angle) * 14);
+
+      this.projectiles.push(
+        new Projectile(spawnX, spawnY, angle, {
           type: 'dart',
-          speed: 370,
+          speed: 400,
           dmg: dmg,
           r: 5
         })
       );
 
-      FX.burst(spawnX, spawnY, '#38bdf8', 3, 60);
+      FX.burst(spawnX, spawnY, '#38bdf8', 3, 70);
     }
   }
 

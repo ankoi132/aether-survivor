@@ -172,7 +172,7 @@
     "yuta": {
       "nickname": "yuta",
       "createdAt": "2026-10-15T16:24:18.920Z",
-      "gold": 109,
+      "gold": 29,
       "totalRuns": 2,
       "totalKills": 14,
       "highestLevel": 5,
@@ -185,16 +185,16 @@
         "gold_gain": 0
       },
       "inventory": {
-        "slime_gel": 11,
+        "slime_gel": 7,
         "ice_crystal": 1,
         "sun_amber": 2,
         "magma_core": 0,
         "ancient_bone": 1,
         "iron_scrap": 5,
-        "arcane_rune": 1
+        "arcane_rune": 0
       },
       "weapons": {
-        "staff": 1,
+        "staff": 2,
         "sword": 1,
         "bow": 0
       },

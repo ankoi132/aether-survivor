@@ -61,23 +61,52 @@ export class Chest {
     return true;
   }
 
+  canInteract(playerX, playerY, maxDist = 85) {
+    if (this.isOpen) return false;
+    const d = Math.hypot(this.x - playerX, this.y - playerY);
+    return d <= maxDist;
+  }
+
+  hitTest(worldX, worldY, padding = 26) {
+    return Math.abs(worldX - this.x) <= padding && (worldY >= this.y - 36 - padding && worldY <= this.y + padding);
+  }
+
   update(dt, player) {
     this.pulseTimer += dt;
   }
 
   draw(ctx) {
     // 1. Ombra a terra
-    Sprites.drawShadow(ctx, this.x, this.y + 2, 14);
+    Sprites.drawShadow(ctx, this.x, this.y + 2, 16);
 
-    // 2. Bagliore se pronto all'apertura
+    // 2. Maestoso fascio di luce ascensionale quando sbloccato e pronto
     if (!this.isLocked && !this.isOpen) {
-      const pulse = 0.5 + Math.sin(this.pulseTimer * 4) * 0.3;
-      const glow = ctx.createRadialGradient(this.x, this.y - 6, 4, this.x, this.y - 6, 32);
-      glow.addColorStop(0, `rgba(250, 204, 21, ${0.4 * pulse})`);
+      const pulse = 0.65 + Math.sin(this.pulseTimer * 4.5) * 0.35;
+
+      // Fascio di luce verso il cielo
+      ctx.save();
+      const beamGrad = ctx.createLinearGradient(this.x, this.y, this.x, this.y - 140);
+      beamGrad.addColorStop(0, `rgba(250, 204, 21, ${0.45 * pulse})`);
+      beamGrad.addColorStop(0.4, `rgba(253, 224, 71, ${0.25 * pulse})`);
+      beamGrad.addColorStop(1, 'rgba(250, 204, 21, 0)');
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(this.x - 14, this.y);
+      ctx.lineTo(this.x + 14, this.y);
+      ctx.lineTo(this.x + 28, this.y - 140);
+      ctx.lineTo(this.x - 28, this.y - 140);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Bagliore radiale al suolo
+      const glow = ctx.createRadialGradient(this.x, this.y - 6, 6, this.x, this.y - 6, 44);
+      glow.addColorStop(0, `rgba(250, 204, 21, ${0.5 * pulse})`);
+      glow.addColorStop(0.6, `rgba(245, 158, 11, ${0.25 * pulse})`);
       glow.addColorStop(1, 'rgba(250, 204, 21, 0)');
       ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(this.x, this.y - 6, 32, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y - 6, 44, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -99,19 +128,23 @@ export class Chest {
       ctx.fillStyle = '#94a3b8';
       ctx.fillText('✓ Forziere Riscattato', Math.round(this.x), Math.round(this.y - 24));
     } else if (this.isLocked) {
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-      ctx.fillRect(Math.round(this.x - 48), Math.round(this.y - 34), 96, 14);
-      ctx.fillStyle = '#ef4444';
-      ctx.fillText(`🔒 ${this.poi.title}`, Math.round(this.x), Math.round(this.y - 23));
-    } else {
-      // Sbloccato!
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-      ctx.fillRect(Math.round(this.x - 44), Math.round(this.y - 36), 88, 16);
-      ctx.strokeStyle = '#f59e0b';
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.fillRect(Math.round(this.x - 52), Math.round(this.y - 36), 104, 16);
+      ctx.strokeStyle = '#ef4444';
       ctx.lineWidth = 1;
-      ctx.strokeRect(Math.round(this.x - 44), Math.round(this.y - 36), 88, 16);
+      ctx.strokeRect(Math.round(this.x - 52), Math.round(this.y - 36), 104, 16);
+      ctx.fillStyle = '#f87171';
+      ctx.fillText(`🔒 ${this.poi.title || this.name}`, Math.round(this.x), Math.round(this.y - 24));
+    } else {
+      // Sbloccato e pronto per essere aperto!
+      const pulseY = Math.sin(this.pulseTimer * 5) * 3;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      ctx.fillRect(Math.round(this.x - 50), Math.round(this.y - 42 + pulseY), 100, 18);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(Math.round(this.x - 50), Math.round(this.y - 42 + pulseY), 100, 18);
       ctx.fillStyle = '#fde047';
-      ctx.fillText('⭐ [E] Apri Forziere', Math.round(this.x), Math.round(this.y - 24));
+      ctx.fillText('⭐ [E] o Clicca per Aprire!', Math.round(this.x), Math.round(this.y - 29 + pulseY));
     }
     ctx.restore();
   }
