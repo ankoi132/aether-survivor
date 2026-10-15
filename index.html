@@ -151,16 +151,12 @@
        3. HUD DI GIOCO IN-GAME (Minimalista, Elegante e Cliccabile con Mouse)
        ========================================================================= -->
   <div id="game-hud" class="hidden">
-    <!-- Barra Superiore Esperienza, Salute & Oro -->
-    <div id="top-xp-bar">
+    <!-- Barra Esperienza Ancorata a Sinistra (con Livello e Oro) -->
+    <div id="left-xp-bar">
       <div id="level-badge">LV <span id="hud-level">1</span></div>
       <div id="xp-track">
         <div id="xp-fill"></div>
         <div id="xp-text">0 / 25 XP</div>
-      </div>
-      <div id="hp-track">
-        <div id="hp-fill"></div>
-        <div id="hp-text">100 / 100 HP</div>
       </div>
       <div id="run-gold-badge">
         🪙 <span id="hud-run-gold">0</span>
@@ -209,9 +205,13 @@
       </div>
     </div>
 
-    <!-- Istruzioni di Gioco (in basso al centro) -->
-    <div id="controls-hint">
-      <b>W A S D</b> Muoviti · <b>[I]</b> Zaino & Talenti · <b>[M]</b> Mappa · <b>[1/2/3]</b> Cambia Arma · <b>[ESC]</b> Menu
+    <!-- Barra della Salute In Basso al Centro (al posto dei comandi suggeriti) -->
+    <div id="bottom-hp-container">
+      <span class="hp-heart-badge">❤️</span>
+      <div id="hp-track">
+        <div id="hp-fill"></div>
+        <div id="hp-text">100 / 100 HP</div>
+      </div>
     </div>
   </div>
 
