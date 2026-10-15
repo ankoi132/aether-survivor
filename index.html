@@ -3,22 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Aether Survivor - Fantasy Action RPG 2D</title>
+  <title>Aether Survivor - Fantasy Action Roguelike 2D</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Contenitore Canvas Principale di Gioco -->
   <div id="canvas-container">
     <canvas id="gameCanvas"></canvas>
   </div>
 
   <!-- =========================================================================
-       MODALE ACCESSO / REGISTRAZIONE ACCOUNT
+       1. MODALE AUTENTICAZIONE ACCOUNT (Accesso / Registrazione / Ospite)
        ========================================================================= -->
   <div id="auth-modal" class="hidden overlay-screen" style="z-index: 120;">
     <div class="menu-box auth-box">
       <div class="menu-header">
         <div class="menu-logo">✨ AETHER SURVIVOR ✨</div>
-        <div class="menu-subtitle">Accesso Personaggio & Salvataggio Progressi Cloud</div>
+        <div class="menu-subtitle">Accesso Account & Salvataggio Progressi Cloud</div>
       </div>
 
       <!-- Schede Accedi / Registrati -->
@@ -41,7 +42,7 @@
           <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
         </div>
         <div class="auth-benefits">
-          🔒 Accedendo con il tuo account sincronizzi il tuo eroe, proteggi i progressi ed hai accesso ai tuoi salvataggi da qualsiasi dispositivo.
+          🔒 Accedendo con il tuo account sincronizzi il tuo eroe, proteggi i progressi ed hai accesso ai tuoi salvataggi e futuri acquisti in-app da qualsiasi dispositivo.
         </div>
         <button type="submit" id="btn-submit-login" class="btn-primary" style="width: 100%; margin-top: 8px;">
           🔑 ACCEDI AL TUO PERSONAGGIO
@@ -67,7 +68,7 @@
           <input type="password" id="register-password-confirm" placeholder="••••••••" required autocomplete="new-password">
         </div>
         <div class="auth-benefits">
-          ✨ Creando un account riceverai subito <b>150 Oro</b> di benvenuto, sbloccherai il salvataggio sicuro e tutti i tuoi acquisti e artefatti rimarranno tuoi per sempre!
+          ✨ Creando un account riceverai subito <b>150 Oro</b> di benvenuto, sbloccherai il salvataggio cloud sicuro e i tuoi artefatti e acquisti rimarranno tuoi per sempre!
         </div>
         <button type="submit" id="btn-submit-register" class="btn-primary" style="width: 100%; margin-top: 8px;">
           ✨ REGISTRATI E CREA IL TUO MAGO
@@ -76,119 +77,81 @@
 
       <!-- Opzione Ospite (Fallback rapido) -->
       <div class="auth-footer-guest">
-        <span>Oppure vuoi fare solo una prova veloce?</span>
+        <span>Vuoi fare prima una prova veloce?</span>
         <button type="button" id="btn-continue-guest" class="btn-text-guest">🎮 Continua come Ospite Locale (Senza Account)</button>
       </div>
     </div>
   </div>
 
   <!-- =========================================================================
-       MENU PRINCIPALE & SANTUARIO DEI TALENTI (Meta-Progressione Backend)
+       2. SCHERMATA INIZIALE & MENU DI INGRESSO (HERO TITLE SCREEN ANIMATA)
        ========================================================================= -->
-  <div id="main-menu" class="overlay-screen">
-    <div class="menu-box">
-      <div class="menu-header">
-        <div class="menu-logo">✨ AETHER SURVIVOR ✨</div>
-        <div class="menu-subtitle">Il Santuario dei Maghi e la Meta-Progressione</div>
-      </div>
+  <div id="main-menu" class="overlay-screen hero-screen">
+    <!-- Canvas dedicato per particelle stellari, fulmini e mana animato -->
+    <canvas id="title-bg-canvas"></canvas>
 
-      <!-- Barra Profilo Giocatore & Account -->
-      <div class="profile-card">
-        <div class="profile-row">
-          <div class="nick-field">
-            <span class="user-avatar-icon">🧙‍♂️</span>
-            <div class="user-info-text">
-              <span class="user-label">Personaggio / Account:</span>
-              <b id="player-nickname-display" class="user-name-bold">Caricamento...</b>
-            </div>
-            <span id="account-status-badge" class="badge-account">🛡️ Account Connesso</span>
-            <button id="btn-switch-account" class="btn-auth-toggle">🔑 Cambia Account</button>
-          </div>
-          <div class="profile-gold">
-            <span class="gold-icon">🪙</span>
-            <span id="menu-gold" class="gold-amount">150</span> Oro Permanente
+    <div class="hero-container">
+      <!-- Badge Profilo Account Compatto ed Elegante in Alto -->
+      <div class="hero-account-badge">
+        <div class="hero-user-info">
+          <span class="user-avatar-icon">🧙‍♂️</span>
+          <div class="user-meta-col">
+            <span class="user-label">Personaggio Connesso</span>
+            <b id="player-nickname-display" class="user-name-bold">Caricamento...</b>
           </div>
         </div>
+        <div class="hero-gold-pill">
+          🪙 <span id="menu-gold" class="gold-amount">150</span>
+        </div>
+        <span id="account-status-badge" class="badge-account">🛡️ Online</span>
+        <button id="btn-switch-account" class="btn-auth-toggle">🔑 Cambia Account</button>
+      </div>
 
-        <div class="career-stats">
-          <div class="stat-item">Partite: <b id="stat-runs">0</b></div>
-          <div class="stat-item">Mostri Sconfitti: <b id="stat-kills">0</b></div>
-          <div class="stat-item">Livello Record: <b id="stat-high-lvl">1</b></div>
-          <div class="stat-item">Miglior Tempo: <b id="stat-best-time">00:00</b></div>
-          <div class="stat-item online-status">Stato Server: <b id="server-status" class="status-offline">Offline (Locale)</b></div>
+      <!-- Hero Header & Logo del Gioco con Bagliore Magico -->
+      <div class="hero-header">
+        <div class="hero-logo-box">
+          <div class="hero-logo-glow"></div>
+          <h1 class="hero-title">AETHER SURVIVOR</h1>
+        </div>
+        <p class="hero-tagline">Esplora le 5 Terre Elementali · Forgia le Tue Leggende · Sopravvivi alle Creature dell'Abisso</p>
+      </div>
+
+      <!-- Preview del Personaggio & Statistiche della Carriera -->
+      <div class="hero-stage">
+        <div class="hero-pedestal">
+          <div class="hero-aura-ring"></div>
+          <div class="hero-preview-avatar">🧙‍♂️</div>
+        </div>
+        <div class="hero-summary-stats">
+          <div class="hero-stat-pill">⚔️ Mostri Sconfitti: <b id="stat-kills">0</b></div>
+          <div class="hero-stat-pill">⭐ Record Livello: <b id="stat-high-lvl">1</b></div>
+          <div class="hero-stat-pill">⏱️ Miglior Tempo: <b id="stat-best-time">00:00</b></div>
+          <div class="hero-stat-pill">🌐 Stato Server: <b id="server-status" class="status-online">Online</b></div>
         </div>
       </div>
 
-      <!-- Navigazione Schede (Grimorio Talenti / Fucina Fabbro / Zaino / Classifica) -->
-      <div class="menu-tabs">
-        <button id="tab-btn-talents" class="tab-btn active">🔮 Grimorio Talenti</button>
-        <button id="tab-btn-blacksmith" class="tab-btn">🔨 Fucina del Fabbro</button>
-        <button id="tab-btn-inventory" class="tab-btn">🎒 Zaino & Artefatti</button>
-        <button id="tab-btn-leaderboard" class="tab-btn">🏆 Classifica</button>
+      <!-- Grande Pulsante Centrale Animato: ENTRA NELL'AETHER -->
+      <div class="hero-cta-box">
+        <button id="btn-start-run" class="btn-enter-aether">
+          <span class="btn-flare"></span>
+          <span class="btn-text">⚔️ ENTRA NELL'AETHER ⚔️</span>
+          <span class="btn-subtext">Inizia la spedizione nel mondo elementale</span>
+        </button>
       </div>
 
-      <!-- Scheda 1: Grimorio dei Talenti Permanenti -->
-      <div id="tab-talents" class="tab-content active">
-        <div class="talents-grid" id="talents-container">
-          <!-- Popolato dinamicamente da api.js -->
-        </div>
-      </div>
-
-      <!-- Scheda 2: Fucina del Fabbro (Crafting & Armi) -->
-      <div id="tab-blacksmith" class="tab-content">
-        <div class="blacksmith-intro">
-          <div class="blacksmith-title">🔨 Fucina di Mastro Bronzo</div>
-          <div class="blacksmith-desc">Usa i materiali e artefatti raccolti dai mostri nei biomi per forgiare e potenziare le 3 leggendarie armi: <b>Spada da Cavaliere</b> (mischia ad area), <b>Arco dei Guardaboschi</b> (frecce perforanti) e <b>Bastone dell'Arcimago</b> (magia a ricerca).</div>
-        </div>
-        <div class="weapons-grid" id="weapons-container">
-          <!-- Popolato dinamicamente -->
-        </div>
-      </div>
-
-      <!-- Scheda 3: Zaino & Inventario Artefatti -->
-      <div id="tab-inventory" class="tab-content">
-        <div class="inventory-intro">
-          <div class="inventory-title">🎒 Collezione di Risorse & Artefatti dei Biomi</div>
-          <div class="inventory-desc">Bottini rilasciati dai mostri sconfitti durante le tue esplorazioni. Usali alla Fucina per forgiare nuove armi.</div>
-        </div>
-        <div class="inventory-grid" id="inventory-container">
-          <!-- Popolato dinamicamente -->
-        </div>
-      </div>
-
-      <!-- Scheda 2: Classifica Globale -->
-      <div id="tab-leaderboard" class="tab-content">
-        <div class="leaderboard-table-wrapper">
-          <table class="leaderboard-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Mago</th>
-                <th>Punteggio</th>
-                <th>Livello</th>
-                <th>Uccisioni</th>
-                <th>Tempo</th>
-              </tr>
-            </thead>
-            <tbody id="leaderboard-rows">
-              <tr><td colspan="6" style="text-align:center;">Caricamento classifica...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Pulsante Avvio Spedizione -->
-      <div class="menu-actions">
-        <button id="btn-start-run" class="btn-primary">⚔️ ENTRA NELLA SPEDIZIONE</button>
+      <!-- Barra Inferiore con Classifica e Comandi -->
+      <div class="hero-footer-bar">
+        <button id="btn-open-leaderboard" class="btn-ghost">🏆 Classifica Globale</button>
+        <span class="version-label">Aether Survivor v0.5.0 · Web RPG Roguelike</span>
       </div>
     </div>
   </div>
 
   <!-- =========================================================================
-       HUD DI GIOCO (Minimalista ed elegante in cima e sui bordi)
+       3. HUD DI GIOCO IN-GAME (Minimalista, Elegante e Cliccabile con Mouse)
        ========================================================================= -->
   <div id="game-hud" class="hidden">
-    <!-- Barra Superiore Esperienza & Salute -->
+    <!-- Barra Superiore Esperienza, Salute & Oro -->
     <div id="top-xp-bar">
       <div id="level-badge">LV <span id="hud-level">1</span></div>
       <div id="xp-track">
@@ -202,12 +165,31 @@
       <div id="run-gold-badge">
         🪙 <span id="hud-run-gold">0</span>
       </div>
-      <button id="btn-open-bag" class="hud-bag-btn" title="Apri Inventario e Zaino (Tasto [I] o [B])">
+    </div>
+
+    <!-- Pulsanti di Azione Rapida HUD (In Alto al Centro / Destra) -->
+    <div id="hud-action-bar">
+      <button id="hud-btn-bag" class="hud-action-btn" title="Apri Zaino, Forgia e Talenti (Tasto [I] o [B])">
         🎒 Zaino [I] (<span id="hud-run-items">0</span>)
+      </button>
+      <button id="hud-btn-map" class="hud-action-btn" title="Mappa Tattica (Tasto [M])">
+        🗺️ Mappa [M]
+      </button>
+      <button id="hud-btn-menu" class="hud-action-btn" title="Menu di Gioco & Impostazioni (Tasto [ESC])">
+        ⚙️ Menu [ESC]
       </button>
     </div>
 
-    <!-- Mini-Badge Statistiche (In alto a destra) -->
+    <!-- Widget Minimappa Interagibile (In Alto a Destra) -->
+    <div id="minimap-widget" title="Clicca per ingrandire la mappa o premi [M]">
+      <canvas id="minimap-canvas" width="130" height="130"></canvas>
+      <div class="minimap-overlay-tag">
+        <span id="minimap-biome-name">📍 Villaggio</span>
+        <button id="btn-expand-minimap" class="minimap-expand-btn" title="Ingrandisci Mappa [M]">🔍</button>
+      </div>
+    </div>
+
+    <!-- Mini-Badge Statistiche (Sotto la minimappa) -->
     <div id="top-stats">
       <span id="hud-fps">60</span> FPS · ⏱️ <span id="hud-timer">00:00</span> · Nemici: <span id="hud-enemies">0</span>
     </div>
@@ -229,12 +211,342 @@
 
     <!-- Istruzioni di Gioco (in basso al centro) -->
     <div id="controls-hint">
-      <b>W A S D</b> Muoviti · <b>[I]</b> Zaino & Inventario · <b>[1/2/3]</b> Cambia Arma · Attacco automatico
+      <b>W A S D</b> Muoviti · <b>[I]</b> Zaino & Talenti · <b>[M]</b> Mappa · <b>[1/2/3]</b> Cambia Arma · <b>[ESC]</b> Menu
     </div>
   </div>
 
   <!-- =========================================================================
-       SCHERMATA DI LEVEL-UP (Scelta Carte Potenziamento)
+       4. MODALE MAPPA TATTICA ESPANSA (Minimappa Interagibile [M])
+       ========================================================================= -->
+  <div id="expanded-map-modal" class="hidden overlay-screen" style="z-index: 105;">
+    <div class="menu-box tactical-map-box">
+      <div class="ingame-modal-header">
+        <div>
+          <div class="menu-logo" style="font-size: 21px;">🗺️ MAPPA DELLE TERRE DELL'AETHER</div>
+          <div class="menu-subtitle">Mappa tattica dei 5 Biomi elementali, confini ed edifici del villaggio</div>
+        </div>
+        <button id="btn-close-map" class="btn-close-modal" title="Chiudi [M o ESC]">✕</button>
+      </div>
+
+      <div class="tactical-map-layout">
+        <!-- Canvas Grande Mappa -->
+        <div class="tactical-canvas-wrapper">
+          <canvas id="expanded-map-canvas" width="460" height="460"></canvas>
+          <div class="map-coordinates-bar">
+            Posizione Eroe: <b id="map-coords-text">X: 0, Y: 50</b> · Bioma: <b id="map-current-biome-text" style="color: #38bdf8;">Villaggio</b>
+          </div>
+        </div>
+
+        <!-- Legenda e Dettaglio Biomi -->
+        <div class="tactical-legend-panel">
+          <div class="legend-title">Biomi & Risorse</div>
+          <div class="legend-list">
+            <div class="legend-item">
+              <span class="legend-color-box" style="background: #475569; border-color: #94a3b8;"></span>
+              <div>
+                <b>🏰 Villaggio dell'Aether (Centro)</b>
+                <p>Zona sicura con Fabbro, Taverna e Manichini da prova.</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box" style="background: #166534; border-color: #22c55e;"></span>
+              <div>
+                <b>🌲 Bosco Silvano (Ovest)</b>
+                <p>Slime verdi. Rilasciano Gel Silvano 🧪</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box" style="background: #e2e8f0; border-color: #38bdf8;"></span>
+              <div>
+                <b>❄️ Vette Innevate (Nord)</b>
+                <p>Slime di ghiaccio. Rilasciano Cristalli Gelidi ❄️</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box" style="background: #d97706; border-color: #fde047;"></span>
+              <div>
+                <b>🏜️ Deserto delle Dune (Sud-Ovest)</b>
+                <p>Slime delle sabbie. Rilasciano Ambra Solare ☀️</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box" style="background: #7f1d1d; border-color: #ef4444;"></span>
+              <div>
+                <b>🌋 Caldera Vulcanica (Est / Sud-Est)</b>
+                <p>Slime di magma. Rilasciano Nuclei di Lava 🔥</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box" style="background: #334155; border-color: #cbd5e1;"></span>
+              <div>
+                <b>💀 Cimitero & Rovine (Ai Confini)</b>
+                <p>Scheletri Guardiani. Rilasciano Ossa Antiche 🦴</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 10px;">
+        <button id="btn-resume-from-map" class="btn-primary" style="width: 100%;">▶️ TORNA AL GIOCO [M o ESC]</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       5. MODALE ZAINO, INVENTARIO, FORGIA & TALENTI IN-GAME (Tasto [I])
+       ========================================================================= -->
+  <div id="ingame-inventory-modal" class="hidden overlay-screen">
+    <div class="menu-box ingame-box">
+      <div class="ingame-modal-header">
+        <div>
+          <div class="menu-logo" style="font-size: 21px;">🎒 ZAINO & POTENZIAMENTI</div>
+          <div class="menu-subtitle">Gestisci risorse, talenti, forgiatura armi ed equipaggiamento durante la spedizione</div>
+        </div>
+        <button id="btn-close-bag" class="btn-close-modal" title="Chiudi [I o ESC]">✕</button>
+      </div>
+
+      <!-- Schede dell'Inventario In-Game: Risorse, Talenti, Forgia, Armeria -->
+      <div class="menu-tabs">
+        <button type="button" id="ingame-tab-btn-loot" class="tab-btn active">📦 Risorse Spedizione</button>
+        <button type="button" id="ingame-tab-btn-talents" class="tab-btn">🔮 Grimorio Talenti</button>
+        <button type="button" id="ingame-tab-btn-forge" class="tab-btn">🔨 Fucina Fabbro</button>
+        <button type="button" id="ingame-tab-btn-weapons" class="tab-btn">⚔️ Armeria Rapida</button>
+      </div>
+
+      <!-- Scheda 1: Risorse e Bottino Spedizione -->
+      <div id="ingame-tab-loot" class="tab-content active">
+        <div class="inventory-intro">
+          <div class="inventory-title">Materiali & Artefatti raccolti finora</div>
+          <div class="inventory-desc">Bottini rilasciati dai mostri sconfitti nei diversi biomi. Usali alla Fucina per creare o potenziare Spada, Arco e Bastone!</div>
+        </div>
+        <div class="inventory-grid" id="ingame-loot-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <!-- Scheda 2: Grimorio dei Talenti Permanenti (In-Game!) -->
+      <div id="ingame-tab-talents" class="tab-content">
+        <div class="inventory-intro">
+          <div class="inventory-title">🔮 Grimorio dei Talenti Arcani</div>
+          <div class="inventory-desc">Spendi l'oro raccolto per potenziare in modo permanente Salute, Danno, Velocità, Raggio di Magnetismo e Guadagno d'Oro!</div>
+        </div>
+        <div class="talents-grid" id="talents-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <!-- Scheda 3: Fucina del Fabbro -->
+      <div id="ingame-tab-forge" class="tab-content">
+        <div class="blacksmith-intro">
+          <div class="blacksmith-title">🔨 Forgia e Potenzia le Tue Armi</div>
+          <div class="blacksmith-desc">Spendi i materiali raccolti e l'oro conquistato per sbloccare e potenziare Spada, Arco e Bastone!</div>
+        </div>
+        <div class="weapons-grid" id="ingame-forge-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <!-- Scheda 4: Armeria Rapida (Cambio e Test Armi immediato) -->
+      <div id="ingame-tab-weapons" class="tab-content">
+        <div class="inventory-intro">
+          <div class="inventory-title">Cambia Arma Equipaggiata</div>
+          <div class="inventory-desc">Puoi cambiare arma all'istante anche durante la partita premendo i tasti <b>[1]</b>, <b>[2]</b> o <b>[3]</b> sulla tastiera!</div>
+        </div>
+        <div class="weapons-grid" id="ingame-weapons-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 12px;">
+        <button id="btn-resume-game" class="btn-primary" style="width: 100%;">▶️ RIPRENDI LA SPEDIZIONE [I o ESC]</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       6. MODALE MENU DI GIOCO IN-GAME (Impostazioni / Negozio / Amici / Esci [ESC])
+       ========================================================================= -->
+  <div id="game-menu-modal" class="hidden overlay-screen" style="z-index: 110;">
+    <div class="menu-box ingame-menu-box">
+      <div class="ingame-modal-header">
+        <div>
+          <div class="menu-logo" style="font-size: 21px;">⚙️ MENU DI GIOCO</div>
+          <div class="menu-subtitle">Impostazioni, Negozio, Amici e Gestione della Sessione</div>
+        </div>
+        <button id="btn-close-game-menu" class="btn-close-modal" title="Chiudi [ESC]">✕</button>
+      </div>
+
+      <!-- Schede Menu -->
+      <div class="menu-tabs">
+        <button type="button" id="menu-tab-btn-settings" class="tab-btn active">⚙️ Impostazioni</button>
+        <button type="button" id="menu-tab-btn-shop" class="tab-btn">💎 Negozio</button>
+        <button type="button" id="menu-tab-btn-friends" class="tab-btn">👥 Amici</button>
+        <button type="button" id="menu-tab-btn-stats" class="tab-btn">📊 Statistiche Run</button>
+      </div>
+
+      <!-- Scheda 1: Impostazioni -->
+      <div id="menu-tab-settings" class="tab-content active">
+        <div class="settings-form">
+          <div class="setting-row">
+            <div>
+              <div class="setting-name">Volume Master Audio</div>
+              <div class="setting-desc">Regola l'intensità complessiva dell'audio di gioco</div>
+            </div>
+            <input type="range" id="setting-volume" min="0" max="100" value="80" class="setting-slider">
+          </div>
+
+          <div class="setting-row">
+            <div>
+              <div class="setting-name">Numeri di Danno Fluttuanti</div>
+              <div class="setting-desc">Visualizza i valori di danno e colpi critici sopra i mostri</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-dmg-numbers" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div>
+              <div class="setting-name">Effetti Onde d'Urto & Scintille</div>
+              <div class="setting-desc">Attiva anelli d'urto e particelle metalliche dei fendenti</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-fx-sparks" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="setting-row">
+            <div>
+              <div class="setting-name">Schermo Intero (Fullscreen)</div>
+              <div class="setting-desc">Espandi il gioco a tutto schermo</div>
+            </div>
+            <button id="btn-toggle-fullscreen" class="btn-small">🖥️ Attiva Fullscreen</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scheda 2: Negozio (Buy-in-app / Shop futuro) -->
+      <div id="menu-tab-shop" class="tab-content">
+        <div class="shop-badge-ready">
+          🛒 Negozio di Gioco (Predisposto per Acquisti In-App, Pass e Supabase)
+        </div>
+        <div class="shop-grid">
+          <div class="shop-card">
+            <div class="shop-item-badge">💎 Valuta</div>
+            <div class="shop-icon">🪙</div>
+            <div class="shop-title">Sacco di 1.000 Monete</div>
+            <div class="shop-desc">Potenzia subito i tuoi talenti arcani e forgia armi leggendarie.</div>
+            <button class="btn-shop-preview" disabled>Prossimamente</button>
+          </div>
+          <div class="shop-card featured">
+            <div class="shop-item-badge hot">🔥 Consigliato</div>
+            <div class="shop-icon">👑</div>
+            <div class="shop-title">Pass dell'Aether (Stagione 1)</div>
+            <div class="shop-desc">Sblocca ricompense esclusive per ogni bioma esplorato e nuove skin di classe.</div>
+            <button class="btn-shop-preview" disabled>Prossimamente</button>
+          </div>
+          <div class="shop-card">
+            <div class="shop-item-badge">✨ Cosmetico</div>
+            <div class="shop-icon">🗡️</div>
+            <div class="shop-title">Skin Spada del Paladino Solare</div>
+            <div class="shop-desc">Fendenti di luce dorata ed effetti visivi sacri personalizzati.</div>
+            <button class="btn-shop-preview" disabled>Prossimamente</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scheda 3: Amici & Social -->
+      <div id="menu-tab-friends" class="tab-content">
+        <div class="friends-box">
+          <div class="my-friend-code-card">
+            <span>Il tuo Codice Giocatore:</span>
+            <b id="my-friend-id-display">AETH-7492</b>
+            <button id="btn-copy-friend-code" class="btn-small">Copia</button>
+          </div>
+
+          <div class="friends-search-row">
+            <input type="text" placeholder="Cerca amico per nome mago..." class="friend-input">
+            <button class="btn-small">➕ Aggiungi</button>
+          </div>
+
+          <div class="friends-empty-placeholder">
+            <span style="font-size: 28px;">👥</span>
+            <b>Nessun amico connesso al momento</b>
+            <p>La lista amici e la cooperativa online saranno attive con il deploy multiplayer!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scheda 4: Statistiche della Run Attuale -->
+      <div id="menu-tab-stats" class="tab-content">
+        <div class="run-stats-summary-grid">
+          <div class="summary-card">
+            <div class="sum-label">Tempo Spedizione</div>
+            <div class="sum-val" id="menu-stat-time">00:00</div>
+          </div>
+          <div class="summary-card">
+            <div class="sum-label">Livello Mago</div>
+            <div class="sum-val" id="menu-stat-lvl">1</div>
+          </div>
+          <div class="summary-card">
+            <div class="sum-label">Mostri Sconfitti</div>
+            <div class="sum-val" id="menu-stat-kills">0</div>
+          </div>
+          <div class="summary-card gold-card">
+            <div class="sum-label">Oro Guadagnato</div>
+            <div class="sum-val" id="menu-stat-gold">+0 🪙</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pulsanti Azione Menu -->
+      <div class="menu-actions" style="margin-top: 14px; display: flex; gap: 10px;">
+        <button id="btn-menu-resume" class="btn-primary" style="flex: 2;">▶️ RIPRENDI LA PARTITA</button>
+        <button id="btn-menu-quit" class="btn-danger" style="flex: 1;">🚪 ESCI E SALVA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       7. MODALE CLASSIFICA GLOBALE
+       ========================================================================= -->
+  <div id="leaderboard-modal" class="hidden overlay-screen">
+    <div class="menu-box">
+      <div class="ingame-modal-header">
+        <div>
+          <div class="menu-logo" style="font-size: 21px;">🏆 CLASSIFICA DEI MAGHI DELL'AETHER</div>
+          <div class="menu-subtitle">I migliori punteggi di sopravvivenza registrati nel server</div>
+        </div>
+        <button id="btn-close-leaderboard" class="btn-close-modal" title="Chiudi [ESC]">✕</button>
+      </div>
+
+      <div class="leaderboard-table-wrapper" style="margin: 12px 0;">
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Mago</th>
+              <th>Punteggio</th>
+              <th>Livello</th>
+              <th>Uccisioni</th>
+              <th>Tempo</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-rows">
+            <tr><td colspan="6" style="text-align:center;">Caricamento classifica...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <button id="btn-close-leaderboard-foot" class="btn-primary" style="width: 100%;">CHIUDI CLASSIFICA</button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       8. SCHERMATA DI LEVEL-UP (Scelta Carte Potenziamento)
        ========================================================================= -->
   <div id="levelup-modal" class="hidden">
     <div class="modal-box">
@@ -254,7 +566,7 @@
   </div>
 
   <!-- =========================================================================
-       SCHERMATA FINE SPEDIZIONE / GAME OVER
+       9. SCHERMATA FINE SPEDIZIONE / GAME OVER
        ========================================================================= -->
   <div id="gameover-modal" class="hidden overlay-screen">
     <div class="modal-box summary-box">
@@ -291,70 +603,11 @@
       </div>
 
       <div class="modal-actions">
-        <button id="btn-return-sanctuary" class="btn-primary">🔮 TORNA AL SANTUARIO (POTENZIA I TALENTI)</button>
+        <button id="btn-return-sanctuary" class="btn-primary">🔮 TORNA AL TITOLO</button>
       </div>
     </div>
   </div>
 
-  <!-- =========================================================================
-       MODALE IN-GAME: ZAINO, INVENTARIO & ARMERIA (Tasto [I] o pulsante Zaino)
-       ========================================================================= -->
-  <div id="ingame-inventory-modal" class="hidden overlay-screen">
-    <div class="menu-box ingame-box">
-      <div class="ingame-modal-header">
-        <div>
-          <div class="menu-logo" style="font-size: 21px;">🎒 ZAINO & ARMERIA</div>
-          <div class="menu-subtitle">Materiali raccolti nella spedizione e Cambio rapido Armi</div>
-        </div>
-        <button id="btn-close-bag" class="btn-close-modal" title="Chiudi [I o ESC]">✕</button>
-      </div>
-
-      <!-- Schede dell'Inventario In-Game -->
-      <div class="menu-tabs">
-        <button id="ingame-tab-btn-loot" class="tab-btn active">📦 Risorse Spedizione</button>
-        <button id="ingame-tab-btn-weapons" class="tab-btn">⚔️ Armeria (Tasti 1, 2, 3)</button>
-        <button id="ingame-tab-btn-forge" class="tab-btn">🔨 Fucina Fabbro</button>
-      </div>
-
-      <!-- Scheda 1: Risorse e Bottino Spedizione -->
-      <div id="ingame-tab-loot" class="tab-content active">
-        <div class="inventory-intro">
-          <div class="inventory-title">Materiali & Artefatti raccolti finora</div>
-          <div class="inventory-desc">Bottini rilasciati dai mostri sconfitti nei diversi biomi. Usali alla Fucina per creare o potenziare Spada, Arco e Bastone!</div>
-        </div>
-        <div class="inventory-grid" id="ingame-loot-container">
-          <!-- Popolato dinamicamente da JS -->
-        </div>
-      </div>
-
-      <!-- Scheda 2: Armeria Rapida (Cambio e Test Armi immediato) -->
-      <div id="ingame-tab-weapons" class="tab-content">
-        <div class="inventory-intro">
-          <div class="inventory-title">Cambia Arma Equipaggiata</div>
-          <div class="inventory-desc">Puoi cambiare arma all'istante anche durante la partita premendo i tasti <b>[1]</b>, <b>[2]</b> o <b>[3]</b> sulla tastiera!</div>
-        </div>
-        <div class="weapons-grid" id="ingame-weapons-container">
-          <!-- Popolato dinamicamente da JS -->
-        </div>
-      </div>
-
-      <!-- Scheda 3: Fucina del Fabbro -->
-      <div id="ingame-tab-forge" class="tab-content">
-        <div class="blacksmith-intro">
-          <div class="blacksmith-title">🔨 Forgia e Potenzia le Tue Armi</div>
-          <div class="blacksmith-desc">Spendi i materiali raccolti e l'oro conquistato per potenziare gli attacchi!</div>
-        </div>
-        <div class="weapons-grid" id="ingame-forge-container">
-          <!-- Popolato dinamicamente da JS -->
-        </div>
-      </div>
-
-      <div class="modal-actions" style="margin-top: 12px;">
-        <button id="btn-resume-game" class="btn-primary" style="width: 100%;">▶️ RIPRENDI LA SPEDIZIONE (Premi [I] o [ESC])</button>
-      </div>
-    </div>
-  </div>
-
-  <script defer src="bundle.js?v=0.4.3"></script>
+  <script defer src="bundle.js?v=0.5.0"></script>
 </body>
 </html>

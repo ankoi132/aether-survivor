@@ -1,5 +1,10 @@
 /**
- * main.js - Entrypoint, Game Loop a 60 FPS, Meta-Progressione Backend e Ciclo di Spedizione
+ * main.js - Entrypoint, Game Loop a 60 FPS, Nuova Architettura UI:
+ * - Hero Title Screen animata con particelle magiche dell'Aether
+ * - Minimappa Radar live a 5 Biomi interattiva
+ * - Mappa Tattica espansa con coordinate e punti di riferimento
+ * - Zaino In-Game con Grimorio dei Talenti (potenziabili durante la run!)
+ * - Menu di Gioco con Impostazioni, Negozio, Amici, Statistiche e Salvataggio
  */
 import { Input } from './core/input.js';
 import { Camera } from './core/camera.js';
@@ -10,6 +15,7 @@ import { CombatSystem } from './systems/combat.js';
 import { ProgressionSystem } from './systems/progression.js';
 import { API } from './core/api.js';
 import { MATERIALS_DEF, WEAPONS_DEF } from './core/crafting.js';
+import { FX } from './core/fx.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   const canvas = document.getElementById('gameCanvas');
@@ -21,12 +27,22 @@ window.addEventListener('DOMContentLoaded', async () => {
   const modalLevelUp = document.getElementById('levelup-modal');
   const modalGameOver = document.getElementById('gameover-modal');
 
+  // Canvas Particelle Sfondo Titolo
+  const titleCanvas = document.getElementById('title-bg-canvas');
+  const titleCtx = titleCanvas ? titleCanvas.getContext('2d') : null;
+
   // Elementi Profilo & Account
   const elNicknameDisplay = document.getElementById('player-nickname-display');
   const elAccountBadge = document.getElementById('account-status-badge');
   const btnSwitchAccount = document.getElementById('btn-switch-account');
+  const elMenuGold = document.getElementById('menu-gold');
+  const elStatKills = document.getElementById('stat-kills');
+  const elStatHighLvl = document.getElementById('stat-high-lvl');
+  const elStatBestTime = document.getElementById('stat-best-time');
+  const elServerStatus = document.getElementById('server-status');
+  const btnStartRun = document.getElementById('btn-start-run');
 
-  // Elementi Modale Autenticazione (Login & Registrazione)
+  // Modale Autenticazione (Login & Registrazione)
   const authModal = document.getElementById('auth-modal');
   const authTabBtnLogin = document.getElementById('auth-tab-btn-login');
   const authTabBtnRegister = document.getElementById('auth-tab-btn-register');
@@ -41,28 +57,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   const inputRegPassConfirm = document.getElementById('register-password-confirm');
   const btnContinueGuest = document.getElementById('btn-continue-guest');
 
-  const elMenuGold = document.getElementById('menu-gold');
-  const elStatRuns = document.getElementById('stat-runs');
-  const elStatKills = document.getElementById('stat-kills');
-  const elStatHighLvl = document.getElementById('stat-high-lvl');
-  const elStatBestTime = document.getElementById('stat-best-time');
-  const elServerStatus = document.getElementById('server-status');
-
-  const tabBtnTalents = document.getElementById('tab-btn-talents');
-  const tabBtnBlacksmith = document.getElementById('tab-btn-blacksmith');
-  const tabBtnInventory = document.getElementById('tab-btn-inventory');
-  const tabBtnLeaderboard = document.getElementById('tab-btn-leaderboard');
-
-  const tabTalents = document.getElementById('tab-talents');
-  const tabBlacksmith = document.getElementById('tab-blacksmith');
-  const tabInventory = document.getElementById('tab-inventory');
-  const tabLeaderboard = document.getElementById('tab-leaderboard');
-
-  const talentsContainer = document.getElementById('talents-container');
-  const weaponsContainer = document.getElementById('weapons-container');
-  const inventoryContainer = document.getElementById('inventory-container');
+  // Modale Classifica Globale
+  const btnOpenLeaderboard = document.getElementById('btn-open-leaderboard');
+  const leaderboardModal = document.getElementById('leaderboard-modal');
   const leaderboardRows = document.getElementById('leaderboard-rows');
-  const btnStartRun = document.getElementById('btn-start-run');
+  const btnCloseLeaderboard = document.getElementById('btn-close-leaderboard');
+  const btnCloseLeaderboardFoot = document.getElementById('btn-close-leaderboard-foot');
 
   // Elementi HUD di Gioco
   const elFps = document.getElementById('hud-fps');
@@ -81,22 +81,69 @@ window.addEventListener('DOMContentLoaded', async () => {
   const elTarget = document.getElementById('hud-target');
   const elCdFill = document.getElementById('hud-cd-fill');
   const cardsContainer = document.getElementById('upgrade-cards');
+  const weaponNotification = document.getElementById('weapon-notification');
 
-  // Elementi In-Game Inventory / Zaino & Armeria
-  const btnOpenBag = document.getElementById('btn-open-bag');
+  // Action Bar HUD
+  const hudBtnBag = document.getElementById('hud-btn-bag');
+  const hudBtnMap = document.getElementById('hud-btn-map');
+  const hudBtnMenu = document.getElementById('hud-btn-menu');
+
+  // Widget Minimappa Live
+  const minimapWidget = document.getElementById('minimap-widget');
+  const minimapCanvas = document.getElementById('minimap-canvas');
+  const minimapCtx = minimapCanvas ? minimapCanvas.getContext('2d') : null;
+  const minimapBiomeName = document.getElementById('minimap-biome-name');
+  const btnExpandMinimap = document.getElementById('btn-expand-minimap');
+
+  // Modale Mappa Tattica Espansa
+  const expandedMapModal = document.getElementById('expanded-map-modal');
+  const expandedCanvas = document.getElementById('expanded-map-canvas');
+  const expandedCtx = expandedCanvas ? expandedCanvas.getContext('2d') : null;
+  const mapCoordsText = document.getElementById('map-coords-text');
+  const mapCurrentBiomeText = document.getElementById('map-current-biome-text');
+  const btnCloseMap = document.getElementById('btn-close-map');
+  const btnResumeFromMap = document.getElementById('btn-resume-from-map');
+
+  // Modale Zaino & Talenti In-Game
   const ingameModal = document.getElementById('ingame-inventory-modal');
   const btnCloseBag = document.getElementById('btn-close-bag');
   const btnResumeGame = document.getElementById('btn-resume-game');
   const ingameTabBtnLoot = document.getElementById('ingame-tab-btn-loot');
-  const ingameTabBtnWeapons = document.getElementById('ingame-tab-btn-weapons');
+  const ingameTabBtnTalents = document.getElementById('ingame-tab-btn-talents');
   const ingameTabBtnForge = document.getElementById('ingame-tab-btn-forge');
+  const ingameTabBtnWeapons = document.getElementById('ingame-tab-btn-weapons');
   const ingameTabLoot = document.getElementById('ingame-tab-loot');
-  const ingameTabWeapons = document.getElementById('ingame-tab-weapons');
+  const ingameTabTalents = document.getElementById('ingame-tab-talents');
   const ingameTabForge = document.getElementById('ingame-tab-forge');
+  const ingameTabWeapons = document.getElementById('ingame-tab-weapons');
   const ingameLootContainer = document.getElementById('ingame-loot-container');
-  const ingameWeaponsContainer = document.getElementById('ingame-weapons-container');
+  const talentsContainer = document.getElementById('talents-container');
   const ingameForgeContainer = document.getElementById('ingame-forge-container');
-  const weaponNotification = document.getElementById('weapon-notification');
+  const ingameWeaponsContainer = document.getElementById('ingame-weapons-container');
+
+  // Modale Menu di Gioco In-Game
+  const gameMenuModal = document.getElementById('game-menu-modal');
+  const btnCloseGameMenu = document.getElementById('btn-close-game-menu');
+  const btnMenuResume = document.getElementById('btn-menu-resume');
+  const btnMenuQuit = document.getElementById('btn-menu-quit');
+  const menuTabBtnSettings = document.getElementById('menu-tab-btn-settings');
+  const menuTabBtnShop = document.getElementById('menu-tab-btn-shop');
+  const menuTabBtnFriends = document.getElementById('menu-tab-btn-friends');
+  const menuTabBtnStats = document.getElementById('menu-tab-btn-stats');
+  const menuTabSettings = document.getElementById('menu-tab-settings');
+  const menuTabShop = document.getElementById('menu-tab-shop');
+  const menuTabFriends = document.getElementById('menu-tab-friends');
+  const menuTabStats = document.getElementById('menu-tab-stats');
+  const settingVolume = document.getElementById('setting-volume');
+  const settingDmgNumbers = document.getElementById('setting-dmg-numbers');
+  const settingFxSparks = document.getElementById('setting-fx-sparks');
+  const btnToggleFullscreen = document.getElementById('btn-toggle-fullscreen');
+  const myFriendIdDisplay = document.getElementById('my-friend-id-display');
+  const btnCopyFriendCode = document.getElementById('btn-copy-friend-code');
+  const menuStatTime = document.getElementById('menu-stat-time');
+  const menuStatLvl = document.getElementById('menu-stat-lvl');
+  const menuStatKills = document.getElementById('menu-stat-kills');
+  const menuStatGold = document.getElementById('menu-stat-gold');
 
   // Elementi Riepilogo Fine Spedizione
   const elSumTime = document.getElementById('sum-time');
@@ -112,6 +159,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   let currentProfile = null;
   let runSurvivalSeconds = 0;
   let isInventoryOpen = false;
+  let isMapOpen = false;
+  let isMenuOpen = false;
   let notificationTimeout = null;
 
   // Istanze di gioco
@@ -129,8 +178,103 @@ window.addEventListener('DOMContentLoaded', async () => {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   }
 
+  function getBiomeInfo(worldX, worldY) {
+    const tx = world.tileOf(worldX);
+    const ty = world.tileOf(worldY);
+    const biomeKey = world.getBiome(tx, ty);
+    switch (biomeKey) {
+      case 'village': return { key: 'village', name: '🏰 Villaggio', color: '#64748b' };
+      case 'snow': return { key: 'snow', name: '❄️ Vette Innevate', color: '#7dd3fc' };
+      case 'desert': return { key: 'desert', name: '🏜️ Deserto', color: '#f59e0b' };
+      case 'volcano': return { key: 'volcano', name: '🌋 Vulcano', color: '#ef4444' };
+      case 'forest':
+      default:
+        return { key: 'forest', name: '🌲 Bosco Silvano', color: '#22c55e' };
+    }
+  }
+
   // =========================================================================
-  // GESTIONE PROFILO, TALENTI & CLASSIFICA (API / BACKEND)
+  // 1. PARTICELLE E SFONDO ANIMATO DELLA SCHERMATA TITOLO
+  // =========================================================================
+  let titleParticles = [];
+
+  function initTitleParticles() {
+    if (!titleCanvas) return;
+    titleCanvas.width = window.innerWidth;
+    titleCanvas.height = window.innerHeight;
+    titleParticles = [];
+    const count = Math.min(85, Math.floor(window.innerWidth / 16));
+    for (let i = 0; i < count; i++) {
+      titleParticles.push({
+        x: Math.random() * titleCanvas.width,
+        y: Math.random() * titleCanvas.height,
+        radius: 1 + Math.random() * 2.6,
+        speedY: 18 + Math.random() * 38,
+        speedX: (Math.random() - 0.5) * 16,
+        alpha: 0.2 + Math.random() * 0.7,
+        color: Math.random() > 0.4 ? '#38bdf8' : (Math.random() > 0.5 ? '#a855f7' : '#fde047'),
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
+  function updateAndDrawTitleBackground(dt, time) {
+    if (!titleCtx || !titleCanvas || gameState !== 'MENU') return;
+    titleCtx.clearRect(0, 0, titleCanvas.width, titleCanvas.height);
+
+    const cx = titleCanvas.width / 2;
+    const cy = titleCanvas.height / 2;
+
+    // Bagliore radiale centrale dell'Aether
+    const grad = titleCtx.createRadialGradient(cx, cy, 80, cx, cy, Math.max(cx, cy));
+    grad.addColorStop(0, 'rgba(14, 165, 233, 0.15)');
+    grad.addColorStop(0.45, 'rgba(88, 28, 135, 0.08)');
+    grad.addColorStop(1, 'rgba(5, 8, 17, 0)');
+    titleCtx.fillStyle = grad;
+    titleCtx.fillRect(0, 0, titleCanvas.width, titleCanvas.height);
+
+    // Cerchio runico rotante nello sfondo
+    titleCtx.save();
+    titleCtx.translate(cx, cy * 0.72);
+    titleCtx.rotate(time * 0.05);
+    titleCtx.strokeStyle = 'rgba(56, 189, 248, 0.09)';
+    titleCtx.lineWidth = 1.5;
+    titleCtx.beginPath();
+    titleCtx.arc(0, 0, 190, 0, Math.PI * 2);
+    titleCtx.stroke();
+    titleCtx.beginPath();
+    titleCtx.arc(0, 0, 150, 0, Math.PI * 2);
+    titleCtx.stroke();
+    for (let a = 0; a < 8; a++) {
+      const angle = (a * Math.PI) / 4;
+      titleCtx.beginPath();
+      titleCtx.moveTo(Math.cos(angle) * 150, Math.sin(angle) * 150);
+      titleCtx.lineTo(Math.cos(angle) * 190, Math.sin(angle) * 190);
+      titleCtx.stroke();
+    }
+    titleCtx.restore();
+
+    // Mote di luce e stelle ascendenti
+    for (const p of titleParticles) {
+      p.y -= p.speedY * dt;
+      p.x += Math.sin(time * 1.5 + p.phase) * (p.speedX * dt);
+      if (p.y < -10) {
+        p.y = titleCanvas.height + 10;
+        p.x = Math.random() * titleCanvas.width;
+      }
+      const pulseAlpha = Math.sin(time * 2 + p.phase) * 0.2 + p.alpha;
+      titleCtx.save();
+      titleCtx.globalAlpha = Math.max(0.1, Math.min(1, pulseAlpha));
+      titleCtx.fillStyle = p.color;
+      titleCtx.beginPath();
+      titleCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      titleCtx.fill();
+      titleCtx.restore();
+    }
+  }
+
+  // =========================================================================
+  // 2. GESTIONE PROFILO & STATISTICHE CARRIERA
   // =========================================================================
   async function refreshProfile(nickname = (API.currentUser ? API.currentUser.username : API.nickname)) {
     currentProfile = await API.getProfile(nickname || 'Mago-' + Math.floor(1000 + Math.random() * 9000));
@@ -139,35 +283,45 @@ window.addEventListener('DOMContentLoaded', async () => {
       elNicknameDisplay.textContent = currentProfile.nickname;
     }
 
+    if (myFriendIdDisplay) {
+      const code = Math.abs(currentProfile.nickname.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 1000)) % 9000 + 1000;
+      myFriendIdDisplay.textContent = `AETH-${code}`;
+    }
+
     if (elAccountBadge) {
       if (API.isGuest) {
-        elAccountBadge.textContent = '⚠️ Ospite (Non Salvato Online)';
+        elAccountBadge.textContent = '⚠️ Ospite (Locale)';
         elAccountBadge.className = 'badge-guest';
       } else {
-        elAccountBadge.textContent = '🛡️ Account Online Connesso';
+        elAccountBadge.textContent = '🛡️ Online';
         elAccountBadge.className = 'badge-account';
       }
     }
 
-    elMenuGold.textContent = `${currentProfile.gold}`;
-    elStatRuns.textContent = `${currentProfile.totalRuns || 0}`;
-    elStatKills.textContent = `${currentProfile.totalKills || 0}`;
-    elStatHighLvl.textContent = `${currentProfile.highestLevel || 1}`;
-    elStatBestTime.textContent = formatTime(currentProfile.bestSurvivalSeconds || 0);
+    if (elMenuGold) elMenuGold.textContent = `${currentProfile.gold}`;
+    if (elStatKills) elStatKills.textContent = `${currentProfile.totalKills || 0}`;
+    if (elStatHighLvl) elStatHighLvl.textContent = `${currentProfile.highestLevel || 1}`;
+    if (elStatBestTime) elStatBestTime.textContent = formatTime(currentProfile.bestSurvivalSeconds || 0);
 
-    if (API.isOnline) {
-      elServerStatus.textContent = 'Online (Server Sincronizzato)';
-      elServerStatus.className = 'status-online';
-    } else {
-      elServerStatus.textContent = 'Offline (Salvataggio Locale)';
-      elServerStatus.className = 'status-offline';
+    if (elServerStatus) {
+      if (API.isOnline) {
+        elServerStatus.textContent = 'Online';
+        elServerStatus.className = 'status-online';
+      } else {
+        elServerStatus.textContent = 'Offline (Locale)';
+        elServerStatus.className = 'status-offline';
+      }
     }
 
     renderTalentsGrid();
-    renderWeaponsGrid();
-    renderInventoryGrid();
+    renderIngameWeapons();
+    renderIngameForge();
+    renderIngameLoot();
   }
 
+  // =========================================================================
+  // 3. GRIMORIO TALENTI (POTENZIAMENTI IN-GAME!)
+  // =========================================================================
   function renderTalentsGrid() {
     if (!currentProfile || !talentsContainer) return;
     talentsContainer.innerHTML = '';
@@ -176,7 +330,6 @@ window.addEventListener('DOMContentLoaded', async () => {
       const card = document.createElement('div');
       card.className = 'talent-card';
 
-      // Pips di rango [● ● ○ ○ ○]
       let pipsHtml = '';
       for (let i = 0; i < talent.maxRank; i++) {
         pipsHtml += `<div class="pip ${i < talent.currentRank ? 'filled' : ''}"></div>`;
@@ -209,6 +362,9 @@ window.addEventListener('DOMContentLoaded', async () => {
         btnUpgrade.addEventListener('click', async () => {
           try {
             currentProfile = await API.upgradeTalent(talent.id);
+            // Applica immediatamente i benefici all'eroe durante la partita
+            player.applyPermanentStats(currentProfile.calculatedStats);
+            showWeaponNotification(`✨ Talento potenziato: ${talent.name}!`);
             refreshProfile(currentProfile.nickname);
           } catch (err) {
             alert(err.message);
@@ -220,151 +376,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  function renderWeaponsGrid() {
-    if (!currentProfile || !weaponsContainer) return;
-    weaponsContainer.innerHTML = '';
-
-    currentProfile.weaponsCatalog.forEach(w => {
-      const card = document.createElement('div');
-      card.className = `weapon-card ${w.isEquipped ? 'equipped' : ''}`;
-
-      let statusHtml = '';
-      if (w.isEquipped) {
-        statusHtml = `<div class="weapon-badge-equipped">✓ In Uso</div>`;
-      }
-
-      let reqHtml = '';
-      let canAfford = false;
-
-      if (w.isMaxLevel) {
-        reqHtml = `<div class="weapon-req-box" style="color: #4ade80; text-align: center; font-weight: 700;">★ Maestria Massima (LV 5)</div>`;
-      } else if (w.nextCost) {
-        const goldHas = currentProfile.gold >= (w.nextCost.gold || 0);
-        let matsOk = true;
-        let matsRows = '';
-
-        if (w.nextCost.materials) {
-          for (const [matId, reqAmt] of Object.entries(w.nextCost.materials)) {
-            const owned = (currentProfile.inventory && currentProfile.inventory[matId]) || 0;
-            const hasEnough = owned >= reqAmt;
-            if (!hasEnough) matsOk = false;
-            const matDef = MATERIALS_DEF[matId] || { name: matId, icon: '📦' };
-            matsRows += `
-              <div class="req-item ${hasEnough ? 'has' : 'missing'}">
-                <span>${matDef.icon} ${matDef.name}:</span>
-                <span>${owned} / ${reqAmt}</span>
-              </div>
-            `;
-          }
-        }
-
-        canAfford = goldHas && matsOk;
-
-        reqHtml = `
-          <div class="weapon-req-box">
-            <div class="weapon-req-title">${w.isUnlocked ? 'Requisiti Potenziamento:' : 'Materiali per Forgiare:'}</div>
-            <div class="req-item ${goldHas ? 'has' : 'missing'}">
-              <span>🪙 Oro:</span>
-              <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
-            </div>
-            ${matsRows}
-            <div style="margin-top: 6px; font-size: 11px; color: #38bdf8; font-weight: 600;">✨ <b>Beneficio:</b> ${w.nextBenefit}</div>
-          </div>
-        `;
-      }
-
-      card.innerHTML = `
-        ${statusHtml}
-        <div>
-          <div class="weapon-head">
-            <div class="weapon-icon">${w.icon}</div>
-            <div>
-              <div class="weapon-title">${w.name}</div>
-              <div class="weapon-type-tag">${w.typeName}</div>
-            </div>
-          </div>
-          <div class="weapon-desc">${w.desc}</div>
-        </div>
-
-        <div>
-          <div class="weapon-level-row">
-            <span>Grado Forgiatura:</span>
-            <span style="color: ${w.isUnlocked ? '#38bdf8' : '#94a3b8'};">
-              ${w.isUnlocked ? `Livello ${w.currentLevel} / ${w.maxLevel}` : 'Bloccata'}
-            </span>
-          </div>
-
-          <div style="margin: 8px 0;">
-            ${reqHtml}
-          </div>
-
-          <div class="weapon-actions">
-            ${!w.isMaxLevel ? `
-              <button class="btn-forge" ${!canAfford ? 'disabled' : ''}>
-                🔨 ${w.isUnlocked ? `Potenzia a LV ${w.currentLevel + 1}` : 'Forgia dal Fabbro'}
-              </button>
-            ` : ''}
-            ${w.isUnlocked && !w.isEquipped ? `
-              <button class="btn-equip">⚔️ Equipaggia</button>
-            ` : ''}
-          </div>
-        </div>
-      `;
-
-      const btnForge = card.querySelector('.btn-forge');
-      if (btnForge && canAfford) {
-        btnForge.addEventListener('click', async () => {
-          try {
-            currentProfile = await API.craftOrUpgradeWeapon(w.id);
-            refreshProfile(currentProfile.nickname);
-          } catch (err) {
-            alert(err.message);
-          }
-        });
-      }
-
-      const btnEquip = card.querySelector('.btn-equip');
-      if (btnEquip) {
-        btnEquip.addEventListener('click', async () => {
-          try {
-            currentProfile = await API.equipWeapon(w.id);
-            refreshProfile(currentProfile.nickname);
-          } catch (err) {
-            alert(err.message);
-          }
-        });
-      }
-
-      weaponsContainer.appendChild(card);
-    });
-  }
-
-  function renderInventoryGrid() {
-    if (!currentProfile || !inventoryContainer) return;
-    inventoryContainer.innerHTML = '';
-
-    currentProfile.inventoryCatalog.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'inventory-item-card';
-
-      const count = item.count || 0;
-      card.innerHTML = `
-        <div class="item-top">
-          <div class="item-icon-box">${item.icon}</div>
-          <div class="item-count-badge" style="opacity: ${count > 0 ? 1 : 0.4};">x${count}</div>
-        </div>
-        <div>
-          <div class="item-name">${item.name}</div>
-          <div class="item-rarity" style="color: ${item.color};">${item.rarity}</div>
-        </div>
-        <div class="item-desc">${item.desc}</div>
-      `;
-
-      inventoryContainer.appendChild(card);
-    });
-  }
-
+  // =========================================================================
+  // 4. CLASSIFICA GLOBALE
+  // =========================================================================
   async function renderLeaderboard() {
+    if (!leaderboardRows) return;
     leaderboardRows.innerHTML = '<tr><td colspan="6" style="text-align:center;">Caricamento classifica...</td></tr>';
     const list = await API.getLeaderboard();
     leaderboardRows.innerHTML = '';
@@ -388,22 +404,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Gestione Navigazione a 4 Schede
-  function switchTab(btn, pane, callback) {
-    [tabBtnTalents, tabBtnBlacksmith, tabBtnInventory, tabBtnLeaderboard].forEach(b => b?.classList.remove('active'));
-    [tabTalents, tabBlacksmith, tabInventory, tabLeaderboard].forEach(p => p?.classList.remove('active'));
-    btn?.classList.add('active');
-    pane?.classList.add('active');
-    if (callback) callback();
+  if (btnOpenLeaderboard) {
+    btnOpenLeaderboard.addEventListener('click', () => {
+      leaderboardModal?.classList.remove('hidden');
+      renderLeaderboard();
+    });
   }
-
-  tabBtnTalents.addEventListener('click', () => switchTab(tabBtnTalents, tabTalents, renderTalentsGrid));
-  tabBtnBlacksmith.addEventListener('click', () => switchTab(tabBtnBlacksmith, tabBlacksmith, renderWeaponsGrid));
-  tabBtnInventory.addEventListener('click', () => switchTab(tabBtnInventory, tabInventory, renderInventoryGrid));
-  tabBtnLeaderboard.addEventListener('click', () => switchTab(tabBtnLeaderboard, tabLeaderboard, renderLeaderboard));
+  if (btnCloseLeaderboard) btnCloseLeaderboard.addEventListener('click', () => leaderboardModal?.classList.add('hidden'));
+  if (btnCloseLeaderboardFoot) btnCloseLeaderboardFoot.addEventListener('click', () => leaderboardModal?.classList.add('hidden'));
 
   // =========================================================================
-  // GESTIONE AUTENTICAZIONE ACCOUNT (LOGIN & REGISTRAZIONE)
+  // 5. GESTIONE AUTENTICAZIONE ACCOUNT (LOGIN & REGISTRAZIONE)
   // =========================================================================
   function showAuthAlert(msg, isError = true) {
     if (!authAlert) return;
@@ -419,12 +430,12 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   function openAuthModal(initialTab = 'login') {
     hideAuthAlert();
-    authModal.classList.remove('hidden');
+    authModal?.classList.remove('hidden');
     switchAuthTab(initialTab);
   }
 
   function closeAuthModal() {
-    authModal.classList.add('hidden');
+    authModal?.classList.add('hidden');
   }
 
   function switchAuthTab(tab) {
@@ -516,7 +527,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   // =========================================================================
-  // GESTIONE INVENTARIO & ARMERIA IN-GAME (Tasto I o pulsante Zaino)
+  // 6. GESTIONE ARMI & INVENTARIO IN-GAME
   // =========================================================================
   function showWeaponNotification(text) {
     if (!weaponNotification) return;
@@ -651,10 +662,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   function renderIngameForge() {
-    if (!ingameForgeContainer) return;
+    if (!ingameForgeContainer || !currentProfile) return;
     ingameForgeContainer.innerHTML = '';
-
-    if (!currentProfile) return;
 
     currentProfile.weaponsCatalog.forEach(w => {
       const card = document.createElement('div');
@@ -733,13 +742,17 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   function switchIngameTab(tabName) {
-    [ingameTabBtnLoot, ingameTabBtnWeapons, ingameTabBtnForge].forEach(b => b?.classList.remove('active'));
-    [ingameTabLoot, ingameTabWeapons, ingameTabForge].forEach(p => p?.classList.remove('active'));
+    [ingameTabBtnLoot, ingameTabBtnTalents, ingameTabBtnForge, ingameTabBtnWeapons].forEach(b => b?.classList.remove('active'));
+    [ingameTabLoot, ingameTabTalents, ingameTabForge, ingameTabWeapons].forEach(p => p?.classList.remove('active'));
 
     if (tabName === 'loot') {
       ingameTabBtnLoot?.classList.add('active');
       ingameTabLoot?.classList.add('active');
       renderIngameLoot();
+    } else if (tabName === 'talents') {
+      ingameTabBtnTalents?.classList.add('active');
+      ingameTabTalents?.classList.add('active');
+      renderTalentsGrid();
     } else if (tabName === 'weapons') {
       ingameTabBtnWeapons?.classList.add('active');
       ingameTabWeapons?.classList.add('active');
@@ -753,14 +766,16 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   function openIngameInventory(tab = 'loot') {
     if (gameState !== 'PLAYING') return;
+    closeTacticalMap();
+    closeGameMenu();
     isInventoryOpen = true;
-    if (ingameModal) ingameModal.classList.remove('hidden');
+    ingameModal?.classList.remove('hidden');
     switchIngameTab(tab);
   }
 
   function closeIngameInventory() {
     isInventoryOpen = false;
-    if (ingameModal) ingameModal.classList.add('hidden');
+    ingameModal?.classList.add('hidden');
   }
 
   function toggleIngameInventory() {
@@ -768,16 +783,363 @@ window.addEventListener('DOMContentLoaded', async () => {
     else openIngameInventory('loot');
   }
 
-  if (btnOpenBag) btnOpenBag.addEventListener('click', () => toggleIngameInventory());
+  if (hudBtnBag) hudBtnBag.addEventListener('click', () => toggleIngameInventory());
   if (btnCloseBag) btnCloseBag.addEventListener('click', () => closeIngameInventory());
   if (btnResumeGame) btnResumeGame.addEventListener('click', () => closeIngameInventory());
 
   if (ingameTabBtnLoot) ingameTabBtnLoot.addEventListener('click', () => switchIngameTab('loot'));
-  if (ingameTabBtnWeapons) ingameTabBtnWeapons.addEventListener('click', () => switchIngameTab('weapons'));
+  if (ingameTabBtnTalents) ingameTabBtnTalents.addEventListener('click', () => switchIngameTab('talents'));
   if (ingameTabBtnForge) ingameTabBtnForge.addEventListener('click', () => switchIngameTab('forge'));
+  if (ingameTabBtnWeapons) ingameTabBtnWeapons.addEventListener('click', () => switchIngameTab('weapons'));
 
   // =========================================================================
-  // AVVIO DELLA SPEDIZIONE
+  // 7. MINIMAPPA LIVE RADAR & MAPPA TATTICA ESPANSA
+  // =========================================================================
+  function renderMinimap() {
+    if (!minimapCtx || !minimapCanvas || gameState !== 'PLAYING') return;
+
+    const w = minimapCanvas.width;
+    const h = minimapCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+
+    const mapExtent = (world.MAP_RADIUS * world.TS) * 2; // 3200 px
+    const scale = w / mapExtent;
+
+    minimapCtx.clearRect(0, 0, w, h);
+
+    // Sfondo base
+    minimapCtx.fillStyle = '#080c14';
+    minimapCtx.fillRect(0, 0, w, h);
+
+    const vSize = 512 * scale;
+    const vLeft = cx - vSize / 2;
+    const vTop = cy - vSize / 2;
+
+    // 1. Neve (Nord)
+    minimapCtx.fillStyle = 'rgba(125, 211, 252, 0.45)';
+    minimapCtx.fillRect(0, 0, w, cy - vSize / 2);
+
+    // 2. Deserto (Sud Ovest)
+    minimapCtx.fillStyle = 'rgba(217, 119, 6, 0.45)';
+    minimapCtx.fillRect(0, cy + vSize / 2, cx, h - (cy + vSize / 2));
+
+    // 3. Vulcano (Est / Sud Est)
+    minimapCtx.fillStyle = 'rgba(185, 28, 28, 0.45)';
+    minimapCtx.fillRect(cx, cy - vSize / 2, cx, h - (cy - vSize / 2));
+
+    // 4. Bosco (Ovest)
+    minimapCtx.fillStyle = 'rgba(22, 101, 52, 0.55)';
+    minimapCtx.fillRect(0, cy - vSize / 2, cx - vSize / 2, vSize);
+
+    // 5. Villaggio (Centro)
+    minimapCtx.fillStyle = '#475569';
+    minimapCtx.fillRect(vLeft, vTop, vSize, vSize);
+    minimapCtx.strokeStyle = '#94a3b8';
+    minimapCtx.lineWidth = 1;
+    minimapCtx.strokeRect(vLeft, vTop, vSize, vSize);
+
+    // Nemici come puntini rossi
+    minimapCtx.fillStyle = '#f87171';
+    for (const en of combat.enemies) {
+      const mx = cx + en.x * scale;
+      const my = cy + en.y * scale;
+      if (mx >= 0 && mx < w && my >= 0 && my < h) {
+        minimapCtx.fillRect(mx - 1, my - 1, 2, 2);
+      }
+    }
+
+    // Giocatore come punto ciano pulsante
+    const px = cx + player.x * scale;
+    const py = cy + player.y * scale;
+
+    minimapCtx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+    minimapCtx.beginPath();
+    minimapCtx.arc(px, py, 4, 0, Math.PI * 2);
+    minimapCtx.fill();
+
+    minimapCtx.fillStyle = '#38bdf8';
+    minimapCtx.beginPath();
+    minimapCtx.arc(px, py, 2, 0, Math.PI * 2);
+    minimapCtx.fill();
+
+    // Bordo radar
+    minimapCtx.strokeStyle = '#0284c7';
+    minimapCtx.lineWidth = 1.5;
+    minimapCtx.strokeRect(0, 0, w, h);
+
+    // Etichetta del bioma corrente
+    const curB = getBiomeInfo(player.x, player.y);
+    if (minimapBiomeName) {
+      minimapBiomeName.textContent = curB.name;
+    }
+  }
+
+  function renderTacticalMap() {
+    if (!expandedCtx || !expandedCanvas) return;
+    const w = expandedCanvas.width;
+    const h = expandedCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const mapExtent = (world.MAP_RADIUS * world.TS) * 2;
+    const scale = w / mapExtent;
+
+    expandedCtx.clearRect(0, 0, w, h);
+
+    // Sfondo pergamena scura
+    expandedCtx.fillStyle = '#080c14';
+    expandedCtx.fillRect(0, 0, w, h);
+
+    // Griglia coordinate
+    expandedCtx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+    expandedCtx.lineWidth = 1;
+    for (let x = 0; x <= w; x += 46) {
+      expandedCtx.beginPath();
+      expandedCtx.moveTo(x, 0);
+      expandedCtx.lineTo(x, h);
+      expandedCtx.stroke();
+    }
+    for (let y = 0; y <= h; y += 46) {
+      expandedCtx.beginPath();
+      expandedCtx.moveTo(0, y);
+      expandedCtx.lineTo(w, y);
+      expandedCtx.stroke();
+    }
+
+    const vSize = 512 * scale;
+    const vLeft = cx - vSize / 2;
+    const vTop = cy - vSize / 2;
+
+    // 1. Neve (Nord)
+    expandedCtx.fillStyle = 'rgba(125, 211, 252, 0.3)';
+    expandedCtx.fillRect(0, 0, w, cy - vSize / 2);
+    expandedCtx.fillStyle = '#7dd3fc';
+    expandedCtx.font = 'bold 11px sans-serif';
+    expandedCtx.fillText('❄️ VETTE INNEVATE', 20, 30);
+
+    // 2. Bosco Silvano (Ovest)
+    expandedCtx.fillStyle = 'rgba(22, 101, 52, 0.4)';
+    expandedCtx.fillRect(0, cy - vSize / 2, cx - vSize / 2, vSize);
+    expandedCtx.fillStyle = '#4ade80';
+    expandedCtx.fillText('🌲 BOSCO SILVANO', 15, cy);
+
+    // 3. Deserto delle Dune (Sud Ovest)
+    expandedCtx.fillStyle = 'rgba(217, 119, 6, 0.35)';
+    expandedCtx.fillRect(0, cy + vSize / 2, cx, h - (cy + vSize / 2));
+    expandedCtx.fillStyle = '#fde047';
+    expandedCtx.fillText('🏜️ DESERTO DELLE DUNE', 20, h - 25);
+
+    // 4. Caldera Vulcanica (Est / Sud Est)
+    expandedCtx.fillStyle = 'rgba(185, 28, 28, 0.35)';
+    expandedCtx.fillRect(cx, cy - vSize / 2, cx, h - (cy - vSize / 2));
+    expandedCtx.fillStyle = '#f87171';
+    expandedCtx.fillText('🌋 CALDERA VULCANICA', cx + 30, cy + 40);
+
+    // 5. Villaggio Centrale
+    expandedCtx.fillStyle = '#334155';
+    expandedCtx.fillRect(vLeft, vTop, vSize, vSize);
+    expandedCtx.strokeStyle = '#94a3b8';
+    expandedCtx.lineWidth = 1.5;
+    expandedCtx.strokeRect(vLeft, vTop, vSize, vSize);
+    expandedCtx.fillStyle = '#f8fafc';
+    expandedCtx.font = 'bold 10px sans-serif';
+    expandedCtx.textAlign = 'center';
+    expandedCtx.fillText('🏰 VILLAGGIO', cx, cy - 8);
+    expandedCtx.font = '9px sans-serif';
+    expandedCtx.fillStyle = '#38bdf8';
+    expandedCtx.fillText('Zona Protetta', cx, cy + 6);
+    expandedCtx.textAlign = 'left';
+
+    // Edifici del villaggio
+    const bScale = world.TS * scale;
+    expandedCtx.fillStyle = '#64748b';
+    expandedCtx.fillRect(cx + (-7 * bScale), cy + (-6 * bScale), 4 * bScale, 3 * bScale);
+    expandedCtx.fillRect(cx + (3 * bScale), cy + (-6 * bScale), 4 * bScale, 3 * bScale);
+    expandedCtx.fillRect(cx + (-7 * bScale), cy + (3 * bScale), 4 * bScale, 3 * bScale);
+    expandedCtx.fillRect(cx + (3 * bScale), cy + (3 * bScale), 4 * bScale, 3 * bScale);
+
+    // Nemici
+    expandedCtx.fillStyle = '#ef4444';
+    for (const en of combat.enemies) {
+      const ex = cx + en.x * scale;
+      const ey = cy + en.y * scale;
+      if (ex >= 0 && ex < w && ey >= 0 && ey < h) {
+        expandedCtx.beginPath();
+        expandedCtx.arc(ex, ey, 2.5, 0, Math.PI * 2);
+        expandedCtx.fill();
+      }
+    }
+
+    // Giocatore con radar pulsante
+    const px = cx + player.x * scale;
+    const py = cy + player.y * scale;
+
+    expandedCtx.strokeStyle = '#38bdf8';
+    expandedCtx.lineWidth = 2;
+    expandedCtx.beginPath();
+    expandedCtx.arc(px, py, 9, 0, Math.PI * 2);
+    expandedCtx.stroke();
+
+    expandedCtx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+    expandedCtx.beginPath();
+    expandedCtx.arc(px, py, 14, 0, Math.PI * 2);
+    expandedCtx.fill();
+
+    expandedCtx.fillStyle = '#ffffff';
+    expandedCtx.beginPath();
+    expandedCtx.arc(px, py, 3.5, 0, Math.PI * 2);
+    expandedCtx.fill();
+
+    // Bordo
+    expandedCtx.strokeStyle = '#38bdf8';
+    expandedCtx.lineWidth = 2;
+    expandedCtx.strokeRect(0, 0, w, h);
+
+    if (mapCoordsText) {
+      mapCoordsText.textContent = `X: ${Math.round(player.x)}, Y: ${Math.round(player.y)}`;
+    }
+    const curB = getBiomeInfo(player.x, player.y);
+    if (mapCurrentBiomeText) {
+      mapCurrentBiomeText.textContent = curB.name;
+      mapCurrentBiomeText.style.color = curB.color;
+    }
+  }
+
+  function openTacticalMap() {
+    if (gameState !== 'PLAYING') return;
+    closeIngameInventory();
+    closeGameMenu();
+    isMapOpen = true;
+    expandedMapModal?.classList.remove('hidden');
+    renderTacticalMap();
+  }
+
+  function closeTacticalMap() {
+    isMapOpen = false;
+    expandedMapModal?.classList.add('hidden');
+  }
+
+  function toggleTacticalMap() {
+    if (isMapOpen) closeTacticalMap();
+    else openTacticalMap();
+  }
+
+  if (hudBtnMap) hudBtnMap.addEventListener('click', () => toggleTacticalMap());
+  if (minimapWidget) minimapWidget.addEventListener('click', () => openTacticalMap());
+  if (btnExpandMinimap) btnExpandMinimap.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openTacticalMap();
+  });
+  if (btnCloseMap) btnCloseMap.addEventListener('click', () => closeTacticalMap());
+  if (btnResumeFromMap) btnResumeFromMap.addEventListener('click', () => closeTacticalMap());
+
+  // =========================================================================
+  // 8. GESTIONE MENU DI GIOCO IN-GAME (Impostazioni / Shop / Amici / Esci)
+  // =========================================================================
+  function switchGameMenuTab(tabName) {
+    [menuTabBtnSettings, menuTabBtnShop, menuTabBtnFriends, menuTabBtnStats].forEach(b => b?.classList.remove('active'));
+    [menuTabSettings, menuTabShop, menuTabFriends, menuTabStats].forEach(p => p?.classList.remove('active'));
+
+    if (tabName === 'settings') {
+      menuTabBtnSettings?.classList.add('active');
+      menuTabSettings?.classList.add('active');
+    } else if (tabName === 'shop') {
+      menuTabBtnShop?.classList.add('active');
+      menuTabShop?.classList.add('active');
+    } else if (tabName === 'friends') {
+      menuTabBtnFriends?.classList.add('active');
+      menuTabFriends?.classList.add('active');
+    } else {
+      menuTabBtnStats?.classList.add('active');
+      menuTabStats?.classList.add('active');
+      updateRunStatsInMenu();
+    }
+  }
+
+  function updateRunStatsInMenu() {
+    if (menuStatTime) menuStatTime.textContent = formatTime(runSurvivalSeconds);
+    if (menuStatLvl) menuStatLvl.textContent = `${progression.level}`;
+    if (menuStatKills) menuStatKills.textContent = `${combat.kills}`;
+    if (menuStatGold) menuStatGold.textContent = `+${combat.goldEarned} 🪙`;
+  }
+
+  function openGameMenu(tab = 'settings') {
+    if (gameState !== 'PLAYING') return;
+    closeIngameInventory();
+    closeTacticalMap();
+    isMenuOpen = true;
+    gameMenuModal?.classList.remove('hidden');
+    switchGameMenuTab(tab);
+    updateRunStatsInMenu();
+  }
+
+  function closeGameMenu() {
+    isMenuOpen = false;
+    gameMenuModal?.classList.add('hidden');
+  }
+
+  function toggleGameMenu() {
+    if (isMenuOpen) closeGameMenu();
+    else openGameMenu('settings');
+  }
+
+  if (hudBtnMenu) hudBtnMenu.addEventListener('click', () => toggleGameMenu());
+  if (btnCloseGameMenu) btnCloseGameMenu.addEventListener('click', () => closeGameMenu());
+  if (btnMenuResume) btnMenuResume.addEventListener('click', () => closeGameMenu());
+
+  if (menuTabBtnSettings) menuTabBtnSettings.addEventListener('click', () => switchGameMenuTab('settings'));
+  if (menuTabBtnShop) menuTabBtnShop.addEventListener('click', () => switchGameMenuTab('shop'));
+  if (menuTabBtnFriends) menuTabBtnFriends.addEventListener('click', () => switchGameMenuTab('friends'));
+  if (menuTabBtnStats) menuTabBtnStats.addEventListener('click', () => switchGameMenuTab('stats'));
+
+  // Toggle Settings
+  if (settingDmgNumbers) {
+    settingDmgNumbers.addEventListener('change', (e) => {
+      FX.showDamageNumbers = e.target.checked;
+    });
+  }
+
+  if (settingFxSparks) {
+    settingFxSparks.addEventListener('change', (e) => {
+      FX.showSparks = e.target.checked;
+    });
+  }
+
+  if (btnToggleFullscreen) {
+    btnToggleFullscreen.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+        btnToggleFullscreen.textContent = '🖥️ Esci da Fullscreen';
+      } else {
+        document.exitFullscreen().catch(() => {});
+        btnToggleFullscreen.textContent = '🖥️ Attiva Fullscreen';
+      }
+    });
+  }
+
+  if (btnCopyFriendCode) {
+    btnCopyFriendCode.addEventListener('click', () => {
+      if (myFriendIdDisplay) {
+        navigator.clipboard.writeText(myFriendIdDisplay.textContent).then(() => {
+          btnCopyFriendCode.textContent = '✓ Copiato!';
+          setTimeout(() => { btnCopyFriendCode.textContent = 'Copia'; }, 2000);
+        }).catch(() => {});
+      }
+    });
+  }
+
+  // Esci dalla sessione e salva i progressi al server
+  if (btnMenuQuit) {
+    btnMenuQuit.addEventListener('click', async () => {
+      if (confirm('Vuoi terminare la spedizione ora? I progressi, l\'oro e i materiali raccolti verranno salvati.')) {
+        closeGameMenu();
+        await handleGameOver();
+      }
+    });
+  }
+
+  // =========================================================================
+  // 9. AVVIO DELLA SPEDIZIONE
   // =========================================================================
   function startExpedition() {
     gameState = 'PLAYING';
@@ -816,8 +1178,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (elWeaponIcon) elWeaponIcon.textContent = combat.weaponId === 'sword' ? '🗡️' : (combat.weaponId === 'bow' ? '🏹' : '🪄');
     if (elWeaponName) elWeaponName.textContent = combat.weaponName;
 
-    // 3. Popola i mostri randagi nei rispettivi biomi della grande mappa finita
-    // Mostri ravvicinati appena fuori dal piazzale del villaggio per test immediato di combattimento e animazioni
+    // 3. Popola i mostri nei rispettivi biomi della mappa
     combat.enemies.push(new Enemy(140, -170, 'slime_forest'));
     combat.enemies.push(new Enemy(180, -190, 'slime_forest'));
     combat.enemies.push(new Enemy(-160, -170, 'slime_ice'));
@@ -847,17 +1208,19 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // 4. Cambia schermata
     closeIngameInventory();
-    menuScreen.classList.add('hidden');
-    gameHud.classList.remove('hidden');
-    modalGameOver.classList.add('hidden');
+    closeTacticalMap();
+    closeGameMenu();
+    menuScreen?.classList.add('hidden');
+    gameHud?.classList.remove('hidden');
+    modalGameOver?.classList.add('hidden');
 
-    showWeaponNotification("Tasto [I]: Zaino/Inventario · Tasti [1/2/3]: Cambia Arma");
+    showWeaponNotification("Tasto [I]: Zaino/Talenti · [M]: Mappa · [ESC]: Menu · [1/2/3]: Armi");
   }
 
-  btnStartRun.addEventListener('click', startExpedition);
+  btnStartRun?.addEventListener('click', startExpedition);
 
   // =========================================================================
-  // GESTIONE FINE PARTITA & REGISTRAZIONE STATISTICHE
+  // 10. GESTIONE FINE PARTITA & REGISTRAZIONE STATISTICHE
   // =========================================================================
   async function handleGameOver() {
     if (gameState === 'GAMEOVER') return;
@@ -865,7 +1228,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     const totalItems = Object.values(combat.collectedItems || {}).reduce((a, b) => a + b, 0);
 
-    // Invia i dati della spedizione al backend (inclusi i materiali raccolti) o salva in locale
     const runStats = {
       level: progression.level,
       kills: combat.kills,
@@ -877,28 +1239,28 @@ window.addEventListener('DOMContentLoaded', async () => {
     const res = await API.submitRun(runStats);
 
     // Mostra il modale di riepilogo
-    elSumTime.textContent = formatTime(runStats.survivalSeconds);
-    elSumLevel.textContent = `${runStats.level}`;
-    elSumKills.textContent = `${runStats.kills}`;
-    elSumGold.textContent = `+${res.finalGold} 🪙`;
+    if (elSumTime) elSumTime.textContent = formatTime(runStats.survivalSeconds);
+    if (elSumLevel) elSumLevel.textContent = `${runStats.level}`;
+    if (elSumKills) elSumKills.textContent = `${runStats.kills}`;
+    if (elSumGold) elSumGold.textContent = `+${res.finalGold} 🪙`;
     if (elSumItems) elSumItems.textContent = `+${totalItems} 🎒`;
-    elSumScore.textContent = `${res.score}`;
+    if (elSumScore) elSumScore.textContent = `${res.score}`;
 
-    gameHud.classList.add('hidden');
-    modalGameOver.classList.remove('hidden');
+    gameHud?.classList.add('hidden');
+    modalGameOver?.classList.remove('hidden');
   }
 
   player.onDeath = () => handleGameOver();
 
-  btnReturnSanctuary.addEventListener('click', async () => {
-    modalGameOver.classList.add('hidden');
-    menuScreen.classList.remove('hidden');
+  btnReturnSanctuary?.addEventListener('click', async () => {
+    modalGameOver?.classList.add('hidden');
+    menuScreen?.classList.remove('hidden');
     gameState = 'MENU';
     await refreshProfile();
   });
 
   // =========================================================================
-  // LEVEL-UP & CARTE
+  // 11. LEVEL-UP & CARTE
   // =========================================================================
   progression.onLevelUpCallback = (lvl, choices) => {
     if (!cardsContainer || !modalLevelUp) return;
@@ -923,11 +1285,12 @@ window.addEventListener('DOMContentLoaded', async () => {
   };
 
   progression.onUpgradeChosenCallback = () => {
-    if (modalLevelUp) {
-      modalLevelUp.classList.add('hidden');
-    }
+    modalLevelUp?.classList.add('hidden');
   };
 
+  // =========================================================================
+  // 12. GESTIONE INPUT TASTIERA
+  // =========================================================================
   window.addEventListener('keydown', (e) => {
     if (progression.isPausedForLevelUp) {
       if (e.key === '1') progression.chooseUpgrade(0);
@@ -937,34 +1300,50 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (gameState === 'PLAYING') {
-      // Tasti [I] e [B] per aprire/chiudere lo Zaino & Inventario
+      // Tasti [I] e [B] per Zaino/Inventario
       if (e.code === 'KeyI' || e.code === 'KeyB' || e.key === 'i' || e.key === 'I' || e.key === 'b' || e.key === 'B') {
         e.preventDefault();
         toggleIngameInventory();
         return;
       }
 
-      // Tasto [ESC] per chiudere l'inventario se aperto
+      // Tasto [M] per Mappa Tattica
+      if (e.code === 'KeyM' || e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        toggleTacticalMap();
+        return;
+      }
+
+      // Tasto [ESC] per chiudere o aprire i menu
       if (e.key === 'Escape' || e.code === 'Escape') {
+        if (isMapOpen) {
+          closeTacticalMap();
+          return;
+        }
         if (isInventoryOpen) {
           closeIngameInventory();
           return;
         }
+        if (isMenuOpen) {
+          closeGameMenu();
+          return;
+        }
+        // Se nessun menu è aperto, apri il Game Menu
+        openGameMenu('settings');
+        return;
       }
 
-      // Tasti rapidi 1, 2, 3 per cambiare arma all'istante
-      if (e.key === '1') {
-        equipWeapon('staff');
-      } else if (e.key === '2') {
-        equipWeapon('sword');
-      } else if (e.key === '3') {
-        equipWeapon('bow');
+      // Cambio arma rapido con 1, 2, 3 (se i menu non sono aperti)
+      if (!isInventoryOpen && !isMapOpen && !isMenuOpen) {
+        if (e.key === '1') equipWeapon('staff');
+        else if (e.key === '2') equipWeapon('sword');
+        else if (e.key === '3') equipWeapon('bow');
       }
     }
   });
 
   // =========================================================================
-  // RIDIMENSIONAMENTO CANVAS
+  // 13. RIDIMENSIONAMENTO CANVAS
   // =========================================================================
   function handleResize() {
     const dpr = window.devicePixelRatio || 1;
@@ -977,18 +1356,20 @@ window.addEventListener('DOMContentLoaded', async () => {
     canvas.style.height = `${h}px`;
 
     camera.resize(canvas.width, canvas.height, dpr);
+    initTitleParticles();
   }
 
   window.addEventListener('resize', handleResize);
   handleResize();
 
   // =========================================================================
-  // GAME LOOP A 60 FPS
+  // 14. GAME LOOP A 60 FPS
   // =========================================================================
   let lastTime = performance.now();
   let frameCount = 0;
   let fpsTimer = 0;
   let currentFps = 60;
+  let minimapTimer = 0;
 
   function loop(currentTime) {
     try {
@@ -1004,9 +1385,15 @@ window.addEventListener('DOMContentLoaded', async () => {
         fpsTimer = 0;
       }
 
-      // 1. UPDATE (Mondo in pausa se l'inventario o il level up è aperto)
+      // Se siamo nella schermata iniziale, aggiorna lo sfondo animato
+      if (gameState === 'MENU') {
+        updateAndDrawTitleBackground(dt, currentTime / 1000);
+      }
+
+      // 1. UPDATE (Mondo in pausa se Zaino, Mappa, Menu o LevelUp sono aperti)
+      const isPaused = isInventoryOpen || isMapOpen || isMenuOpen || progression.isPausedForLevelUp;
       if (gameState === 'PLAYING') {
-        if (!isInventoryOpen && !progression.isPausedForLevelUp) {
+        if (!isPaused) {
           runSurvivalSeconds += dt;
           player.update(dt, Input, world);
           combat.update(dt, player, world, camera);
@@ -1014,7 +1401,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
       }
 
-      // 2. RENDER PIPELINE
+      // 2. RENDER PIPELINE DEL MONDO
       ctx.save();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.imageSmoothingEnabled = false;
@@ -1025,7 +1412,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Terreno
       world.drawGround(ctx, camera);
 
-      // Gemme a terra
+      // Gemme e artefatti a terra
       combat.drawPickups(ctx);
 
       // Elementi verticali Y-Sort
@@ -1034,7 +1421,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Sfere orbitanti
       combat.drawOrbitOrbs(ctx, player);
 
-      // Dardi e particelle
+      // Dardi, frecce e fendenti
       combat.drawProjectiles(ctx);
       combat.drawFX(ctx);
 
@@ -1044,8 +1431,17 @@ window.addEventListener('DOMContentLoaded', async () => {
       world.drawVignette(ctx, canvas.width, canvas.height);
       ctx.restore();
 
-      // 3. AGGIORNAMENTO HUD DI GIOCO
+      // 3. MINIMAPPA LIVE E HUD
       if (gameState === 'PLAYING') {
+        minimapTimer += dt;
+        if (minimapTimer >= 0.08) { // Aggiornamento minimappa a ~12 Hz
+          minimapTimer = 0;
+          renderMinimap();
+          if (isMapOpen) {
+            renderTacticalMap();
+          }
+        }
+
         if (elFps) elFps.textContent = `${currentFps}`;
         if (elTimer) elTimer.textContent = formatTime(runSurvivalSeconds);
         if (elEnemies) elEnemies.textContent = `${combat.enemies.length}`;
@@ -1088,7 +1484,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     requestAnimationFrame(loop);
   }
 
-  // Inizializza la sessione utente all'avvio
+  // Inizializza sessione utente all'avvio
   const session = await API.restoreSession();
   if (session && session.user) {
     await refreshProfile(session.user.username);

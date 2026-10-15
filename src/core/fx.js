@@ -17,6 +17,9 @@ export const FX = (() => {
   const damageTexts = [];
 
   return {
+    showDamageNumbers: true,
+    showSparks: true,
+
     /**
      * Esplosione circolare di particelle colorate
      */
@@ -274,98 +277,99 @@ export const FX = (() => {
     draw(ctx) {
       ctx.save();
 
-      // 1. Onde d'urto circolari
-      for (const sw of shockwaves) {
-        const alpha = Math.max(0, 1 - sw.t / sw.life);
-        ctx.strokeStyle = sw.color;
-        ctx.globalAlpha = alpha * 0.85;
-        ctx.lineWidth = Math.max(1.5, 3 * (1 - sw.t / sw.life));
-        ctx.beginPath();
-        ctx.arc(Math.round(sw.x), Math.round(sw.y), Math.round(sw.radius), 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      // 2. Tagli di lama (Slash Cuts)
-      for (const sc of slashCuts) {
-        const alpha = Math.max(0, 1 - sc.t / sc.life);
-        ctx.save();
-        ctx.translate(Math.round(sc.x), Math.round(sc.y));
-        ctx.rotate(sc.angle);
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = sc.color;
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.moveTo(-sc.length / 2, 0);
-        ctx.lineTo(sc.length / 2, 0);
-        ctx.stroke();
-
-        ctx.strokeStyle = '#fde047';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(-sc.length / 3, -1);
-        ctx.lineTo(sc.length / 3, 1);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      // 3. Detriti ossei rotanti
-      for (const b of bones) {
-        const alpha = Math.max(0, 1 - (b.t / b.life) * 0.8);
-        ctx.save();
-        ctx.translate(Math.round(b.x), Math.round(b.y));
-        ctx.rotate(b.rotation);
-        ctx.globalAlpha = alpha;
-
-        if (b.isSkull) {
-          // Mini-teschio
-          ctx.fillStyle = '#0f172a';
-          ctx.fillRect(-3, -3, 6, 6);
-          ctx.fillStyle = '#f8fafc';
-          ctx.fillRect(-2, -2, 5, 5);
-          // Occhiaie
-          ctx.fillStyle = '#ef4444';
-          ctx.fillRect(-1, -1, 1, 1);
-          ctx.fillRect(1, -1, 1, 1);
-        } else {
-          // Osso / costola
-          ctx.fillStyle = '#0f172a';
-          ctx.fillRect(-3, -1, 6, 3);
-          ctx.fillStyle = '#cbd5e1';
-          ctx.fillRect(-2, 0, 5, 2);
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(-2, 0, 2, 1);
+      // 1. Onde d'urto, tagli e scintille (se attivi)
+      if (this.showSparks !== false) {
+        for (const sw of shockwaves) {
+          const alpha = Math.max(0, 1 - sw.t / sw.life);
+          ctx.strokeStyle = sw.color;
+          ctx.globalAlpha = alpha * 0.85;
+          ctx.lineWidth = Math.max(1.5, 3 * (1 - sw.t / sw.life));
+          ctx.beginPath();
+          ctx.arc(Math.round(sw.x), Math.round(sw.y), Math.round(sw.radius), 0, Math.PI * 2);
+          ctx.stroke();
         }
-        ctx.restore();
+
+        // 2. Tagli di lama (Slash Cuts)
+        for (const sc of slashCuts) {
+          const alpha = Math.max(0, 1 - sc.t / sc.life);
+          ctx.save();
+          ctx.translate(Math.round(sc.x), Math.round(sc.y));
+          ctx.rotate(sc.angle);
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = sc.color;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(-sc.length / 2, 0);
+          ctx.lineTo(sc.length / 2, 0);
+          ctx.stroke();
+
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(-sc.length / 3, -1);
+          ctx.lineTo(sc.length / 3, 1);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // 3. Detriti ossei rotanti
+        for (const b of bones) {
+          const alpha = Math.max(0, 1 - (b.t / b.life) * 0.8);
+          ctx.save();
+          ctx.translate(Math.round(b.x), Math.round(b.y));
+          ctx.rotate(b.rotation);
+          ctx.globalAlpha = alpha;
+
+          if (b.isSkull) {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-3, -3, 6, 6);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(-2, -2, 5, 5);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-1, -1, 1, 1);
+            ctx.fillRect(1, -1, 1, 1);
+          } else {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-3, -1, 6, 3);
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(-2, 0, 5, 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-2, 0, 2, 1);
+          }
+          ctx.restore();
+        }
+
+        // 4. Particelle pixel art
+        for (const p of particles) {
+          const alpha = Math.max(0, 1 - p.t / p.life);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = alpha;
+          ctx.fillRect(Math.round(p.x - p.size / 2), Math.round(p.y - p.size / 2), p.size, p.size);
+        }
       }
 
-      // 4. Particelle pixel art
-      for (const p of particles) {
-        const alpha = Math.max(0, 1 - p.t / p.life);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = alpha;
-        ctx.fillRect(Math.round(p.x - p.size / 2), Math.round(p.y - p.size / 2), p.size, p.size);
-      }
+      // 5. Testi e Numeri fluttuanti con Pop Scaling (se attivi)
+      if (this.showDamageNumbers !== false) {
+        for (const d of damageTexts) {
+          const alpha = Math.max(0, 1 - d.t / d.life);
+          ctx.save();
+          ctx.globalAlpha = alpha;
 
-      // 5. Testi e Numeri fluttuanti con Pop Scaling
-      for (const d of damageTexts) {
-        const alpha = Math.max(0, 1 - d.t / d.life);
-        ctx.save();
-        ctx.globalAlpha = alpha;
+          const fontSize = Math.round(13 * (d.scale || 1.0));
+          ctx.font = `bold ${fontSize}px "Courier New", monospace, sans-serif`;
+          ctx.textAlign = 'center';
 
-        const fontSize = Math.round(13 * (d.scale || 1.0));
-        ctx.font = `bold ${fontSize}px "Courier New", monospace, sans-serif`;
-        ctx.textAlign = 'center';
+          // Ombra/contorno scuro
+          ctx.fillStyle = '#080a0f';
+          ctx.fillText(d.text, Math.round(d.x) + 1, Math.round(d.y) + 1);
+          ctx.fillText(d.text, Math.round(d.x) - 1, Math.round(d.y) - 1);
 
-        // Ombra/contorno scuro
-        ctx.fillStyle = '#080a0f';
-        ctx.fillText(d.text, Math.round(d.x) + 1, Math.round(d.y) + 1);
-        ctx.fillText(d.text, Math.round(d.x) - 1, Math.round(d.y) - 1);
+          // Colore primario
+          ctx.fillStyle = d.color || (d.isCrit ? '#fde047' : '#e0f2fe');
+          ctx.fillText(d.text, Math.round(d.x), Math.round(d.y));
 
-        // Colore primario
-        ctx.fillStyle = d.color || (d.isCrit ? '#fde047' : '#e0f2fe');
-        ctx.fillText(d.text, Math.round(d.x), Math.round(d.y));
-
-        ctx.restore();
+          ctx.restore();
+        }
       }
 
       ctx.restore();
