@@ -2,6 +2,7 @@
  * entities/player.js - Il protagonista fantasy giocabile (Mago Arcano)
  */
 import { Sprites } from '../core/sprites.js';
+import { FX } from '../core/fx.js';
 
 export class Player {
   constructor(x = 0, y = 0) {
@@ -13,6 +14,15 @@ export class Player {
     this.maxHp = 100;
     this.magnetRadius = 85;   // Raggio di attrazione magnetica per gemme di mana
     this.permanentBonusDamage = 0;
+    this.defense = 0;
+    this.damageReductionPercent = 0;
+    this.critChance = 0;
+    this.critDamage = 50;
+    this.hpRegen = 0;
+    this.lifeSteal = 0;
+    this.dodgeChance = 0;
+    this.cooldownReduction = 0;
+    this.ignoreWaterSlow = false;
     this.invulnerableTimer = 0;
 
     // Orientamento e animazione
@@ -28,16 +38,41 @@ export class Player {
 
   applyPermanentStats(stats = {}) {
     this.maxHp = 100 + (stats.bonusHp || 0);
-    this.hp = this.maxHp;
+    this.hp = Math.min(this.hp, this.maxHp);
+    if (this.hp <= 0) this.hp = this.maxHp;
     this.baseSpd = Math.round(105 * (stats.speedMultiplier || 1.0));
     this.magnetRadius = Math.round(85 * (stats.magnetMultiplier || 1.0));
     this.permanentBonusDamage = stats.bonusDamage || 0;
+    this.defense = stats.defense || 0;
+    this.damageReductionPercent = stats.damageReductionPercent || 0;
+    this.critChance = stats.critChance || 0;
+    this.critDamage = stats.critDamage || 50;
+    this.hpRegen = stats.hpRegen || 0;
+    this.lifeSteal = stats.lifeSteal || 0;
+    this.dodgeChance = stats.dodgeChance || 0;
+    this.cooldownReduction = stats.cooldownReduction || 0;
+    this.ignoreWaterSlow = !!stats.ignoreWaterSlow;
   }
 
   takeDamage(amount) {
     if (this.invulnerableTimer > 0 || this.hp <= 0) return;
-    this.hp = Math.max(0, this.hp - amount);
+
+    // 1. Controllo Schivata (Dodge Chance)
+    if (this.dodgeChance > 0 && Math.random() * 100 < this.dodgeChance) {
+      this.invulnerableTimer = 0.35;
+      FX.addFloatingText(this.x, this.y - 24, 'SCHIVATA! 💨', '#38bdf8');
+      FX.spark(this.x, this.y - 8, '#7dd3fc', 4);
+      return;
+    }
+
+    // 2. Riduzione del danno tramite Difesa / Armatura (Diablo Formula)
+    const reduction = this.defense > 0 ? (this.defense / (this.defense + 100)) : 0;
+    const finalDmg = Math.max(1, Math.round(amount * (1 - reduction)));
+
+    this.hp = Math.max(0, this.hp - finalDmg);
     this.invulnerableTimer = 0.6; // 600ms invulnerabilità
+    FX.addFloatingText(this.x, this.y - 18, `-${finalDmg}`, '#ef4444');
+
     if (this.hp <= 0 && this.onDeath) {
       this.onDeath();
     }
@@ -45,8 +80,8 @@ export class Player {
 
   get currentSpeed() {
     let s = this.baseSpd;
-    // Se immerso in acqua, la velocità si riduce del 40% (x0.6)
-    if (this.inLiquid) {
+    // Se immerso in acqua profonda, rallenta solo se non ha stivali anfibi
+    if (this.inLiquid && !this.ignoreWaterSlow) {
       s *= 0.6;
     }
     return s;
@@ -55,6 +90,11 @@ export class Player {
   update(dt, input, world) {
     if (this.invulnerableTimer > 0) {
       this.invulnerableTimer -= dt;
+    }
+
+    // Rigenerazione passiva della salute da equipaggiamento
+    if (this.hpRegen > 0 && this.hp > 0 && this.hp < this.maxHp) {
+      this.hp = Math.min(this.maxHp, this.hp + this.hpRegen * dt);
     }
 
     const [ax, ay] = input.axis();
@@ -66,7 +106,7 @@ export class Player {
 
       // Movimento fluido integrato con delta time
       let spd = this.currentSpeed;
-      if (world.isShallowWater(this.x, this.y)) {
+      if (world.isShallowWater(this.x, this.y) && !this.ignoreWaterSlow) {
         spd *= 0.85; // Leggero rallentamento realistico nei guadi
       }
       this.x += ax * spd * dt;

@@ -204,6 +204,106 @@ app.post('/api/weapons/equip', (req, res) => {
   }
 });
 
+// Forgia Pezzo d'Equipaggiamento (Diablo Style)
+app.post('/api/blacksmith/craft-equipment', (req, res) => {
+  try {
+    const token = extractToken(req);
+    let nickname = req.body.nickname;
+    if (token) {
+      const auth = db.getAccountByToken(token);
+      if (auth && auth.user) nickname = auth.user.username;
+    }
+    const { equipId } = req.body;
+    if (!nickname || !equipId) {
+      return res.status(400).json({ success: false, error: 'Nickname ed equipId sono obbligatori' });
+    }
+    const profile = db.craftEquipment(nickname, equipId);
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Raffina Risorse (Albion Online Style)
+app.post('/api/blacksmith/refine', (req, res) => {
+  try {
+    const token = extractToken(req);
+    let nickname = req.body.nickname;
+    if (token) {
+      const auth = db.getAccountByToken(token);
+      if (auth && auth.user) nickname = auth.user.username;
+    }
+    const { recipeId, quantity } = req.body;
+    if (!nickname || !recipeId) {
+      return res.status(400).json({ success: false, error: 'Nickname e recipeId sono obbligatori' });
+    }
+    const profile = db.refineResource(nickname, recipeId, quantity || 1);
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Smantella / Salvage Pezzo d'Equipaggiamento (Diablo Style)
+app.post('/api/blacksmith/salvage', (req, res) => {
+  try {
+    const token = extractToken(req);
+    let nickname = req.body.nickname;
+    if (token) {
+      const auth = db.getAccountByToken(token);
+      if (auth && auth.user) nickname = auth.user.username;
+    }
+    const { equipId } = req.body;
+    if (!nickname || !equipId) {
+      return res.status(400).json({ success: false, error: 'Nickname ed equipId sono obbligatori' });
+    }
+    const profile = db.salvageItem(nickname, equipId);
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Equipaggia Armatura o Gioiello nello Slot
+app.post('/api/equipment/equip', (req, res) => {
+  try {
+    const token = extractToken(req);
+    let nickname = req.body.nickname;
+    if (token) {
+      const auth = db.getAccountByToken(token);
+      if (auth && auth.user) nickname = auth.user.username;
+    }
+    const { equipId } = req.body;
+    if (!nickname || !equipId) {
+      return res.status(400).json({ success: false, error: 'Nickname ed equipId sono obbligatori' });
+    }
+    const profile = db.equipItem(nickname, equipId);
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Rimuovi Equipaggiamento dallo Slot
+app.post('/api/equipment/unequip', (req, res) => {
+  try {
+    const token = extractToken(req);
+    let nickname = req.body.nickname;
+    if (token) {
+      const auth = db.getAccountByToken(token);
+      if (auth && auth.user) nickname = auth.user.username;
+    }
+    const { slot } = req.body;
+    if (!nickname || !slot) {
+      return res.status(400).json({ success: false, error: 'Nickname e slot sono obbligatori' });
+    }
+    const profile = db.unequipItem(nickname, slot);
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 // Classifica Globale
 app.get('/api/leaderboard', (req, res) => {
   try {

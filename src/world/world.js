@@ -8,6 +8,7 @@
  */
 import { Tiles } from './tiles.js';
 import { Sprites } from '../core/sprites.js';
+import { ResourceNode } from '../entities/resource_node.js';
 
 export const SETTLEMENTS = [
   {
@@ -341,6 +342,97 @@ export const TRAIL_SEGMENTS = [
   { x1: -30, y1: -55, x2: 20, y2: -75 }
 ];
 
+// =========================================================================
+// DISTRIBUZIONE DETERMINISTICA DEI NODI DI RACCOLTA (Albion Online Style)
+// =========================================================================
+export const RESOURCE_SPOTS = [
+  // --- BOSCO DI SYLVA (Rame, Querce Antiche, Geodi Arcani) ---
+  { type: 'mining_copper', tx: -50, ty: -20 },
+  { type: 'mining_copper', tx: -65, ty: -48 },
+  { type: 'mining_copper', tx: -82, ty: -25 },
+  { type: 'mining_copper', tx: -30, ty: -46 },
+  { type: 'mining_copper', tx: -15, ty: -35 },
+  { type: 'mining_copper', tx: -45, ty: -68 },
+  { type: 'mining_copper', tx: -10, ty: -20 },
+  { type: 'mining_copper', tx: 8, ty: -28 },
+
+  { type: 'tree_ancient', tx: -86, ty: -52 },
+  { type: 'tree_ancient', tx: -72, ty: -22 },
+  { type: 'tree_ancient', tx: -62, ty: -58 },
+  { type: 'tree_ancient', tx: -42, ty: -42 },
+  { type: 'tree_ancient', tx: -28, ty: -62 },
+  { type: 'tree_ancient', tx: -92, ty: -34 },
+  { type: 'tree_ancient', tx: -18, ty: -48 },
+
+  // --- BIOMA DEL FIUME & CASCATE (Loto delle Ninfee, Rame Fluviale) ---
+  { type: 'plant_lotus', tx: -44, ty: 15 },
+  { type: 'plant_lotus', tx: -34, ty: 18 },
+  { type: 'plant_lotus', tx: -42, ty: 30 },
+  { type: 'plant_lotus', tx: -52, ty: 26 },
+  { type: 'plant_lotus', tx: -32, ty: 28 },
+  { type: 'plant_lotus', tx: -24, ty: 12 },
+  { type: 'plant_lotus', tx: -56, ty: 34 },
+  { type: 'mining_copper', tx: -38, ty: 36 },
+  { type: 'mining_copper', tx: -48, ty: 12 },
+  { type: 'mining_copper', tx: -28, ty: 32 },
+
+  // --- VETTE DI FROSTPEAK (Ferro Montano, Abeti del Permafrost) ---
+  { type: 'mining_iron', tx: 14, ty: -62 },
+  { type: 'mining_iron', tx: 32, ty: -68 },
+  { type: 'mining_iron', tx: 10, ty: -84 },
+  { type: 'mining_iron', tx: 26, ty: -92 },
+  { type: 'mining_iron', tx: 36, ty: -54 },
+  { type: 'mining_iron', tx: 6, ty: -74 },
+  { type: 'mining_iron', tx: 42, ty: -78 },
+
+  { type: 'tree_frost', tx: 16, ty: -70 },
+  { type: 'tree_frost', tx: 28, ty: -84 },
+  { type: 'tree_frost', tx: 8, ty: -66 },
+  { type: 'tree_frost', tx: 24, ty: -96 },
+  { type: 'tree_frost', tx: 34, ty: -64 },
+  { type: 'tree_frost', tx: 12, ty: -86 },
+
+  // --- DESERTO DI AL-ZAHIR (Spine Solari, Minerale Ferroso delle Sabbie) ---
+  { type: 'mining_iron', tx: -58, ty: 54 },
+  { type: 'mining_iron', tx: -76, ty: 74 },
+  { type: 'mining_iron', tx: -48, ty: 68 },
+  { type: 'mining_iron', tx: -82, ty: 48 },
+  { type: 'mining_iron', tx: -64, ty: 82 },
+  { type: 'mining_iron', tx: -54, ty: 62 },
+
+  { type: 'plant_sun', tx: -74, ty: 56 },
+  { type: 'plant_sun', tx: -66, ty: 74 },
+  { type: 'plant_sun', tx: -56, ty: 66 },
+  { type: 'plant_sun', tx: -84, ty: 64 },
+  { type: 'plant_sun', tx: -60, ty: 80 },
+  { type: 'plant_sun', tx: -78, ty: 50 },
+
+  // --- ZONA VULCANICA DI CINERIS (Giacimenti d'Ossidiana, Ferro Vulcanico) ---
+  { type: 'mining_obsidian', tx: 58, ty: 34 },
+  { type: 'mining_obsidian', tx: 76, ty: 56 },
+  { type: 'mining_obsidian', tx: 82, ty: 38 },
+  { type: 'mining_obsidian', tx: 64, ty: 54 },
+  { type: 'mining_obsidian', tx: 54, ty: 44 },
+  { type: 'mining_obsidian', tx: 86, ty: 28 },
+  { type: 'mining_obsidian', tx: 72, ty: 62 },
+  { type: 'mining_obsidian', tx: 92, ty: 52 },
+  { type: 'mining_iron', tx: 52, ty: 28 },
+  { type: 'mining_iron', tx: 60, ty: 48 },
+  { type: 'mining_iron', tx: 80, ty: 46 },
+
+  // --- GEODI D'AETHER (Filoni Arcani presso rovine e crocevia) ---
+  { type: 'geode_aether', tx: 2, ty: -24 },
+  { type: 'geode_aether', tx: -16, ty: 16 },
+  { type: 'geode_aether', tx: 22, ty: 22 },
+  { type: 'geode_aether', tx: -22, ty: -16 },
+  { type: 'geode_aether', tx: 12, ty: -46 },
+  { type: 'geode_aether', tx: -52, ty: -6 },
+  { type: 'geode_aether', tx: 46, ty: -22 },
+  { type: 'geode_aether', tx: 36, ty: 36 },
+  { type: 'geode_aether', tx: -72, ty: 12 },
+  { type: 'geode_aether', tx: 72, ty: 14 }
+];
+
 function distToSegment(px, py, x1, y1, x2, y2) {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -387,6 +479,51 @@ export class World {
 
     this.chunkCanvases = new Map();
     this.chunkProps = new Map();
+
+    // Inizializza i nodi fisici di raccolta del mondo
+    this.resourceNodes = RESOURCE_SPOTS.map(spot => {
+      const wx = spot.tx * this.TS + this.TS / 2;
+      const wy = spot.ty * this.TS + this.TS / 2;
+      return new ResourceNode(wx, wy, spot.type);
+    });
+  }
+
+  /**
+   * Restituisce il nodo risorsa più vicino e interagibile
+   */
+  getNearbyResourceNode(playerX, playerY, maxDist = 75) {
+    let nearest = null;
+    let minDist = maxDist;
+    for (const node of this.resourceNodes) {
+      if (node.state === 'depleted') continue;
+      const d = Math.hypot(node.x - playerX, node.y - playerY);
+      if (d <= minDist) {
+        minDist = d;
+        nearest = node;
+      }
+    }
+    return nearest;
+  }
+
+  /**
+   * Cerca un nodo risorsa cliccato alle coordinate del mondo
+   */
+  getResourceNodeAt(worldX, worldY, padding = 24) {
+    for (const node of this.resourceNodes) {
+      if (node.hitTest(worldX, worldY, padding)) {
+        return node;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Aggiorna lo stato di tutti i nodi di risorsa (canalizzazione, respawn)
+   */
+  updateResourceNodes(dt, player, combat) {
+    for (const node of this.resourceNodes) {
+      node.update(dt, player, combat);
+    }
   }
 
   hash2D(x, y, s = 0) {
@@ -1051,6 +1188,18 @@ export class World {
               }
             });
           }
+        }
+      }
+    }
+
+    // Nodi di Raccolta Risorse nel Mondo (Albion Online Style)
+    if (this.resourceNodes) {
+      for (const node of this.resourceNodes) {
+        if (camera.sees(node.x, node.y, 80)) {
+          drawList.push({
+            y: node.y,
+            draw: () => node.draw(ctx, camera)
+          });
         }
       }
     }

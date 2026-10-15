@@ -13,7 +13,7 @@ const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 
 import { TALENTS_DEF } from '../src/core/talents.js';
-import { WEAPONS_DEF, MATERIALS_DEF } from '../src/core/crafting.js';
+import { WEAPONS_DEF, MATERIALS_DEF, EQUIPMENT_DEF, REFINING_RECIPES } from '../src/core/crafting.js';
 
 // Funzioni crittografiche sicure basate sulle API native di Node.js
 function generateSalt() {
@@ -259,13 +259,64 @@ class Database {
     return Math.floor(def.baseCost * Math.pow(def.costMult, currentRank));
   }
 
-  calculateStats(talents = {}) {
+  calculateStats(talents = {}, equipment = {}) {
+    const bonusHpTalent = (talents.max_hp || 0) * (TALENTS_DEF.max_hp?.bonusPerRank || 15);
+    const bonusDmgTalent = (talents.damage || 0) * (TALENTS_DEF.damage?.bonusPerRank || 3);
+    const speedMultTalent = (talents.speed || 0) * (TALENTS_DEF.speed?.bonusPerRank || 0.04);
+    const magnetMultTalent = (talents.magnet || 0) * (TALENTS_DEF.magnet?.bonusPerRank || 0.08);
+    const goldMultTalent = (talents.gold_gain || 0) * (TALENTS_DEF.gold_gain?.bonusPerRank || 0.10);
+
+    let bonusHp = bonusHpTalent;
+    let defense = 0;
+    let bonusDamage = bonusDmgTalent;
+    let speedBonusTotal = 0;
+    let critChance = 0;
+    let critDamage = 50; // base +50% extra sui critici (tot 1.5x)
+    let hpRegen = 0;
+    let lifeSteal = 0;
+    let dodgeChance = 0;
+    let cooldownReduction = 0;
+    let ignoreWaterSlow = false;
+
+    if (equipment && typeof equipment === 'object') {
+      for (const [slot, eqId] of Object.entries(equipment)) {
+        if (!eqId) continue;
+        const eqDef = EQUIPMENT_DEF[eqId];
+        if (eqDef && eqDef.stats) {
+          const s = eqDef.stats;
+          if (s.maxHp) bonusHp += s.maxHp;
+          if (s.defense) defense += s.defense;
+          if (s.bonusDamage) bonusDamage += s.bonusDamage;
+          if (s.speedBonus) speedBonusTotal += s.speedBonus;
+          if (s.critChance) critChance += s.critChance;
+          if (s.critDamage) critDamage += s.critDamage;
+          if (s.hpRegen) hpRegen += s.hpRegen;
+          if (s.lifeSteal) lifeSteal += s.lifeSteal;
+          if (s.dodgeChance) dodgeChance += s.dodgeChance;
+          if (s.cooldownReduction) cooldownReduction += s.cooldownReduction;
+          if (s.ignoreWaterSlow) ignoreWaterSlow = true;
+        }
+      }
+    }
+
+    const damageReductionPercent = defense > 0 ? Math.round((defense / (defense + 100)) * 100) : 0;
+
     return {
-      bonusHp: (talents.max_hp || 0) * TALENTS_DEF.max_hp.bonusPerRank,
-      bonusDamage: (talents.damage || 0) * TALENTS_DEF.damage.bonusPerRank,
-      speedMultiplier: 1 + (talents.speed || 0) * TALENTS_DEF.speed.bonusPerRank,
-      magnetMultiplier: 1 + (talents.magnet || 0) * TALENTS_DEF.magnet.bonusPerRank,
-      goldMultiplier: 1 + (talents.gold_gain || 0) * TALENTS_DEF.gold_gain.bonusPerRank
+      bonusHp,
+      defense,
+      damageReductionPercent,
+      bonusDamage,
+      speedMultiplier: 1 + speedMultTalent + (speedBonusTotal / 100),
+      speedBonusPercent: Math.round((speedMultTalent * 100) + speedBonusTotal),
+      magnetMultiplier: 1 + magnetMultTalent,
+      goldMultiplier: 1 + goldMultTalent,
+      critChance: Math.min(75, critChance),
+      critDamage,
+      hpRegen,
+      lifeSteal,
+      dodgeChance: Math.min(50, dodgeChance),
+      cooldownReduction: Math.min(0.40, cooldownReduction),
+      ignoreWaterSlow
     };
   }
 
@@ -290,6 +341,8 @@ class Database {
           gold_gain: 0
         },
         inventory: {
+          copper_ore: 6,
+          ancient_wood: 4,
           slime_gel: 4,
           ice_crystal: 0,
           sun_amber: 0,
@@ -304,6 +357,14 @@ class Database {
           bow: 0    // Da forgiare dal fabbro
         },
         equippedWeapon: 'staff',
+        equipment: {
+          armor: null,
+          helmet: null,
+          boots: null,
+          amulet: null,
+          ring: null
+        },
+        craftedItems: [],
         inAppPurchases: []
       };
       this.profiles.set(key, newProfile);
@@ -315,6 +376,8 @@ class Database {
     // Garanzia di retrocompatibilità
     if (!p.inventory) {
       p.inventory = {
+        copper_ore: 6,
+        ancient_wood: 4,
         slime_gel: 4,
         ice_crystal: 0,
         sun_amber: 0,
@@ -329,6 +392,12 @@ class Database {
     }
     if (!p.equippedWeapon) {
       p.equippedWeapon = 'staff';
+    }
+    if (!p.equipment) {
+      p.equipment = { armor: null, helmet: null, boots: null, amulet: null, ring: null };
+    }
+    if (!Array.isArray(p.craftedItems)) {
+      p.craftedItems = [];
     }
     if (!p.inAppPurchases) {
       p.inAppPurchases = [];
@@ -366,16 +435,76 @@ class Database {
       count: p.inventory[mat.id] || 0
     }));
 
+    // Catalogo Equipaggiamento da forgiare
+    const equipmentCatalog = Object.values(EQUIPMENT_DEF).map(def => {
+      const isEquipped = p.equipment && p.equipment[def.slot] === def.id;
+      const isOwned = p.craftedItems.includes(def.id);
+      let canCraft = p.gold >= (def.craftCost?.gold || 0);
+      if (canCraft && def.craftCost?.materials) {
+        for (const [mId, amt] of Object.entries(def.craftCost.materials)) {
+          if ((p.inventory[mId] || 0) < amt) {
+            canCraft = false;
+            break;
+          }
+        }
+      }
+      return {
+        ...def,
+        isEquipped,
+        isOwned,
+        canCraft
+      };
+    });
+
+    // Catalogo Raffinazione Risorse
+    const refiningCatalog = REFINING_RECIPES.map(rec => {
+      let canRefine = p.gold >= (rec.goldCost || 0);
+      if (canRefine && rec.inputs) {
+        for (const [mId, amt] of Object.entries(rec.inputs)) {
+          if ((p.inventory[mId] || 0) < amt) {
+            canRefine = false;
+            break;
+          }
+        }
+      }
+      return {
+        ...rec,
+        canRefine,
+        outputDef: MATERIALS_DEF[rec.output.itemId] || { name: rec.output.itemId, icon: '📦', color: '#fff' }
+      };
+    });
+
+    // Catalogo Oggetti Riciclabili / Salvage
+    const salvageCatalog = p.craftedItems.map(eqId => {
+      const def = EQUIPMENT_DEF[eqId] || { id: eqId, name: eqId, slot: 'unknown', icon: '📦', rarity: 'Comune', salvageYield: {} };
+      const isEquipped = p.equipment && p.equipment[def.slot] === eqId;
+      return {
+        ...def,
+        isEquipped
+      };
+    });
+
+    // Pezzi correntemente equipaggiati con definizioni
+    const equippedPieces = {};
+    for (const slot of ['armor', 'helmet', 'boots', 'amulet', 'ring']) {
+      const eqId = p.equipment ? p.equipment[slot] : null;
+      equippedPieces[slot] = eqId ? (EQUIPMENT_DEF[eqId] || null) : null;
+    }
+
     return {
       ...p,
-      calculatedStats: this.calculateStats(p.talents),
+      calculatedStats: this.calculateStats(p.talents, p.equipment),
       talentsCatalog: Object.values(TALENTS_DEF).map(def => ({
         ...def,
         currentRank: p.talents[def.id] || 0,
         nextCost: (p.talents[def.id] || 0) >= def.maxRank ? null : this.getCostForTalent(def.id, p.talents[def.id] || 0)
       })),
       weaponsCatalog,
-      inventoryCatalog
+      inventoryCatalog,
+      equipmentCatalog,
+      refiningCatalog,
+      salvageCatalog,
+      equippedPieces
     };
   }
 
@@ -494,6 +623,167 @@ class Database {
     p.equippedWeapon = weaponId;
     this.save();
 
+    return this.getOrCreateProfile(nick);
+  }
+
+  /**
+   * Forgia un pezzo di equipaggiamento (Diablo Style) dal Fabbro
+   */
+  craftEquipment(rawNickname, equipId) {
+    const nick = (rawNickname || '').trim();
+    const key = nick.toLowerCase();
+    const p = this.profiles.get(key);
+    if (!p) throw new Error('Profilo non trovato');
+
+    const def = EQUIPMENT_DEF[equipId];
+    if (!def) throw new Error('Pezzo d\'equipaggiamento non valido');
+
+    const goldCost = def.craftCost?.gold || 0;
+    const matsCost = def.craftCost?.materials || {};
+
+    if (p.gold < goldCost) {
+      throw new Error(`Oro insufficiente: servono ${goldCost} oro ma ne possiedi ${p.gold}`);
+    }
+
+    for (const [mId, req] of Object.entries(matsCost)) {
+      const owned = p.inventory[mId] || 0;
+      if (owned < req) {
+        const matDef = MATERIALS_DEF[mId] || { name: mId };
+        throw new Error(`Materiale insufficiente: servono ${req}x ${matDef.name} ma ne possiedi ${owned}`);
+      }
+    }
+
+    p.gold -= goldCost;
+    for (const [mId, req] of Object.entries(matsCost)) {
+      p.inventory[mId] = Math.max(0, (p.inventory[mId] || 0) - req);
+    }
+
+    p.craftedItems = p.craftedItems || [];
+    p.craftedItems.push(equipId);
+
+    // Se lo slot è vuoto, equipaggia automaticamente il pezzo
+    p.equipment = p.equipment || {};
+    if (!p.equipment[def.slot]) {
+      p.equipment[def.slot] = equipId;
+    }
+
+    this.save();
+    return this.getOrCreateProfile(nick);
+  }
+
+  /**
+   * Equipaggia un pezzo di armatura o gioiello posseduto (Diablo Style)
+   */
+  equipItem(rawNickname, equipId) {
+    const nick = (rawNickname || '').trim();
+    const key = nick.toLowerCase();
+    const p = this.profiles.get(key);
+    if (!p) throw new Error('Profilo non trovato');
+
+    const def = EQUIPMENT_DEF[equipId];
+    if (!def) throw new Error('Oggetto non valido');
+
+    if (!p.craftedItems || !p.craftedItems.includes(equipId)) {
+      throw new Error('Non possiedi questo oggetto nel tuo inventario forgiato!');
+    }
+
+    p.equipment = p.equipment || {};
+    p.equipment[def.slot] = equipId;
+    this.save();
+    return this.getOrCreateProfile(nick);
+  }
+
+  /**
+   * Rimuove un pezzo equipaggiato dallo slot
+   */
+  unequipItem(rawNickname, slot) {
+    const nick = (rawNickname || '').trim();
+    const key = nick.toLowerCase();
+    const p = this.profiles.get(key);
+    if (!p) throw new Error('Profilo non trovato');
+
+    p.equipment = p.equipment || {};
+    p.equipment[slot] = null;
+    this.save();
+    return this.getOrCreateProfile(nick);
+  }
+
+  /**
+   * Raffina risorse grezze alla forgia (Albion Online Style)
+   */
+  refineResource(rawNickname, recipeId, quantity = 1) {
+    const nick = (rawNickname || '').trim();
+    const key = nick.toLowerCase();
+    const p = this.profiles.get(key);
+    if (!p) throw new Error('Profilo non trovato');
+
+    const recipe = REFINING_RECIPES.find(r => r.id === recipeId);
+    if (!recipe) throw new Error('Ricetta di raffinazione non valida');
+
+    const times = Math.max(1, Math.min(50, Math.floor(quantity)));
+    const totalGold = (recipe.goldCost || 0) * times;
+
+    if (p.gold < totalGold) {
+      throw new Error(`Oro insufficiente per raffinare ${times}x: servono ${totalGold} oro`);
+    }
+
+    for (const [mId, req] of Object.entries(recipe.inputs)) {
+      const totalReq = req * times;
+      const owned = p.inventory[mId] || 0;
+      if (owned < totalReq) {
+        const matDef = MATERIALS_DEF[mId] || { name: mId };
+        throw new Error(`Materiali grezzi insufficienti: servono ${totalReq}x ${matDef.name}`);
+      }
+    }
+
+    p.gold -= totalGold;
+    for (const [mId, req] of Object.entries(recipe.inputs)) {
+      p.inventory[mId] = Math.max(0, (p.inventory[mId] || 0) - req * times);
+    }
+
+    const outId = recipe.output.itemId;
+    const outAmt = (recipe.output.count || 1) * times;
+    p.inventory[outId] = (p.inventory[outId] || 0) + outAmt;
+
+    this.save();
+    return this.getOrCreateProfile(nick);
+  }
+
+  /**
+   * Smantella un pezzo d'equipaggiamento forgiato per recuperare materiali (Diablo Salvage)
+   */
+  salvageItem(rawNickname, equipId) {
+    const nick = (rawNickname || '').trim();
+    const key = nick.toLowerCase();
+    const p = this.profiles.get(key);
+    if (!p) throw new Error('Profilo non trovato');
+
+    const def = EQUIPMENT_DEF[equipId];
+    if (!def) throw new Error('Oggetto non valido per lo smantellamento');
+
+    const idx = (p.craftedItems || []).indexOf(equipId);
+    if (idx === -1) {
+      throw new Error('Non possiedi questo pezzo nel tuo forziere per riciclarlo');
+    }
+
+    // Rimuovi un pezzo
+    p.craftedItems.splice(idx, 1);
+
+    // Se era equipaggiato, rimuovilo
+    if (p.equipment && p.equipment[def.slot] === equipId) {
+      if (!p.craftedItems.includes(equipId)) {
+        p.equipment[def.slot] = null;
+      }
+    }
+
+    // Restituisci materiali riciclati
+    if (def.salvageYield) {
+      for (const [mId, count] of Object.entries(def.salvageYield)) {
+        p.inventory[mId] = (p.inventory[mId] || 0) + count;
+      }
+    }
+
+    this.save();
     return this.getOrCreateProfile(nick);
   }
 

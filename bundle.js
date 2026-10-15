@@ -1190,6 +1190,215 @@
       outline(P, cEdge);
       return P.canvas();
     }
+    function paintMiningNode(oreType = "copper") {
+      const P = Pix(22, 18);
+      const cStoneDark = pack("#1e293b");
+      const cStoneMid = pack("#334155");
+      const cStoneLight = pack("#64748b");
+      const cEdge = pack("#090d16");
+      let cOreDark, cOreBright, cOreShine;
+      if (oreType === "iron") {
+        cOreDark = pack("#64748b");
+        cOreBright = pack("#cbd5e1");
+        cOreShine = pack("#ffffff");
+      } else if (oreType === "obsidian") {
+        cOreDark = pack("#3b0764");
+        cOreBright = pack("#9333ea");
+        cOreShine = pack("#e9d5ff");
+      } else {
+        cOreDark = pack("#9a3412");
+        cOreBright = pack("#f97316");
+        cOreShine = pack("#ffedd5");
+      }
+      for (let y = 3; y <= 15; y++) {
+        for (let x = 2; x <= 19; x++) {
+          const nx = (x - 10.5) / 8.5;
+          const ny = (y - 9.5) / 6;
+          if (nx * nx + ny * ny <= 1) {
+            P.set(x, y, y > 11 ? cStoneDark : x < 10 ? cStoneLight : cStoneMid);
+          }
+        }
+      }
+      const oreSpots = [
+        { x: 7, y: 7, col: cOreShine },
+        { x: 8, y: 7, col: cOreBright },
+        { x: 8, y: 8, col: cOreDark },
+        { x: 13, y: 6, col: cOreShine },
+        { x: 14, y: 6, col: cOreBright },
+        { x: 13, y: 7, col: cOreBright },
+        { x: 10, y: 11, col: cOreBright },
+        { x: 11, y: 11, col: cOreShine },
+        { x: 11, y: 12, col: cOreDark },
+        { x: 6, y: 12, col: cOreBright },
+        { x: 16, y: 10, col: cOreBright }
+      ];
+      for (const spot of oreSpots) {
+        P.set(spot.x, spot.y, spot.col);
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintLotus() {
+      const P = Pix(20, 16);
+      const cLeafDark = pack("#14532d");
+      const cLeaf = pack("#16a34a");
+      const cPetalDark = pack("#0284c7");
+      const cPetalLight = pack("#38bdf8");
+      const cPetalCore = pack("#ffffff");
+      const cStamen = pack("#fde047");
+      const cEdge = pack("#022c22");
+      for (let y = 9; y <= 14; y++) {
+        for (let x = 2; x <= 17; x++) {
+          const dx = (x - 9.5) / 7.5;
+          const dy = (y - 11.5) / 2.8;
+          if (dx * dx + dy * dy <= 1) {
+            P.set(x, y, x === 10 && y === 12 ? 0 : y > 12 ? cLeafDark : cLeaf);
+          }
+        }
+      }
+      const petals = [
+        { x: 9, y: 4, col: cPetalCore },
+        { x: 10, y: 4, col: cPetalCore },
+        { x: 8, y: 5, col: cPetalLight },
+        { x: 9, y: 5, col: cPetalCore },
+        { x: 10, y: 5, col: cPetalCore },
+        { x: 11, y: 5, col: cPetalLight },
+        { x: 7, y: 6, col: cPetalDark },
+        { x: 8, y: 6, col: cPetalLight },
+        { x: 9, y: 6, col: cStamen },
+        { x: 10, y: 6, col: cStamen },
+        { x: 11, y: 6, col: cPetalLight },
+        { x: 12, y: 6, col: cPetalDark },
+        { x: 6, y: 7, col: cPetalDark },
+        { x: 7, y: 7, col: cPetalLight },
+        { x: 8, y: 7, col: cPetalLight },
+        { x: 11, y: 7, col: cPetalLight },
+        { x: 12, y: 7, col: cPetalLight },
+        { x: 13, y: 7, col: cPetalDark },
+        { x: 8, y: 8, col: cPetalDark },
+        { x: 9, y: 8, col: cPetalLight },
+        { x: 10, y: 8, col: cPetalLight },
+        { x: 11, y: 8, col: cPetalDark }
+      ];
+      for (const pt of petals) {
+        P.set(pt.x, pt.y, pt.col);
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintSunSpur() {
+      const P = Pix(18, 22);
+      const cStemDark = pack("#78350f");
+      const cStem = pack("#d97706");
+      const cStemLight = pack("#f59e0b");
+      const cBloomDark = pack("#ea580c");
+      const cBloomLight = pack("#facc15");
+      const cBloomCore = pack("#ffffff");
+      const cEdge = pack("#451a03");
+      for (let y = 8; y <= 19; y++) {
+        for (let x = 7; x <= 10; x++) {
+          P.set(x, y, x === 7 ? cStemDark : x === 8 ? cStem : cStemLight);
+        }
+      }
+      P.set(5, 11, cStemLight);
+      P.set(6, 12, cStem);
+      P.set(12, 14, cStemLight);
+      P.set(11, 15, cStem);
+      P.set(5, 17, cStemLight);
+      P.set(6, 17, cStem);
+      const bloom = [
+        { x: 8, y: 3, col: cBloomCore },
+        { x: 9, y: 3, col: cBloomCore },
+        { x: 7, y: 4, col: cBloomLight },
+        { x: 8, y: 4, col: cBloomCore },
+        { x: 9, y: 4, col: cBloomCore },
+        { x: 10, y: 4, col: cBloomLight },
+        { x: 6, y: 5, col: cBloomDark },
+        { x: 7, y: 5, col: cBloomLight },
+        { x: 8, y: 5, col: cBloomLight },
+        { x: 9, y: 5, col: cBloomLight },
+        { x: 10, y: 5, col: cBloomLight },
+        { x: 11, y: 5, col: cBloomDark },
+        { x: 7, y: 6, col: cBloomDark },
+        { x: 8, y: 6, col: cBloomLight },
+        { x: 9, y: 6, col: cBloomLight },
+        { x: 10, y: 6, col: cBloomDark },
+        { x: 8, y: 7, col: cBloomDark },
+        { x: 9, y: 7, col: cBloomDark }
+      ];
+      for (const b of bloom) {
+        P.set(b.x, b.y, b.col);
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintAetherGeode() {
+      const P = Pix(22, 22);
+      const cRockDark = pack("#0f172a");
+      const cRockMid = pack("#1e293b");
+      const cCryDark = pack("#0284c7");
+      const cCryBright = pack("#38bdf8");
+      const cCryShine = pack("#7dd3fc");
+      const cCryCore = pack("#ffffff");
+      const cEdge = pack("#020617");
+      for (let y = 6; y <= 18; y++) {
+        for (let x = 3; x <= 18; x++) {
+          const nx = (x - 10.5) / 7.5;
+          const ny = (y - 12) / 6;
+          if (nx * nx + ny * ny <= 1) {
+            P.set(x, y, y > 14 || x < 7 ? cRockDark : cRockMid);
+          }
+        }
+      }
+      const crystals = [
+        { x: 10, y: 3, col: cCryCore },
+        { x: 9, y: 4, col: cCryBright },
+        { x: 10, y: 4, col: cCryCore },
+        { x: 11, y: 4, col: cCryBright },
+        { x: 8, y: 5, col: cCryDark },
+        { x: 9, y: 5, col: cCryBright },
+        { x: 10, y: 5, col: cCryShine },
+        { x: 11, y: 5, col: cCryBright },
+        { x: 13, y: 5, col: cCryCore },
+        { x: 14, y: 5, col: cCryShine },
+        { x: 8, y: 6, col: cCryDark },
+        { x: 9, y: 6, col: cCryBright },
+        { x: 10, y: 6, col: cCryBright },
+        { x: 12, y: 6, col: cCryDark },
+        { x: 13, y: 6, col: cCryBright },
+        { x: 14, y: 6, col: cCryCore },
+        { x: 9, y: 7, col: cCryDark },
+        { x: 10, y: 7, col: cCryBright },
+        { x: 11, y: 7, col: cCryBright },
+        { x: 13, y: 7, col: cCryBright },
+        { x: 10, y: 8, col: cCryDark },
+        { x: 11, y: 8, col: cCryDark }
+      ];
+      for (const c of crystals) {
+        P.set(c.x, c.y, c.col);
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintDepletedNode() {
+      const P = Pix(20, 14);
+      const cDust = pack("#334155");
+      const cCrag = pack("#475569");
+      const cHole = pack("#0f172a");
+      const cEdge = pack("#090d16");
+      for (let y = 3; y <= 11; y++) {
+        for (let x = 2; x <= 17; x++) {
+          const nx = (x - 9.5) / 7.5;
+          const ny = (y - 7) / 4;
+          if (nx * nx + ny * ny <= 1) {
+            const isHole = x >= 7 && x <= 12 && y >= 5 && y <= 8;
+            P.set(x, y, isHole ? cHole : y > 8 ? cDust : cCrag);
+          }
+        }
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
     const propCache = /* @__PURE__ */ new Map();
     return {
       T,
@@ -1242,6 +1451,13 @@
           else if (type === "runic_pillar") propCache.set(type, paintRunicPillar(false));
           else if (type === "runic_pillar_lit") propCache.set(type, paintRunicPillar(true));
           else if (type === "waypoint_portal") propCache.set(type, paintWaypointPortal());
+          else if (type === "node_copper") propCache.set(type, paintMiningNode("copper"));
+          else if (type === "node_iron") propCache.set(type, paintMiningNode("iron"));
+          else if (type === "node_obsidian") propCache.set(type, paintMiningNode("obsidian"));
+          else if (type === "node_lotus") propCache.set(type, paintLotus());
+          else if (type === "node_sun") propCache.set(type, paintSunSpur());
+          else if (type === "node_geode") propCache.set(type, paintAetherGeode());
+          else if (type === "node_depleted") propCache.set(type, paintDepletedNode());
         }
         return propCache.get(type);
       }
@@ -1584,6 +1800,1641 @@
     };
   })();
 
+  // src/core/fx.js
+  var FX = /* @__PURE__ */ (() => {
+    const particles = [];
+    const shockwaves = [];
+    const slashCuts = [];
+    const bones = [];
+    const damageTexts = [];
+    return {
+      showDamageNumbers: true,
+      showSparks: true,
+      /**
+       * Esplosione circolare di particelle colorate
+       */
+      burst(x, y, color = "#38bdf8", count = 8, speed = 120) {
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const s = speed * (0.35 + Math.random() * 0.65);
+          particles.push({
+            x,
+            y,
+            vx: Math.cos(angle) * s,
+            vy: Math.sin(angle) * s,
+            color,
+            size: Math.random() < 0.35 ? 3 : 2,
+            life: 0.25 + Math.random() * 0.22,
+            t: 0
+          });
+        }
+      },
+      /**
+       * Scia o scintilla direzionale ad alta velocità
+       */
+      spark(x, y, color = "#bae6fd", size = 2) {
+        particles.push({
+          x: x + (Math.random() * 4 - 2),
+          y: y + (Math.random() * 4 - 2),
+          vx: Math.random() * 30 - 15,
+          vy: Math.random() * 30 - 15,
+          color,
+          size,
+          life: 0.16 + Math.random() * 0.12,
+          t: 0
+        });
+      },
+      /**
+       * Anello di onde d'urto ad espansione rapida (impatto colpi e morte mob)
+       */
+      addShockwave(x, y, maxRadius = 32, color = "#ffffff", duration = 0.24) {
+        shockwaves.push({
+          x,
+          y,
+          radius: 4,
+          maxRadius,
+          color,
+          life: duration,
+          t: 0
+        });
+      },
+      /**
+       * Taglio di fendente d'acciaio con scintille lungo l'angolo d'impatto
+       */
+      addSlashCut(x, y, angle, length = 26, color = "#ffffff") {
+        slashCuts.push({
+          x,
+          y,
+          angle,
+          length,
+          color,
+          life: 0.14,
+          t: 0
+        });
+        for (let i = 0; i < 4; i++) {
+          const pAngle = angle + Math.PI / 2 * (Math.random() > 0.5 ? 1 : -1) + (Math.random() * 0.6 - 0.3);
+          const spd = 60 + Math.random() * 90;
+          particles.push({
+            x,
+            y,
+            vx: Math.cos(pAngle) * spd,
+            vy: Math.sin(pAngle) * spd,
+            color: Math.random() > 0.3 ? "#fde047" : "#ffffff",
+            size: 2,
+            life: 0.15 + Math.random() * 0.1,
+            t: 0
+          });
+        }
+      },
+      /**
+       * Sbuffo di fumo o polvere che sale dolcemente
+       */
+      addSmokePuff(x, y, color = "#94a3b8") {
+        for (let i = 0; i < 5; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = Math.random() * 8;
+          particles.push({
+            x: x + Math.cos(angle) * dist,
+            y: y + Math.sin(angle) * dist,
+            vx: Math.random() * 20 - 10,
+            vy: -25 - Math.random() * 25,
+            color,
+            size: 4 + Math.floor(Math.random() * 3),
+            life: 0.35 + Math.random() * 0.2,
+            t: 0
+          });
+        }
+      },
+      /**
+       * Frammenti ossei che rimbalzano al suolo per la morte dello scheletro
+       */
+      addBones(x, y, count = 6) {
+        for (let i = 0; i < count; i++) {
+          const angle = -Math.PI / 2 + (Math.random() * 1.6 - 0.8);
+          const speed = 70 + Math.random() * 90;
+          bones.push({
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            gravity: 280,
+            rotation: Math.random() * Math.PI * 2,
+            vRot: Math.random() * 12 - 6,
+            size: i === 0 ? 6 : 4,
+            // Il primo pezzo è il teschio!
+            isSkull: i === 0,
+            groundY: y + 10 + Math.random() * 8,
+            bounces: 2,
+            life: 0.55 + Math.random() * 0.2,
+            t: 0
+          });
+        }
+      },
+      /**
+       * Spruzzi e globuli gelatinosi per la morte degli slime
+       */
+      addSlimeSplat(x, y, color = "#22c55e", count = 10) {
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 60 + Math.random() * 110;
+          particles.push({
+            x,
+            y,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd + 20,
+            // Leggera caduta verso terra
+            color,
+            size: Math.random() < 0.4 ? 4 : 3,
+            life: 0.3 + Math.random() * 0.2,
+            t: 0
+          });
+        }
+      },
+      /**
+       * Numero di danno fluttuante con pop-scale iniziale e critico
+       */
+      addDamageNumber(x, y, amount, isCrit = false) {
+        damageTexts.push({
+          x: x + (Math.random() * 14 - 7),
+          y: y - 10,
+          text: isCrit ? `-${amount}!` : `-${amount}`,
+          vy: isCrit ? -54 : -42,
+          life: 0.72,
+          t: 0,
+          isCrit,
+          scale: isCrit ? 1.4 : 1.15
+        });
+      },
+      /**
+       * Testo fluttuante colorato per la raccolta di oggetti e artefatti
+       */
+      addFloatingText(x, y, text, color = "#22c55e") {
+        damageTexts.push({
+          x: x + (Math.random() * 8 - 4),
+          y: y - 12,
+          text,
+          vy: -36,
+          life: 0.85,
+          t: 0,
+          color,
+          scale: 1.05
+        });
+      },
+      update(dt) {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.t += dt;
+          if (p.t >= p.life) {
+            particles.splice(i, 1);
+            continue;
+          }
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vx *= 0.91;
+          p.vy *= 0.91;
+        }
+        for (let i = shockwaves.length - 1; i >= 0; i--) {
+          const sw = shockwaves[i];
+          sw.t += dt;
+          if (sw.t >= sw.life) {
+            shockwaves.splice(i, 1);
+            continue;
+          }
+          const progress = sw.t / sw.life;
+          sw.radius = 4 + (sw.maxRadius - 4) * Math.sin(progress * Math.PI * 0.5);
+        }
+        for (let i = slashCuts.length - 1; i >= 0; i--) {
+          const sc = slashCuts[i];
+          sc.t += dt;
+          if (sc.t >= sc.life) {
+            slashCuts.splice(i, 1);
+          }
+        }
+        for (let i = bones.length - 1; i >= 0; i--) {
+          const b = bones[i];
+          b.t += dt;
+          if (b.t >= b.life) {
+            bones.splice(i, 1);
+            continue;
+          }
+          b.vy += b.gravity * dt;
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+          b.rotation += b.vRot * dt;
+          if (b.y >= b.groundY && b.bounces > 0) {
+            b.y = b.groundY;
+            b.vy = -b.vy * 0.45;
+            b.vx *= 0.65;
+            b.vRot *= 0.6;
+            b.bounces--;
+          }
+        }
+        for (let i = damageTexts.length - 1; i >= 0; i--) {
+          const d = damageTexts[i];
+          d.t += dt;
+          if (d.t >= d.life) {
+            damageTexts.splice(i, 1);
+            continue;
+          }
+          d.y += d.vy * dt;
+          d.vy *= 0.93;
+          if (d.scale > 1) {
+            d.scale = Math.max(1, d.scale - dt * 2.5);
+          }
+        }
+      },
+      draw(ctx) {
+        ctx.save();
+        if (this.showSparks !== false) {
+          for (const sw of shockwaves) {
+            const alpha = Math.max(0, 1 - sw.t / sw.life);
+            ctx.strokeStyle = sw.color;
+            ctx.globalAlpha = alpha * 0.85;
+            ctx.lineWidth = Math.max(1.5, 3 * (1 - sw.t / sw.life));
+            ctx.beginPath();
+            ctx.arc(Math.round(sw.x), Math.round(sw.y), Math.round(sw.radius), 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          for (const sc of slashCuts) {
+            const alpha = Math.max(0, 1 - sc.t / sc.life);
+            ctx.save();
+            ctx.translate(Math.round(sc.x), Math.round(sc.y));
+            ctx.rotate(sc.angle);
+            ctx.globalAlpha = alpha;
+            ctx.strokeStyle = sc.color;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(-sc.length / 2, 0);
+            ctx.lineTo(sc.length / 2, 0);
+            ctx.stroke();
+            ctx.strokeStyle = "#fde047";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-sc.length / 3, -1);
+            ctx.lineTo(sc.length / 3, 1);
+            ctx.stroke();
+            ctx.restore();
+          }
+          for (const b of bones) {
+            const alpha = Math.max(0, 1 - b.t / b.life * 0.8);
+            ctx.save();
+            ctx.translate(Math.round(b.x), Math.round(b.y));
+            ctx.rotate(b.rotation);
+            ctx.globalAlpha = alpha;
+            if (b.isSkull) {
+              ctx.fillStyle = "#0f172a";
+              ctx.fillRect(-3, -3, 6, 6);
+              ctx.fillStyle = "#f8fafc";
+              ctx.fillRect(-2, -2, 5, 5);
+              ctx.fillStyle = "#ef4444";
+              ctx.fillRect(-1, -1, 1, 1);
+              ctx.fillRect(1, -1, 1, 1);
+            } else {
+              ctx.fillStyle = "#0f172a";
+              ctx.fillRect(-3, -1, 6, 3);
+              ctx.fillStyle = "#cbd5e1";
+              ctx.fillRect(-2, 0, 5, 2);
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(-2, 0, 2, 1);
+            }
+            ctx.restore();
+          }
+          for (const p of particles) {
+            const alpha = Math.max(0, 1 - p.t / p.life);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = alpha;
+            ctx.fillRect(Math.round(p.x - p.size / 2), Math.round(p.y - p.size / 2), p.size, p.size);
+          }
+        }
+        if (this.showDamageNumbers !== false) {
+          for (const d of damageTexts) {
+            const alpha = Math.max(0, 1 - d.t / d.life);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            const fontSize = Math.round(13 * (d.scale || 1));
+            ctx.font = `bold ${fontSize}px "Courier New", monospace, sans-serif`;
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#080a0f";
+            ctx.fillText(d.text, Math.round(d.x) + 1, Math.round(d.y) + 1);
+            ctx.fillText(d.text, Math.round(d.x) - 1, Math.round(d.y) - 1);
+            ctx.fillStyle = d.color || (d.isCrit ? "#fde047" : "#e0f2fe");
+            ctx.fillText(d.text, Math.round(d.x), Math.round(d.y));
+            ctx.restore();
+          }
+        }
+        ctx.restore();
+      }
+    };
+  })();
+
+  // src/core/crafting.js
+  var MATERIALS_DEF = {
+    // --- MINERALI E LINGOTTI ---
+    copper_ore: {
+      id: "copper_ore",
+      name: "Minerale di Rame",
+      icon: "\u{1FAA8}",
+      category: "mineral",
+      desc: "Minerale grezzo ramato estratto dai filoni rocciosi del bosco e delle rive fluviali.",
+      color: "#f97316",
+      rarity: "Comune",
+      sellValue: 4
+    },
+    iron_ore: {
+      id: "iron_ore",
+      name: "Minerale di Ferro",
+      icon: "\u26CF\uFE0F",
+      category: "mineral",
+      desc: "Ferro grezzo denso e pesante estratto dalle scogliere montane e dalle gole desertiche.",
+      color: "#94a3b8",
+      rarity: "Comune",
+      sellValue: 8
+    },
+    obsidian_ore: {
+      id: "obsidian_ore",
+      name: "Ossidiana Vulcanica",
+      icon: "\u{1F311}",
+      category: "mineral",
+      desc: "Vetro vulcanico magmatico nerastro carico di calore e durezza titanica.",
+      color: "#7c3aed",
+      rarity: "Raro",
+      sellValue: 20
+    },
+    copper_bar: {
+      id: "copper_bar",
+      name: "Lingotto di Bronzo Antico",
+      icon: "\u{1F9F1}",
+      category: "mineral",
+      desc: "Lingotto raffinato alla fonderia, perfetto per finiture e leghe flessibili.",
+      color: "#ea580c",
+      rarity: "Comune",
+      sellValue: 18
+    },
+    iron_scrap: {
+      id: "iron_scrap",
+      name: "Metallo Temprato",
+      icon: "\u2699\uFE0F",
+      category: "mineral",
+      desc: "Lingotti e piastre di metallo purificato usati per forgiare armi e armature indistruttibili.",
+      color: "#cbd5e1",
+      rarity: "Non Comune",
+      sellValue: 30
+    },
+    obsidian_bar: {
+      id: "obsidian_bar",
+      name: "Lingotto d'Ossidiana",
+      icon: "\u{1F52E}",
+      category: "mineral",
+      desc: "Lega vulcanica purificata nel crogiolo magmatico, resistente a temperature estreme.",
+      color: "#a855f7",
+      rarity: "Raro",
+      sellValue: 65
+    },
+    // --- LEGNAME E FIBRE ---
+    ancient_wood: {
+      id: "ancient_wood",
+      name: "Legno di Quercia Antica",
+      icon: "\u{1FAB5}",
+      category: "wood_fiber",
+      desc: "Tronchi nobili e stagionati abbattuti dalle foreste secolari di Sylva.",
+      color: "#b45309",
+      rarity: "Comune",
+      sellValue: 5
+    },
+    frost_pine_wood: {
+      id: "frost_pine_wood",
+      name: "Abete del Permafrost",
+      icon: "\u{1F332}",
+      category: "wood_fiber",
+      desc: "Legno resiliente impregnato di crio-linfa raccolto sulle vette ghiacciate di Frostpeak.",
+      color: "#38bdf8",
+      rarity: "Non Comune",
+      sellValue: 12
+    },
+    desert_hardwood: {
+      id: "desert_hardwood",
+      name: "Legno Fossile del Deserto",
+      icon: "\u{1FA93}",
+      category: "wood_fiber",
+      desc: "Rami fossili induriti da secoli di sole cocente nelle dune dell'Oasi di Al-Zahir.",
+      color: "#d97706",
+      rarity: "Non Comune",
+      sellValue: 15
+    },
+    river_fiber: {
+      id: "river_fiber",
+      name: "Fibra di Canapa Fluviale",
+      icon: "\u{1F33E}",
+      category: "wood_fiber",
+      desc: "Fibre tenaci raccolte lungo i canneti e le cascate, usate per corde, archi e fodere.",
+      color: "#06b6d4",
+      rarity: "Comune",
+      sellValue: 6
+    },
+    // --- ERBE E PIANTE ALCHEMICHE ---
+    life_lotus: {
+      id: "life_lotus",
+      name: "Loto Vitale delle Cascate",
+      icon: "\u{1FAB7}",
+      category: "herb",
+      desc: "Fiore acquatico miracoloso che sboccia sulle rapide. Emana una fragranza che rigenera la linfa vitale.",
+      color: "#38bdf8",
+      rarity: "Non Comune",
+      sellValue: 16
+    },
+    frost_bloom: {
+      id: "frost_bloom",
+      name: "Bocciolo di Gelo",
+      icon: "\u{1F4A0}",
+      category: "herb",
+      desc: "Piccolo fiore cristallino che cresce tra la neve eterna, impiegato in amuleti difensivi.",
+      color: "#7dd3fc",
+      rarity: "Non Comune",
+      sellValue: 18
+    },
+    fire_root: {
+      id: "fire_root",
+      name: "Radice Magmatica",
+      icon: "\u{1F336}\uFE0F",
+      category: "herb",
+      desc: "Radice ardente che cresce nelle crepe di zolfo, carica di sostanze infiammabili.",
+      color: "#ef4444",
+      rarity: "Raro",
+      sellValue: 28
+    },
+    // --- TROFEI DI CREATURE E PELLI ---
+    slime_gel: {
+      id: "slime_gel",
+      name: "Gel Silvano",
+      icon: "\u{1F9EA}",
+      category: "trophy",
+      desc: "Materia gelatinosa pura raccolta dagli Slime del Bosco.",
+      color: "#22c55e",
+      rarity: "Comune",
+      sellValue: 6
+    },
+    ancient_bone: {
+      id: "ancient_bone",
+      name: "Osso Antico",
+      icon: "\u{1F9B4}",
+      category: "trophy",
+      desc: "Resto pietrificato degli scheletri a guardia delle antiche rovine.",
+      color: "#cbd5e1",
+      rarity: "Comune",
+      sellValue: 8
+    },
+    beast_leather: {
+      id: "beast_leather",
+      name: "Pelle di Cuoio Lavorata",
+      icon: "\u{1F4DC}",
+      category: "trophy",
+      desc: "Pelli conciate resistenti usate per imbottire armature, impugnature e stivali.",
+      color: "#854d0e",
+      rarity: "Comune",
+      sellValue: 14
+    },
+    chitin_plate: {
+      id: "chitin_plate",
+      name: "Scaglia di Carapace",
+      icon: "\u{1F6E1}\uFE0F",
+      category: "trophy",
+      desc: "Guscio chitinoso ultrarigido rilasciato dai mostri delle dune e della caldera.",
+      color: "#eab308",
+      rarity: "Non Comune",
+      sellValue: 22
+    },
+    // --- GEMME, ESSENZE E CRISTALLI MAGICI ---
+    arcane_dust: {
+      id: "arcane_dust",
+      name: "Polvere Arcana di Riciclo",
+      icon: "\u2728",
+      category: "magical",
+      desc: "Polvere luccicante ottenuta dallo smantellamento di oggetti e materiali alla fucina.",
+      color: "#c084fc",
+      rarity: "Comune",
+      sellValue: 12
+    },
+    aether_shard: {
+      id: "aether_shard",
+      name: "Frammento d'Aether Puro",
+      icon: "\u{1F48E}",
+      category: "magical",
+      desc: "Scheggia primordiale di pura energia dimensionale caduta dai cieli dell'Aether.",
+      color: "#38bdf8",
+      rarity: "Raro",
+      sellValue: 45
+    },
+    ice_crystal: {
+      id: "ice_crystal",
+      name: "Cristallo Gelido",
+      icon: "\u2744\uFE0F",
+      category: "magical",
+      desc: "Ghiaccio perenne non fondente che brilla sulle vette innevate.",
+      color: "#38bdf8",
+      rarity: "Non Comune",
+      sellValue: 20
+    },
+    sun_amber: {
+      id: "sun_amber",
+      name: "Ambra delle Sabbie",
+      icon: "\u2600\uFE0F",
+      category: "magical",
+      desc: "Gemma solare fossilizzata tra le dune ardenti del deserto.",
+      color: "#f59e0b",
+      rarity: "Non Comune",
+      sellValue: 24
+    },
+    magma_core: {
+      id: "magma_core",
+      name: "Nucleo di Lava",
+      icon: "\u{1F525}",
+      category: "magical",
+      desc: "Frammento incandescente di roccia e fuoco elementale della caldera.",
+      color: "#ef4444",
+      rarity: "Raro",
+      sellValue: 35
+    },
+    arcane_rune: {
+      id: "arcane_rune",
+      name: "Runa Arcana Antica",
+      icon: "\u{1F52E}",
+      category: "magical",
+      desc: "Raro artefatto runico carico di antica magia elementale.",
+      color: "#c084fc",
+      rarity: "Raro",
+      sellValue: 60
+    }
+  };
+  var RESOURCE_NODES_DEF = {
+    mining_copper: {
+      id: "mining_copper",
+      name: "Filone di Rame",
+      category: "mining",
+      icon: "\u26CF\uFE0F",
+      spriteType: "node_copper",
+      color: "#f97316",
+      harvestDuration: 1.2,
+      respawnDuration: 45,
+      xpReward: 16,
+      drops: [
+        { itemId: "copper_ore", count: [2, 3], chance: 1 },
+        { itemId: "iron_scrap", count: [1, 1], chance: 0.25 }
+      ]
+    },
+    mining_iron: {
+      id: "mining_iron",
+      name: "Filone di Ferro",
+      category: "mining",
+      icon: "\u26CF\uFE0F",
+      spriteType: "node_iron",
+      color: "#94a3b8",
+      harvestDuration: 1.4,
+      respawnDuration: 50,
+      xpReward: 22,
+      drops: [
+        { itemId: "iron_ore", count: [2, 4], chance: 1 },
+        { itemId: "iron_scrap", count: [1, 2], chance: 0.35 }
+      ]
+    },
+    mining_obsidian: {
+      id: "mining_obsidian",
+      name: "Giacimento d'Ossidiana",
+      category: "mining",
+      icon: "\u26CF\uFE0F",
+      spriteType: "node_obsidian",
+      color: "#a855f7",
+      harvestDuration: 1.8,
+      respawnDuration: 60,
+      xpReward: 35,
+      drops: [
+        { itemId: "obsidian_ore", count: [2, 3], chance: 1 },
+        { itemId: "magma_core", count: [1, 1], chance: 0.3 }
+      ]
+    },
+    tree_ancient: {
+      id: "tree_ancient",
+      name: "Quercia Antica di Sylva",
+      category: "lumberjack",
+      icon: "\u{1FA93}",
+      spriteType: "tree",
+      color: "#b45309",
+      harvestDuration: 1.3,
+      respawnDuration: 45,
+      xpReward: 18,
+      drops: [
+        { itemId: "ancient_wood", count: [2, 4], chance: 1 },
+        { itemId: "slime_gel", count: [1, 2], chance: 0.4 }
+      ]
+    },
+    tree_frost: {
+      id: "tree_frost",
+      name: "Abete Glaciale",
+      category: "lumberjack",
+      icon: "\u{1FA93}",
+      spriteType: "pine",
+      color: "#38bdf8",
+      harvestDuration: 1.4,
+      respawnDuration: 50,
+      xpReward: 24,
+      drops: [
+        { itemId: "frost_pine_wood", count: [2, 3], chance: 1 },
+        { itemId: "ice_crystal", count: [1, 1], chance: 0.35 }
+      ]
+    },
+    plant_lotus: {
+      id: "plant_lotus",
+      name: "Loto delle Cascate",
+      category: "herbalism",
+      icon: "\u{1F33F}",
+      spriteType: "node_lotus",
+      color: "#06b6d4",
+      harvestDuration: 0.9,
+      respawnDuration: 40,
+      xpReward: 18,
+      drops: [
+        { itemId: "life_lotus", count: [1, 2], chance: 1 },
+        { itemId: "river_fiber", count: [2, 3], chance: 0.8 }
+      ]
+    },
+    plant_sun: {
+      id: "plant_sun",
+      name: "Spina Solare delle Dune",
+      category: "herbalism",
+      icon: "\u{1F33F}",
+      spriteType: "node_sun",
+      color: "#f59e0b",
+      harvestDuration: 1,
+      respawnDuration: 45,
+      xpReward: 20,
+      drops: [
+        { itemId: "desert_hardwood", count: [2, 3], chance: 1 },
+        { itemId: "sun_amber", count: [1, 1], chance: 0.35 }
+      ]
+    },
+    geode_aether: {
+      id: "geode_aether",
+      name: "Monolite d'Aether",
+      category: "arcane",
+      icon: "\u{1F48E}",
+      spriteType: "node_geode",
+      color: "#38bdf8",
+      harvestDuration: 1.6,
+      respawnDuration: 65,
+      xpReward: 40,
+      drops: [
+        { itemId: "aether_shard", count: [2, 3], chance: 1 },
+        { itemId: "arcane_rune", count: [1, 1], chance: 0.4 }
+      ]
+    }
+  };
+  var EQUIPMENT_DEF = {
+    // ==================== CORAZZE / TORACE (Armor) ====================
+    armor_novice: {
+      id: "armor_novice",
+      name: "Giaco del Viandante",
+      slot: "armor",
+      rarity: "Comune",
+      icon: "\u{1F94B}",
+      color: "#94a3b8",
+      desc: "Corpetto leggero in cuoio e fibre vegetali che assorbe i primi colpi.",
+      stats: {
+        bonusHp: 30,
+        defense: 8
+      },
+      recipe: {
+        gold: 50,
+        materials: { beast_leather: 3, ancient_wood: 3 }
+      },
+      salvage: { gold: 20, materials: { arcane_dust: 2, beast_leather: 1 } }
+    },
+    armor_iron: {
+      id: "armor_iron",
+      name: "Corazza a Piastre d'Acciaio",
+      slot: "armor",
+      rarity: "Non Comune",
+      icon: "\u{1F6E1}\uFE0F",
+      color: "#22c55e",
+      desc: "Solida corazza militare forgiata con placche d'acciaio temprato.",
+      stats: {
+        bonusHp: 65,
+        defense: 20
+      },
+      recipe: {
+        gold: 130,
+        materials: { iron_scrap: 6, copper_bar: 4, beast_leather: 3 }
+      },
+      salvage: { gold: 50, materials: { arcane_dust: 4, iron_scrap: 2 } }
+    },
+    armor_frost: {
+      id: "armor_frost",
+      name: "Baluardo del Crio-Acciaio",
+      slot: "armor",
+      rarity: "Raro",
+      icon: "\u2744\uFE0F",
+      color: "#38bdf8",
+      desc: "Forgiata a Frostpeak. L'acciaio perenne ghiaccia gli attacchi nemici e dona rigenerazione costante.",
+      stats: {
+        bonusHp: 120,
+        defense: 35,
+        hpRegen: 1.8
+      },
+      recipe: {
+        gold: 260,
+        materials: { iron_scrap: 10, ice_crystal: 4, frost_pine_wood: 5 }
+      },
+      salvage: { gold: 100, materials: { arcane_dust: 6, ice_crystal: 2 } }
+    },
+    armor_volcano: {
+      id: "armor_volcano",
+      name: "Pettorale di Magma della Fenice",
+      slot: "armor",
+      rarity: "Epico",
+      icon: "\u{1F525}",
+      color: "#c084fc",
+      desc: "Irradia un calore infernale. Riflette 18 danni da scottatura a qualsiasi mostro ti colpisca.",
+      stats: {
+        bonusHp: 190,
+        defense: 52,
+        hpRegen: 3.2,
+        thorns: 18
+      },
+      recipe: {
+        gold: 440,
+        materials: { obsidian_bar: 8, magma_core: 5, arcane_rune: 3 }
+      },
+      salvage: { gold: 160, materials: { arcane_dust: 10, magma_core: 2 } }
+    },
+    armor_aether: {
+      id: "armor_aether",
+      name: "Armatura Celestiale dell'Aether",
+      slot: "armor",
+      rarity: "Leggendario",
+      icon: "\u{1F451}",
+      color: "#f59e0b",
+      desc: "Artefatto divino forgiato nel cuore della Cittadella. Genera una barriera di luce che dimezza i danni subiti.",
+      stats: {
+        bonusHp: 300,
+        defense: 80,
+        hpRegen: 5,
+        aetherShield: true
+      },
+      recipe: {
+        gold: 750,
+        materials: { obsidian_bar: 12, aether_shard: 8, arcane_rune: 6 }
+      },
+      salvage: { gold: 300, materials: { arcane_dust: 18, aether_shard: 4 } }
+    },
+    // ==================== ELMI / CORONE (Helmet) ====================
+    helmet_cloth: {
+      id: "helmet_cloth",
+      name: "Cappuccio del Viandante",
+      slot: "helmet",
+      rarity: "Comune",
+      icon: "\u{1F9E2}",
+      color: "#94a3b8",
+      desc: "Tessuto traspirante in canapa fluviale che favorisce la concentrazione magica.",
+      stats: {
+        bonusHp: 15,
+        cooldownReduction: 0.05
+      },
+      recipe: {
+        gold: 40,
+        materials: { river_fiber: 4, beast_leather: 2 }
+      },
+      salvage: { gold: 15, materials: { arcane_dust: 2 } }
+    },
+    helmet_iron: {
+      id: "helmet_iron",
+      name: "Celata di Ferro delle Guardie",
+      slot: "helmet",
+      rarity: "Non Comune",
+      icon: "\u{1FA96}",
+      color: "#22c55e",
+      desc: "Protegge la testa con un robusto frontale forgiato a mano.",
+      stats: {
+        bonusHp: 35,
+        defense: 10,
+        cooldownReduction: 0.08
+      },
+      recipe: {
+        gold: 110,
+        materials: { iron_scrap: 5, ancient_bone: 4 }
+      },
+      salvage: { gold: 40, materials: { arcane_dust: 3, iron_scrap: 1 } }
+    },
+    helmet_sylva: {
+      id: "helmet_sylva",
+      name: "Corona delle Fronde di Sylva",
+      slot: "helmet",
+      rarity: "Raro",
+      icon: "\u{1F33F}",
+      color: "#38bdf8",
+      desc: "Intrecciata con germogli dell'Albero della Vita, amplifica l'energia dei dardi e degli attacchi.",
+      stats: {
+        bonusHp: 60,
+        cooldownReduction: 0.14,
+        bonusDamage: 12
+      },
+      recipe: {
+        gold: 220,
+        materials: { ancient_wood: 8, slime_gel: 6, arcane_rune: 2 }
+      },
+      salvage: { gold: 80, materials: { arcane_dust: 5, arcane_rune: 1 } }
+    },
+    helmet_archmage: {
+      id: "helmet_archmage",
+      name: "Diadema dell'Arcimago Ancestrale",
+      slot: "helmet",
+      rarity: "Epico",
+      icon: "\u2728",
+      color: "#c084fc",
+      desc: "Incastonato con gemme magiche purpuree. Riduce del 22% i tempi di ricarica di ogni incantesimo e arma.",
+      stats: {
+        bonusHp: 95,
+        defense: 24,
+        cooldownReduction: 0.22,
+        bonusDamage: 24
+      },
+      recipe: {
+        gold: 400,
+        materials: { obsidian_bar: 6, sun_amber: 6, arcane_rune: 4 }
+      },
+      salvage: { gold: 150, materials: { arcane_dust: 8, sun_amber: 2 } }
+    },
+    helmet_titan: {
+      id: "helmet_titan",
+      name: "Corona d'Oro del Colosso delle Dune",
+      slot: "helmet",
+      rarity: "Leggendario",
+      icon: "\u2600\uFE0F",
+      color: "#f59e0b",
+      desc: "La sacra corona della Sfinge. Ricarica le abilit\xE0 all'istante (-30%) e scaglia archi voltaici sui nemici vicini.",
+      stats: {
+        bonusHp: 160,
+        defense: 42,
+        cooldownReduction: 0.3,
+        bonusDamage: 38,
+        chainLightning: true
+      },
+      recipe: {
+        gold: 680,
+        materials: { sun_amber: 10, obsidian_bar: 10, arcane_rune: 6 }
+      },
+      salvage: { gold: 260, materials: { arcane_dust: 16, obsidian_bar: 3 } }
+    },
+    // ==================== STIVALI / CALZARI (Boots) ====================
+    boots_leather: {
+      id: "boots_leather",
+      name: "Stivali da Cacciatore",
+      slot: "boots",
+      rarity: "Comune",
+      icon: "\u{1F97E}",
+      color: "#94a3b8",
+      desc: "Calzature da marcia in cuoio che aumentano la velocit\xE0 di corsa.",
+      stats: {
+        speedMultiplier: 1.08,
+        magnetMultiplier: 1.1
+      },
+      recipe: {
+        gold: 45,
+        materials: { beast_leather: 4, river_fiber: 2 }
+      },
+      salvage: { gold: 15, materials: { arcane_dust: 2 } }
+    },
+    boots_river: {
+      id: "boots_river",
+      name: "Calzari delle Maree Fluviali",
+      slot: "boots",
+      rarity: "Non Comune",
+      icon: "\u{1F30A}",
+      color: "#22c55e",
+      desc: "Trattati con oli di loto, ti permettono di correre nei guadi e nell'acqua senza subire alcun rallentamento!",
+      stats: {
+        speedMultiplier: 1.15,
+        ignoreWaterSlow: true,
+        bonusHp: 25
+      },
+      recipe: {
+        gold: 120,
+        materials: { river_fiber: 6, beast_leather: 4, copper_bar: 3 }
+      },
+      salvage: { gold: 45, materials: { arcane_dust: 3, copper_bar: 1 } }
+    },
+    boots_dune: {
+      id: "boots_dune",
+      name: "Schinieri del Predatore delle Dune",
+      slot: "boots",
+      rarity: "Raro",
+      icon: "\u{1F3DC}\uFE0F",
+      color: "#38bdf8",
+      desc: "Scattanti e silenziosi: aumentano la velocit\xE0 del 22% e conferiscono il 10% di schivata su ogni colpo subito.",
+      stats: {
+        speedMultiplier: 1.22,
+        dodgeChance: 0.1,
+        magnetMultiplier: 1.3
+      },
+      recipe: {
+        gold: 240,
+        materials: { sun_amber: 5, beast_leather: 6, ancient_bone: 5 }
+      },
+      salvage: { gold: 90, materials: { arcane_dust: 5, sun_amber: 1 } }
+    },
+    boots_hermes: {
+      id: "boots_hermes",
+      name: "Ali del Vento dell'Aether",
+      slot: "boots",
+      rarity: "Leggendario",
+      icon: "\u{1FABD}",
+      color: "#f59e0b",
+      desc: "L'eroe fluttua sfiorando il suolo con il +35% di velocit\xE0, +20% di schivata e un raggio magnetico immenso.",
+      stats: {
+        speedMultiplier: 1.35,
+        dodgeChance: 0.2,
+        magnetMultiplier: 1.6,
+        bonusHp: 65,
+        ignoreWaterSlow: true
+      },
+      recipe: {
+        gold: 620,
+        materials: { arcane_rune: 6, aether_shard: 8, obsidian_bar: 6 }
+      },
+      salvage: { gold: 240, materials: { arcane_dust: 15, aether_shard: 3 } }
+    },
+    // ==================== AMULETI (Amulet) ====================
+    amulet_copper: {
+      id: "amulet_copper",
+      name: "Talismano di Rame dell'Esploratore",
+      slot: "amulet",
+      rarity: "Comune",
+      icon: "\u{1F4FF}",
+      color: "#94a3b8",
+      desc: "Ciondolo porta-fortuna che incrementa l'oro raccolto dai nemici e forzieri.",
+      stats: {
+        goldMultiplier: 1.15,
+        critChance: 0.03
+      },
+      recipe: {
+        gold: 60,
+        materials: { copper_bar: 4, ancient_wood: 4 }
+      },
+      salvage: { gold: 20, materials: { arcane_dust: 2 } }
+    },
+    amulet_frost: {
+      id: "amulet_frost",
+      name: "Pendente del Cristallo Glaciale",
+      slot: "amulet",
+      rarity: "Raro",
+      icon: "\u{1F48E}",
+      color: "#38bdf8",
+      desc: "Sintonizza la vista del mago per individuare i punti deboli: +8% colpo critico e +14 danno bonus.",
+      stats: {
+        goldMultiplier: 1.25,
+        critChance: 0.08,
+        bonusDamage: 14
+      },
+      recipe: {
+        gold: 210,
+        materials: { ice_crystal: 5, copper_bar: 5, arcane_rune: 2 }
+      },
+      salvage: { gold: 75, materials: { arcane_dust: 5, ice_crystal: 1 } }
+    },
+    amulet_dragon: {
+      id: "amulet_dragon",
+      name: "Cuore del Drago di Magma",
+      slot: "amulet",
+      rarity: "Epico",
+      icon: "\u{1F409}",
+      color: "#c084fc",
+      desc: "La furia ardente del vulcano: +15% probabilit\xE0 di colpo critico e moltiplicatore danno critico portato a 2.2x!",
+      stats: {
+        bonusDamage: 30,
+        critChance: 0.15,
+        critMultiplier: 2.2,
+        hpRegen: 2.2
+      },
+      recipe: {
+        gold: 420,
+        materials: { magma_core: 6, obsidian_bar: 6, arcane_rune: 4 }
+      },
+      salvage: { gold: 160, materials: { arcane_dust: 9, magma_core: 2 } }
+    },
+    amulet_star: {
+      id: "amulet_star",
+      name: "Occhio dell'Infinito Aether",
+      slot: "amulet",
+      rarity: "Leggendario",
+      icon: "\u{1F52E}",
+      color: "#f59e0b",
+      desc: "Il leggendario talismano dei Fondatori: +25% critico, +50% oro e trasforma il 9% dei danni inflitti in guarigione immediata (Furto Vitale)!",
+      stats: {
+        bonusDamage: 48,
+        critChance: 0.25,
+        critMultiplier: 2.5,
+        goldMultiplier: 1.5,
+        lifeSteal: 0.09
+      },
+      recipe: {
+        gold: 720,
+        materials: { aether_shard: 10, arcane_rune: 7, magma_core: 6 }
+      },
+      salvage: { gold: 280, materials: { arcane_dust: 18, aether_shard: 4 } }
+    },
+    // ==================== ANELLI (Ring) ====================
+    ring_iron: {
+      id: "ring_iron",
+      name: "Fede di Ferro da Battaglia",
+      slot: "ring",
+      rarity: "Comune",
+      icon: "\u{1F48D}",
+      color: "#94a3b8",
+      desc: "Semplice fascia d'acciaio incisa con rune marziali per rinforzare i colpi.",
+      stats: {
+        bonusDamage: 8,
+        defense: 5
+      },
+      recipe: {
+        gold: 50,
+        materials: { iron_scrap: 4, copper_bar: 2 }
+      },
+      salvage: { gold: 18, materials: { arcane_dust: 2 } }
+    },
+    ring_amber: {
+      id: "ring_amber",
+      name: "Anello del Sole d'Oriente",
+      slot: "ring",
+      rarity: "Non Comune",
+      icon: "\u{1F536}",
+      color: "#22c55e",
+      desc: "L'ambra solare incanalata nell'anello velocizza i riflessi e l'attacco del +10%.",
+      stats: {
+        bonusDamage: 16,
+        attackSpeed: 0.1
+      },
+      recipe: {
+        gold: 130,
+        materials: { sun_amber: 4, iron_scrap: 4 }
+      },
+      salvage: { gold: 45, materials: { arcane_dust: 3, sun_amber: 1 } }
+    },
+    ring_golem: {
+      id: "ring_golem",
+      name: "Sigillo del Signore del Gelo",
+      slot: "ring",
+      rarity: "Raro",
+      icon: "\u{1F4A0}",
+      color: "#38bdf8",
+      desc: "I tuoi attacchi avvolgono i nemici in un gelo penetrante, rallentandoli del 35% per 1.5 secondi.",
+      stats: {
+        bonusDamage: 25,
+        defense: 12,
+        slowEnemiesOnHit: 0.35
+      },
+      recipe: {
+        gold: 260,
+        materials: { ice_crystal: 6, obsidian_bar: 4, arcane_rune: 2 }
+      },
+      salvage: { gold: 95, materials: { arcane_dust: 6, ice_crystal: 2 } }
+    },
+    ring_infernal: {
+      id: "ring_infernal",
+      name: "Fede dell'Apocalisse Vulcanica",
+      slot: "ring",
+      rarity: "Epico",
+      icon: "\u{1F30B}",
+      color: "#c084fc",
+      desc: "I mostri sconfitti esplodono in fiamme incandescenti, infliggendo 35 danni ad area a tutti i mostri adiacenti.",
+      stats: {
+        bonusDamage: 40,
+        attackSpeed: 0.18,
+        explosionOnKill: 35
+      },
+      recipe: {
+        gold: 450,
+        materials: { magma_core: 6, obsidian_bar: 8, arcane_rune: 4 }
+      },
+      salvage: { gold: 170, materials: { arcane_dust: 10, magma_core: 2 } }
+    },
+    ring_eternal: {
+      id: "ring_eternal",
+      name: "Anello dell'Immortalit\xE0 di Thorgar",
+      slot: "ring",
+      rarity: "Leggendario",
+      icon: "\u{1F48D}",
+      color: "#f59e0b",
+      desc: "Il capolavoro supremo forgiato dal Gran Fabbro Reale. Conferisce vigore sovrumano (+80 HP, +58 Danno, +28 Difesa e rigenerazione perenne).",
+      stats: {
+        bonusDamage: 58,
+        defense: 28,
+        attackSpeed: 0.25,
+        bonusHp: 80,
+        hpRegen: 3.5
+      },
+      recipe: {
+        gold: 780,
+        materials: { aether_shard: 10, obsidian_bar: 10, arcane_rune: 8 }
+      },
+      salvage: { gold: 300, materials: { arcane_dust: 20, obsidian_bar: 4 } }
+    }
+  };
+  var REFINING_RECIPES = [
+    {
+      id: "refine_copper",
+      name: "Fondi Lingotto di Bronzo Antico",
+      category: "smelting",
+      icon: "\u{1F9F1}",
+      cost: { gold: 20, materials: { copper_ore: 3 } },
+      output: { itemId: "copper_bar", count: 1 },
+      desc: "Fondi 3x Minerale di Rame grezzo alla fonderia per ottenere 1x Lingotto di Bronzo Antico."
+    },
+    {
+      id: "refine_iron",
+      name: "Forgia Metallo Temprato",
+      category: "smelting",
+      icon: "\u2699\uFE0F",
+      cost: { gold: 30, materials: { iron_ore: 3 } },
+      output: { itemId: "iron_scrap", count: 1 },
+      desc: "Purifica 3x Minerale di Ferro grezzo per ottenere 1x Metallo Temprato d'acciaio."
+    },
+    {
+      id: "refine_obsidian",
+      name: "Fondi Lingotto d'Ossidiana",
+      category: "smelting",
+      icon: "\u{1F52E}",
+      cost: { gold: 60, materials: { obsidian_ore: 3 } },
+      output: { itemId: "obsidian_bar", count: 1 },
+      desc: "Lavora 3x Ossidiana Vulcanica nel crogiolo per ottenere 1x Lingotto d'Ossidiana temprata."
+    },
+    {
+      id: "refine_leather",
+      name: "Concia Cuoio Lavorato",
+      category: "tanning",
+      icon: "\u{1F4DC}",
+      cost: { gold: 25, materials: { ancient_wood: 3, river_fiber: 2 } },
+      output: { itemId: "beast_leather", count: 1 },
+      desc: "Tratta le fibre e i tannini di legno antico per confezionare 1x Pelle di Cuoio flessibile."
+    },
+    {
+      id: "refine_rune",
+      name: "Sintetizza Runa Arcana",
+      category: "alchemy",
+      icon: "\u{1F52E}",
+      cost: { gold: 90, materials: { aether_shard: 3, life_lotus: 1 } },
+      output: { itemId: "arcane_rune", count: 1 },
+      desc: "Incapsula il potere di 3x Frammenti d'Aether e 1x Loto Vitale per sintetizzare 1x Runa Arcana."
+    }
+  ];
+  var WEAPONS_DEF = {
+    staff: {
+      id: "staff",
+      name: "Bastone dell'Arcimago",
+      icon: "\u{1FA84}",
+      typeName: "Magia a Distanza (Dardi Autoguidati)",
+      desc: "Scaglia dardi arcani luminosi che inseguono i bersagli pi\xF9 vicini con precisione fatata.",
+      maxLevel: 5,
+      unlockCost: null,
+      // Sbloccato di default
+      baseStats: {
+        damage: 18,
+        cooldown: 0.85,
+        range: 320,
+        projectiles: 1,
+        speed: 380
+      },
+      upgrades: [
+        {
+          level: 2,
+          gold: 80,
+          materials: { slime_gel: 4, arcane_rune: 1 },
+          benefit: "+6 Danno, +1 Dardo magico",
+          stats: { damageBonus: 6, extraProjectiles: 1, cooldownReduction: 0.05 }
+        },
+        {
+          level: 3,
+          gold: 160,
+          materials: { slime_gel: 6, ice_crystal: 3, arcane_rune: 2 },
+          benefit: "+8 Danno, -15% Tempo di Ricarica",
+          stats: { damageBonus: 14, extraProjectiles: 1, cooldownReduction: 0.15 }
+        },
+        {
+          level: 4,
+          gold: 260,
+          materials: { ice_crystal: 5, magma_core: 3, arcane_rune: 3 },
+          benefit: "+10 Danno, +1 Dardo aggiuntivo (3 dardi)",
+          stats: { damageBonus: 24, extraProjectiles: 2, cooldownReduction: 0.18 }
+        },
+        {
+          level: 5,
+          gold: 400,
+          materials: { magma_core: 6, arcane_rune: 5 },
+          benefit: "+16 Danno, Dardi di Mana Instabile ad alta velocit\xE0",
+          stats: { damageBonus: 40, extraProjectiles: 2, cooldownReduction: 0.25 }
+        }
+      ]
+    },
+    sword: {
+      id: "sword",
+      name: "Spada da Cavaliere",
+      icon: "\u{1F5E1}\uFE0F",
+      typeName: "Mischia ad Area (Fendenti Ravvicinati)",
+      desc: "Esegue rapidi fendenti semicircolari ad ampio raggio con elevato danno da taglio e potente spinta indietro (knockback).",
+      maxLevel: 5,
+      unlockCost: {
+        gold: 120,
+        materials: { iron_scrap: 4, ancient_bone: 3 }
+      },
+      baseStats: {
+        damage: 28,
+        cooldown: 0.55,
+        range: 92,
+        knockback: 180,
+        arcAngle: Math.PI * 0.95
+      },
+      upgrades: [
+        {
+          level: 2,
+          gold: 100,
+          materials: { iron_scrap: 5, ancient_bone: 4 },
+          benefit: "+8 Danno da taglio, +16px Ampiezza fendente",
+          stats: { damageBonus: 8, rangeBonus: 16, cooldownReduction: 0.04 }
+        },
+        {
+          level: 3,
+          gold: 180,
+          materials: { iron_scrap: 8, sun_amber: 3, ancient_bone: 5 },
+          benefit: "+12 Danno, +35% Spinta Indietro (Knockback)",
+          stats: { damageBonus: 20, rangeBonus: 22, knockbackBonus: 70 }
+        },
+        {
+          level: 4,
+          gold: 280,
+          materials: { iron_scrap: 10, magma_core: 3, arcane_rune: 2 },
+          benefit: "+15 Danno, -20% Tempo di Recupero tra i colpi",
+          stats: { damageBonus: 35, rangeBonus: 30, cooldownReduction: 0.12 }
+        },
+        {
+          level: 5,
+          gold: 420,
+          materials: { iron_scrap: 15, magma_core: 5, arcane_rune: 4 },
+          benefit: "+22 Danno, Lama di Fiamme Runica a Vortice 360\xB0",
+          stats: { damageBonus: 57, rangeBonus: 42, fullCircle: true }
+        }
+      ]
+    },
+    bow: {
+      id: "bow",
+      name: "Arco dei Guardaboschi",
+      icon: "\u{1F3F9}",
+      typeName: "Frecce Perforanti a Lungo Raggio",
+      desc: "Scocca frecce aerodinamiche ad altissima velocit\xE0 che trapassano i nemici in linea retta a grande distanza.",
+      maxLevel: 5,
+      unlockCost: {
+        gold: 120,
+        materials: { ancient_bone: 4, sun_amber: 3 }
+      },
+      baseStats: {
+        damage: 22,
+        cooldown: 0.7,
+        range: 440,
+        pierce: 2,
+        speed: 520
+      },
+      upgrades: [
+        {
+          level: 2,
+          gold: 100,
+          materials: { ancient_bone: 5, sun_amber: 4 },
+          benefit: "+6 Danno, +1 Bersaglio trapassabile (Pierce 3)",
+          stats: { damageBonus: 6, extraPierce: 1, cooldownReduction: 0.05 }
+        },
+        {
+          level: 3,
+          gold: 180,
+          materials: { sun_amber: 6, ice_crystal: 4, iron_scrap: 4 },
+          benefit: "+10 Danno, +25% Velocit\xE0 di volo della freccia",
+          stats: { damageBonus: 16, extraPierce: 1, speedBonus: 130 }
+        },
+        {
+          level: 4,
+          gold: 280,
+          materials: { sun_amber: 8, magma_core: 4, arcane_rune: 2 },
+          benefit: "+14 Danno, Tiro Doppio (2 frecce parallele)",
+          stats: { damageBonus: 30, extraPierce: 2, extraArrows: 1 }
+        },
+        {
+          level: 5,
+          gold: 420,
+          materials: { sun_amber: 10, arcane_rune: 4, magma_core: 5 },
+          benefit: "+20 Danno, Frecce di Cristallo Solare a Perforazione Totale",
+          stats: { damageBonus: 50, infinitePierce: true, extraArrows: 1 }
+        }
+      ]
+    }
+  };
+
+  // src/entities/item_pickup.js
+  var ItemPickup = class {
+    constructor(x, y, itemId = "slime_gel") {
+      this.x = x;
+      this.y = y;
+      this.itemId = itemId;
+      this.def = MATERIALS_DEF[itemId] || { name: "Artefatto", icon: "\u{1F4E6}", color: "#f8fafc" };
+      this.r = 8;
+      this.dead = false;
+      this.timer = Math.random() * Math.PI * 2;
+      this.flying = false;
+      this.flySpeed = 70;
+    }
+    update(dt, player, onCollect) {
+      if (this.dead) return;
+      this.timer += dt * 4;
+      const dx = player.x - this.x;
+      const dy = player.y - 8 - this.y;
+      const dist2 = dx * dx + dy * dy;
+      const dist = Math.sqrt(dist2);
+      const magnetRange = (player.magnetRadius || 85) * 1.15;
+      if (dist < magnetRange) {
+        this.flying = true;
+      }
+      if (this.flying) {
+        this.flySpeed = Math.min(560, this.flySpeed + dt * 700);
+        if (dist > 1) {
+          this.x += dx / dist * this.flySpeed * dt;
+          this.y += dy / dist * this.flySpeed * dt;
+        }
+        if (dist < player.r + this.r + 4) {
+          this.dead = true;
+          FX.burst(this.x, this.y, this.def.color, 8, 95);
+          FX.addFloatingText(this.x, this.y - 18, `+1 ${this.def.name}`, this.def.color);
+          if (onCollect) {
+            onCollect(this.itemId);
+          }
+        }
+      }
+    }
+    draw(ctx) {
+      if (this.dead) return;
+      const bob = Math.sin(this.timer) * 3.5;
+      Sprites.drawShadow(ctx, this.x, this.y + 4, 5);
+      ctx.save();
+      const drawY = Math.round(this.y + bob - 6);
+      ctx.fillStyle = this.def.color + "33";
+      ctx.beginPath();
+      ctx.arc(Math.round(this.x), drawY, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = "14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(this.def.icon, Math.round(this.x), drawY);
+      ctx.restore();
+    }
+  };
+
+  // src/entities/pickup.js
+  var GemPickup = class {
+    constructor(x, y, xpValue = 10, type = "cyan") {
+      this.x = x;
+      this.y = y;
+      this.xpValue = xpValue;
+      this.type = type;
+      this.r = 6;
+      this.dead = false;
+      this.timer = Math.random() * Math.PI * 2;
+      this.flying = false;
+      this.flySpeed = 60;
+    }
+    update(dt, player) {
+      if (this.dead) return;
+      this.timer += dt * 3.5;
+      const dx = player.x - this.x;
+      const dy = player.y - 8 - this.y;
+      const dist2 = dx * dx + dy * dy;
+      const dist = Math.sqrt(dist2);
+      const magnetRange = player.magnetRadius || 85;
+      if (dist < magnetRange) {
+        this.flying = true;
+      }
+      if (this.flying) {
+        this.flySpeed = Math.min(520, this.flySpeed + dt * 650);
+        if (dist > 1) {
+          this.x += dx / dist * this.flySpeed * dt;
+          this.y += dy / dist * this.flySpeed * dt;
+        }
+        if (dist < player.r + this.r + 4) {
+          this.dead = true;
+          const color = this.type === "emerald" ? "#34d399" : "#38bdf8";
+          FX.burst(this.x, this.y, color, 5, 70);
+          player.gainXp(this.xpValue);
+        }
+      }
+    }
+    draw(ctx) {
+      if (this.dead) return;
+      const bob = Math.sin(this.timer) * 3;
+      Sprites.drawShadow(ctx, this.x, this.y + 4, 4);
+      const sprite = Sprites.getGemSprite(this.type, 0);
+      const sw = sprite.width;
+      const sh = sprite.height;
+      ctx.drawImage(
+        sprite,
+        Math.round(this.x - sw / 2),
+        Math.round(this.y - sh / 2 + bob)
+      );
+    }
+  };
+
+  // src/entities/resource_node.js
+  var ResourceNode = class {
+    constructor(x, y, nodeType = "mining_copper") {
+      this.x = x;
+      this.y = y;
+      this.nodeType = nodeType;
+      this.def = RESOURCE_NODES_DEF[nodeType] || RESOURCE_NODES_DEF.mining_copper;
+      this.id = `${nodeType}_${Math.round(x)}_${Math.round(y)}`;
+      this.r = 16;
+      this.state = "ready";
+      this.maxCharges = 3;
+      this.charges = 3;
+      this.channelProgress = 0;
+      this.harvestDuration = this.def.harvestDuration || 1.2;
+      this.respawnTimer = 0;
+      this.respawnDuration = this.def.respawnDuration || 45;
+      this.pulseTimer = Math.random() * Math.PI * 2;
+      this.sparkleTimer = Math.random() * 2;
+    }
+    get isHarvesting() {
+      return this.state === "harvesting";
+    }
+    get isDepleted() {
+      return this.state === "depleted";
+    }
+    get progress() {
+      return this.channelProgress;
+    }
+    canInteract(playerX, playerY, maxDist = 75) {
+      if (this.state === "depleted") return false;
+      const d = Math.hypot(this.x - playerX, this.y - playerY);
+      return d <= maxDist;
+    }
+    hitTest(worldX, worldY, padding = 24) {
+      return Math.abs(worldX - this.x) <= padding && (worldY >= this.y - 32 - padding && worldY <= this.y + padding);
+    }
+    startHarvest(player) {
+      if (this.state !== "ready") return false;
+      this.state = "harvesting";
+      this.channelProgress = 0;
+      FX.spark(this.x, this.y - 12, this.def.color, 4);
+      return true;
+    }
+    cancelHarvest() {
+      if (this.state === "harvesting") {
+        this.state = "ready";
+        this.channelProgress = 0;
+      }
+    }
+    completeHarvest(combat, player) {
+      this.state = "ready";
+      this.channelProgress = 0;
+      this.charges--;
+      if (this.def.xpReward && combat) {
+        combat.pickups.push(new GemPickup(this.x, this.y + 2, this.def.xpReward, "sapphire"));
+      }
+      if (this.def.drops && combat) {
+        let angle = -Math.PI / 2;
+        const totalDrops = [];
+        for (const drop of this.def.drops) {
+          if (Math.random() <= (drop.chance || 1)) {
+            const [minC, maxC] = drop.count || [1, 1];
+            const count = minC + Math.floor(Math.random() * (maxC - minC + 1));
+            for (let i = 0; i < count; i++) {
+              totalDrops.push(drop.itemId);
+            }
+          }
+        }
+        const step = Math.PI * 2 / Math.max(1, totalDrops.length);
+        totalDrops.forEach((matId, idx) => {
+          const dist = 18 + idx % 2 * 12;
+          const ox = Math.cos(angle) * dist;
+          const oy = Math.sin(angle) * dist;
+          combat.itemPickups.push(new ItemPickup(this.x + ox, this.y + oy, matId));
+          angle += step;
+        });
+      }
+      FX.burst(this.x, this.y - 14, this.def.color, 14, 110);
+      FX.addFloatingText(this.x, this.y - 28, `+${this.def.name}`, this.def.color);
+      if (this.charges <= 0) {
+        this.state = "depleted";
+        this.respawnTimer = this.respawnDuration;
+        FX.burst(this.x, this.y - 8, "#64748b", 8, 60);
+      }
+    }
+    update(dt, player, combat) {
+      this.pulseTimer += dt * 3.2;
+      this.sparkleTimer -= dt;
+      if (this.state === "depleted") {
+        this.respawnTimer -= dt;
+        if (this.respawnTimer <= 0) {
+          this.state = "ready";
+          this.charges = this.maxCharges;
+          FX.burst(this.x, this.y - 12, this.def.color, 16, 100);
+          FX.addFloatingText(this.x, this.y - 30, `\u2728 ${this.def.name} Ricresciuto!`, this.def.color);
+        }
+        return;
+      }
+      if (this.state === "ready" && this.sparkleTimer <= 0) {
+        this.sparkleTimer = 1.2 + Math.random() * 1.5;
+        FX.spark(this.x + (Math.random() * 20 - 10), this.y - 8 - Math.random() * 16, this.def.color, 2);
+      }
+      if (this.state === "harvesting") {
+        const dist = Math.hypot(this.x - player.x, this.y - player.y);
+        if (dist > 85) {
+          this.cancelHarvest();
+          return;
+        }
+        this.channelProgress += dt / this.harvestDuration;
+        if (Math.random() < 0.45) {
+          FX.spark(this.x + (Math.random() * 16 - 8), this.y - 10 + (Math.random() * 8 - 4), this.def.color, 3);
+        }
+        if (this.channelProgress >= 1) {
+          this.completeHarvest(combat, player);
+        }
+      }
+    }
+    draw(ctx, camera) {
+      if (camera && !camera.sees(this.x, this.y, 80)) return;
+      Sprites.drawShadow(ctx, this.x, this.y + 4, 14);
+      const spriteType = this.state === "depleted" ? "node_depleted" : this.def.spriteType || "node_copper";
+      const sprite = Tiles.getPropSprite(spriteType);
+      if (sprite) {
+        const sw = sprite.width * 2;
+        const sh = sprite.height * 2;
+        ctx.save();
+        if (this.state === "depleted") {
+          ctx.globalAlpha = 0.55;
+        }
+        ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 8), sw, sh);
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.fillStyle = this.def.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - 8, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      if (this.state === "ready") {
+        ctx.save();
+        const bob = Math.sin(this.pulseTimer) * 2;
+        const badgeY = Math.round(this.y - 36 + bob);
+        ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+        ctx.beginPath();
+        ctx.roundRect(Math.round(this.x - 22), badgeY - 14, 44, 16, 4);
+        ctx.fill();
+        ctx.strokeStyle = this.def.color;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.font = "10px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "#ffffff";
+        let dots = "\u25CF".repeat(this.charges) + "\u25CB".repeat(this.maxCharges - this.charges);
+        ctx.fillText(`${this.def.icon} ${dots}`, Math.round(this.x), badgeY - 6);
+        ctx.restore();
+      }
+      if (this.state === "harvesting") {
+        ctx.save();
+        const barW = 54;
+        const barH = 7;
+        const barX = Math.round(this.x - barW / 2);
+        const barY = Math.round(this.y - 44);
+        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+        ctx.fillRect(barX - 2, barY - 2, barW + 4, barH + 4);
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX - 2, barY - 2, barW + 4, barH + 4);
+        const fillW = Math.max(0, Math.min(barW, Math.round(barW * this.channelProgress)));
+        const grad = ctx.createLinearGradient(barX, barY, barX + barW, barY);
+        grad.addColorStop(0, this.def.color);
+        grad.addColorStop(1, "#ffffff");
+        ctx.fillStyle = grad;
+        ctx.fillRect(barX, barY, fillW, barH);
+        ctx.font = "bold 9px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fillText(`Raccolta in corso...`, Math.round(this.x), barY - 5);
+        ctx.restore();
+      }
+      if (this.state === "depleted") {
+        ctx.save();
+        ctx.font = "9px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#94a3b8";
+        const secsLeft = Math.ceil(this.respawnTimer);
+        ctx.fillText(`\u23F3 Ricresce in ${secsLeft}s`, Math.round(this.x), Math.round(this.y - 28));
+        ctx.restore();
+      }
+    }
+  };
+
   // src/world/world.js
   var SETTLEMENTS = [
     {
@@ -1899,6 +3750,85 @@
     { x1: -75, y1: -35, x2: -30, y2: -55 },
     { x1: -30, y1: -55, x2: 20, y2: -75 }
   ];
+  var RESOURCE_SPOTS = [
+    // --- BOSCO DI SYLVA (Rame, Querce Antiche, Geodi Arcani) ---
+    { type: "mining_copper", tx: -50, ty: -20 },
+    { type: "mining_copper", tx: -65, ty: -48 },
+    { type: "mining_copper", tx: -82, ty: -25 },
+    { type: "mining_copper", tx: -30, ty: -46 },
+    { type: "mining_copper", tx: -15, ty: -35 },
+    { type: "mining_copper", tx: -45, ty: -68 },
+    { type: "mining_copper", tx: -10, ty: -20 },
+    { type: "mining_copper", tx: 8, ty: -28 },
+    { type: "tree_ancient", tx: -86, ty: -52 },
+    { type: "tree_ancient", tx: -72, ty: -22 },
+    { type: "tree_ancient", tx: -62, ty: -58 },
+    { type: "tree_ancient", tx: -42, ty: -42 },
+    { type: "tree_ancient", tx: -28, ty: -62 },
+    { type: "tree_ancient", tx: -92, ty: -34 },
+    { type: "tree_ancient", tx: -18, ty: -48 },
+    // --- BIOMA DEL FIUME & CASCATE (Loto delle Ninfee, Rame Fluviale) ---
+    { type: "plant_lotus", tx: -44, ty: 15 },
+    { type: "plant_lotus", tx: -34, ty: 18 },
+    { type: "plant_lotus", tx: -42, ty: 30 },
+    { type: "plant_lotus", tx: -52, ty: 26 },
+    { type: "plant_lotus", tx: -32, ty: 28 },
+    { type: "plant_lotus", tx: -24, ty: 12 },
+    { type: "plant_lotus", tx: -56, ty: 34 },
+    { type: "mining_copper", tx: -38, ty: 36 },
+    { type: "mining_copper", tx: -48, ty: 12 },
+    { type: "mining_copper", tx: -28, ty: 32 },
+    // --- VETTE DI FROSTPEAK (Ferro Montano, Abeti del Permafrost) ---
+    { type: "mining_iron", tx: 14, ty: -62 },
+    { type: "mining_iron", tx: 32, ty: -68 },
+    { type: "mining_iron", tx: 10, ty: -84 },
+    { type: "mining_iron", tx: 26, ty: -92 },
+    { type: "mining_iron", tx: 36, ty: -54 },
+    { type: "mining_iron", tx: 6, ty: -74 },
+    { type: "mining_iron", tx: 42, ty: -78 },
+    { type: "tree_frost", tx: 16, ty: -70 },
+    { type: "tree_frost", tx: 28, ty: -84 },
+    { type: "tree_frost", tx: 8, ty: -66 },
+    { type: "tree_frost", tx: 24, ty: -96 },
+    { type: "tree_frost", tx: 34, ty: -64 },
+    { type: "tree_frost", tx: 12, ty: -86 },
+    // --- DESERTO DI AL-ZAHIR (Spine Solari, Minerale Ferroso delle Sabbie) ---
+    { type: "mining_iron", tx: -58, ty: 54 },
+    { type: "mining_iron", tx: -76, ty: 74 },
+    { type: "mining_iron", tx: -48, ty: 68 },
+    { type: "mining_iron", tx: -82, ty: 48 },
+    { type: "mining_iron", tx: -64, ty: 82 },
+    { type: "mining_iron", tx: -54, ty: 62 },
+    { type: "plant_sun", tx: -74, ty: 56 },
+    { type: "plant_sun", tx: -66, ty: 74 },
+    { type: "plant_sun", tx: -56, ty: 66 },
+    { type: "plant_sun", tx: -84, ty: 64 },
+    { type: "plant_sun", tx: -60, ty: 80 },
+    { type: "plant_sun", tx: -78, ty: 50 },
+    // --- ZONA VULCANICA DI CINERIS (Giacimenti d'Ossidiana, Ferro Vulcanico) ---
+    { type: "mining_obsidian", tx: 58, ty: 34 },
+    { type: "mining_obsidian", tx: 76, ty: 56 },
+    { type: "mining_obsidian", tx: 82, ty: 38 },
+    { type: "mining_obsidian", tx: 64, ty: 54 },
+    { type: "mining_obsidian", tx: 54, ty: 44 },
+    { type: "mining_obsidian", tx: 86, ty: 28 },
+    { type: "mining_obsidian", tx: 72, ty: 62 },
+    { type: "mining_obsidian", tx: 92, ty: 52 },
+    { type: "mining_iron", tx: 52, ty: 28 },
+    { type: "mining_iron", tx: 60, ty: 48 },
+    { type: "mining_iron", tx: 80, ty: 46 },
+    // --- GEODI D'AETHER (Filoni Arcani presso rovine e crocevia) ---
+    { type: "geode_aether", tx: 2, ty: -24 },
+    { type: "geode_aether", tx: -16, ty: 16 },
+    { type: "geode_aether", tx: 22, ty: 22 },
+    { type: "geode_aether", tx: -22, ty: -16 },
+    { type: "geode_aether", tx: 12, ty: -46 },
+    { type: "geode_aether", tx: -52, ty: -6 },
+    { type: "geode_aether", tx: 46, ty: -22 },
+    { type: "geode_aether", tx: 36, ty: 36 },
+    { type: "geode_aether", tx: -72, ty: 12 },
+    { type: "geode_aether", tx: 72, ty: 14 }
+  ];
   function distToSegment(px, py, x1, y1, x2, y2) {
     const dx = x2 - x1;
     const dy = y2 - y1;
@@ -1939,6 +3869,46 @@
       this.maxY = (this.maxTile - 2) * this.TS;
       this.chunkCanvases = /* @__PURE__ */ new Map();
       this.chunkProps = /* @__PURE__ */ new Map();
+      this.resourceNodes = RESOURCE_SPOTS.map((spot) => {
+        const wx = spot.tx * this.TS + this.TS / 2;
+        const wy = spot.ty * this.TS + this.TS / 2;
+        return new ResourceNode(wx, wy, spot.type);
+      });
+    }
+    /**
+     * Restituisce il nodo risorsa più vicino e interagibile
+     */
+    getNearbyResourceNode(playerX, playerY, maxDist = 75) {
+      let nearest = null;
+      let minDist = maxDist;
+      for (const node of this.resourceNodes) {
+        if (node.state === "depleted") continue;
+        const d = Math.hypot(node.x - playerX, node.y - playerY);
+        if (d <= minDist) {
+          minDist = d;
+          nearest = node;
+        }
+      }
+      return nearest;
+    }
+    /**
+     * Cerca un nodo risorsa cliccato alle coordinate del mondo
+     */
+    getResourceNodeAt(worldX, worldY, padding = 24) {
+      for (const node of this.resourceNodes) {
+        if (node.hitTest(worldX, worldY, padding)) {
+          return node;
+        }
+      }
+      return null;
+    }
+    /**
+     * Aggiorna lo stato di tutti i nodi di risorsa (canalizzazione, respawn)
+     */
+    updateResourceNodes(dt, player, combat) {
+      for (const node of this.resourceNodes) {
+        node.update(dt, player, combat);
+      }
     }
     hash2D(x, y, s = 0) {
       let h = x * 374761393 + y * 668265263 + (this.seed + s) * 1442695040888963300 ^ 1542469173;
@@ -2502,6 +4472,16 @@
           }
         }
       }
+      if (this.resourceNodes) {
+        for (const node of this.resourceNodes) {
+          if (camera.sees(node.x, node.y, 80)) {
+            drawList.push({
+              y: node.y,
+              draw: () => node.draw(ctx, camera)
+            });
+          }
+        }
+      }
       for (const e of entities) {
         if (camera.sees(e.x, e.y, 80)) {
           drawList.push({
@@ -2542,6 +4522,15 @@
       this.maxHp = 100;
       this.magnetRadius = 85;
       this.permanentBonusDamage = 0;
+      this.defense = 0;
+      this.damageReductionPercent = 0;
+      this.critChance = 0;
+      this.critDamage = 50;
+      this.hpRegen = 0;
+      this.lifeSteal = 0;
+      this.dodgeChance = 0;
+      this.cooldownReduction = 0;
+      this.ignoreWaterSlow = false;
       this.invulnerableTimer = 0;
       this.dir = 0;
       this.moveAngle = Math.PI / 2;
@@ -2553,22 +4542,41 @@
     }
     applyPermanentStats(stats = {}) {
       this.maxHp = 100 + (stats.bonusHp || 0);
-      this.hp = this.maxHp;
+      this.hp = Math.min(this.hp, this.maxHp);
+      if (this.hp <= 0) this.hp = this.maxHp;
       this.baseSpd = Math.round(105 * (stats.speedMultiplier || 1));
       this.magnetRadius = Math.round(85 * (stats.magnetMultiplier || 1));
       this.permanentBonusDamage = stats.bonusDamage || 0;
+      this.defense = stats.defense || 0;
+      this.damageReductionPercent = stats.damageReductionPercent || 0;
+      this.critChance = stats.critChance || 0;
+      this.critDamage = stats.critDamage || 50;
+      this.hpRegen = stats.hpRegen || 0;
+      this.lifeSteal = stats.lifeSteal || 0;
+      this.dodgeChance = stats.dodgeChance || 0;
+      this.cooldownReduction = stats.cooldownReduction || 0;
+      this.ignoreWaterSlow = !!stats.ignoreWaterSlow;
     }
     takeDamage(amount) {
       if (this.invulnerableTimer > 0 || this.hp <= 0) return;
-      this.hp = Math.max(0, this.hp - amount);
+      if (this.dodgeChance > 0 && Math.random() * 100 < this.dodgeChance) {
+        this.invulnerableTimer = 0.35;
+        FX.addFloatingText(this.x, this.y - 24, "SCHIVATA! \u{1F4A8}", "#38bdf8");
+        FX.spark(this.x, this.y - 8, "#7dd3fc", 4);
+        return;
+      }
+      const reduction = this.defense > 0 ? this.defense / (this.defense + 100) : 0;
+      const finalDmg = Math.max(1, Math.round(amount * (1 - reduction)));
+      this.hp = Math.max(0, this.hp - finalDmg);
       this.invulnerableTimer = 0.6;
+      FX.addFloatingText(this.x, this.y - 18, `-${finalDmg}`, "#ef4444");
       if (this.hp <= 0 && this.onDeath) {
         this.onDeath();
       }
     }
     get currentSpeed() {
       let s = this.baseSpd;
-      if (this.inLiquid) {
+      if (this.inLiquid && !this.ignoreWaterSlow) {
         s *= 0.6;
       }
       return s;
@@ -2577,13 +4585,16 @@
       if (this.invulnerableTimer > 0) {
         this.invulnerableTimer -= dt;
       }
+      if (this.hpRegen > 0 && this.hp > 0 && this.hp < this.maxHp) {
+        this.hp = Math.min(this.maxHp, this.hp + this.hpRegen * dt);
+      }
       const [ax, ay] = input.axis();
       this.walking = ax !== 0 || ay !== 0;
       if (this.walking) {
         this.moveAngle = Math.atan2(ay, ax);
         this.dir = Sprites.dirFromAngle(this.moveAngle);
         let spd = this.currentSpeed;
-        if (world.isShallowWater(this.x, this.y)) {
+        if (world.isShallowWater(this.x, this.y) && !this.ignoreWaterSlow) {
           spd *= 0.85;
         }
         this.x += ax * spd * dt;
@@ -2619,333 +4630,6 @@
       }
     }
   };
-
-  // src/core/fx.js
-  var FX = /* @__PURE__ */ (() => {
-    const particles = [];
-    const shockwaves = [];
-    const slashCuts = [];
-    const bones = [];
-    const damageTexts = [];
-    return {
-      showDamageNumbers: true,
-      showSparks: true,
-      /**
-       * Esplosione circolare di particelle colorate
-       */
-      burst(x, y, color = "#38bdf8", count = 8, speed = 120) {
-        for (let i = 0; i < count; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const s = speed * (0.35 + Math.random() * 0.65);
-          particles.push({
-            x,
-            y,
-            vx: Math.cos(angle) * s,
-            vy: Math.sin(angle) * s,
-            color,
-            size: Math.random() < 0.35 ? 3 : 2,
-            life: 0.25 + Math.random() * 0.22,
-            t: 0
-          });
-        }
-      },
-      /**
-       * Scia o scintilla direzionale ad alta velocità
-       */
-      spark(x, y, color = "#bae6fd", size = 2) {
-        particles.push({
-          x: x + (Math.random() * 4 - 2),
-          y: y + (Math.random() * 4 - 2),
-          vx: Math.random() * 30 - 15,
-          vy: Math.random() * 30 - 15,
-          color,
-          size,
-          life: 0.16 + Math.random() * 0.12,
-          t: 0
-        });
-      },
-      /**
-       * Anello di onde d'urto ad espansione rapida (impatto colpi e morte mob)
-       */
-      addShockwave(x, y, maxRadius = 32, color = "#ffffff", duration = 0.24) {
-        shockwaves.push({
-          x,
-          y,
-          radius: 4,
-          maxRadius,
-          color,
-          life: duration,
-          t: 0
-        });
-      },
-      /**
-       * Taglio di fendente d'acciaio con scintille lungo l'angolo d'impatto
-       */
-      addSlashCut(x, y, angle, length = 26, color = "#ffffff") {
-        slashCuts.push({
-          x,
-          y,
-          angle,
-          length,
-          color,
-          life: 0.14,
-          t: 0
-        });
-        for (let i = 0; i < 4; i++) {
-          const pAngle = angle + Math.PI / 2 * (Math.random() > 0.5 ? 1 : -1) + (Math.random() * 0.6 - 0.3);
-          const spd = 60 + Math.random() * 90;
-          particles.push({
-            x,
-            y,
-            vx: Math.cos(pAngle) * spd,
-            vy: Math.sin(pAngle) * spd,
-            color: Math.random() > 0.3 ? "#fde047" : "#ffffff",
-            size: 2,
-            life: 0.15 + Math.random() * 0.1,
-            t: 0
-          });
-        }
-      },
-      /**
-       * Sbuffo di fumo o polvere che sale dolcemente
-       */
-      addSmokePuff(x, y, color = "#94a3b8") {
-        for (let i = 0; i < 5; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const dist = Math.random() * 8;
-          particles.push({
-            x: x + Math.cos(angle) * dist,
-            y: y + Math.sin(angle) * dist,
-            vx: Math.random() * 20 - 10,
-            vy: -25 - Math.random() * 25,
-            color,
-            size: 4 + Math.floor(Math.random() * 3),
-            life: 0.35 + Math.random() * 0.2,
-            t: 0
-          });
-        }
-      },
-      /**
-       * Frammenti ossei che rimbalzano al suolo per la morte dello scheletro
-       */
-      addBones(x, y, count = 6) {
-        for (let i = 0; i < count; i++) {
-          const angle = -Math.PI / 2 + (Math.random() * 1.6 - 0.8);
-          const speed = 70 + Math.random() * 90;
-          bones.push({
-            x,
-            y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            gravity: 280,
-            rotation: Math.random() * Math.PI * 2,
-            vRot: Math.random() * 12 - 6,
-            size: i === 0 ? 6 : 4,
-            // Il primo pezzo è il teschio!
-            isSkull: i === 0,
-            groundY: y + 10 + Math.random() * 8,
-            bounces: 2,
-            life: 0.55 + Math.random() * 0.2,
-            t: 0
-          });
-        }
-      },
-      /**
-       * Spruzzi e globuli gelatinosi per la morte degli slime
-       */
-      addSlimeSplat(x, y, color = "#22c55e", count = 10) {
-        for (let i = 0; i < count; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const spd = 60 + Math.random() * 110;
-          particles.push({
-            x,
-            y,
-            vx: Math.cos(angle) * spd,
-            vy: Math.sin(angle) * spd + 20,
-            // Leggera caduta verso terra
-            color,
-            size: Math.random() < 0.4 ? 4 : 3,
-            life: 0.3 + Math.random() * 0.2,
-            t: 0
-          });
-        }
-      },
-      /**
-       * Numero di danno fluttuante con pop-scale iniziale e critico
-       */
-      addDamageNumber(x, y, amount, isCrit = false) {
-        damageTexts.push({
-          x: x + (Math.random() * 14 - 7),
-          y: y - 10,
-          text: isCrit ? `-${amount}!` : `-${amount}`,
-          vy: isCrit ? -54 : -42,
-          life: 0.72,
-          t: 0,
-          isCrit,
-          scale: isCrit ? 1.4 : 1.15
-        });
-      },
-      /**
-       * Testo fluttuante colorato per la raccolta di oggetti e artefatti
-       */
-      addFloatingText(x, y, text, color = "#22c55e") {
-        damageTexts.push({
-          x: x + (Math.random() * 8 - 4),
-          y: y - 12,
-          text,
-          vy: -36,
-          life: 0.85,
-          t: 0,
-          color,
-          scale: 1.05
-        });
-      },
-      update(dt) {
-        for (let i = particles.length - 1; i >= 0; i--) {
-          const p = particles[i];
-          p.t += dt;
-          if (p.t >= p.life) {
-            particles.splice(i, 1);
-            continue;
-          }
-          p.x += p.vx * dt;
-          p.y += p.vy * dt;
-          p.vx *= 0.91;
-          p.vy *= 0.91;
-        }
-        for (let i = shockwaves.length - 1; i >= 0; i--) {
-          const sw = shockwaves[i];
-          sw.t += dt;
-          if (sw.t >= sw.life) {
-            shockwaves.splice(i, 1);
-            continue;
-          }
-          const progress = sw.t / sw.life;
-          sw.radius = 4 + (sw.maxRadius - 4) * Math.sin(progress * Math.PI * 0.5);
-        }
-        for (let i = slashCuts.length - 1; i >= 0; i--) {
-          const sc = slashCuts[i];
-          sc.t += dt;
-          if (sc.t >= sc.life) {
-            slashCuts.splice(i, 1);
-          }
-        }
-        for (let i = bones.length - 1; i >= 0; i--) {
-          const b = bones[i];
-          b.t += dt;
-          if (b.t >= b.life) {
-            bones.splice(i, 1);
-            continue;
-          }
-          b.vy += b.gravity * dt;
-          b.x += b.vx * dt;
-          b.y += b.vy * dt;
-          b.rotation += b.vRot * dt;
-          if (b.y >= b.groundY && b.bounces > 0) {
-            b.y = b.groundY;
-            b.vy = -b.vy * 0.45;
-            b.vx *= 0.65;
-            b.vRot *= 0.6;
-            b.bounces--;
-          }
-        }
-        for (let i = damageTexts.length - 1; i >= 0; i--) {
-          const d = damageTexts[i];
-          d.t += dt;
-          if (d.t >= d.life) {
-            damageTexts.splice(i, 1);
-            continue;
-          }
-          d.y += d.vy * dt;
-          d.vy *= 0.93;
-          if (d.scale > 1) {
-            d.scale = Math.max(1, d.scale - dt * 2.5);
-          }
-        }
-      },
-      draw(ctx) {
-        ctx.save();
-        if (this.showSparks !== false) {
-          for (const sw of shockwaves) {
-            const alpha = Math.max(0, 1 - sw.t / sw.life);
-            ctx.strokeStyle = sw.color;
-            ctx.globalAlpha = alpha * 0.85;
-            ctx.lineWidth = Math.max(1.5, 3 * (1 - sw.t / sw.life));
-            ctx.beginPath();
-            ctx.arc(Math.round(sw.x), Math.round(sw.y), Math.round(sw.radius), 0, Math.PI * 2);
-            ctx.stroke();
-          }
-          for (const sc of slashCuts) {
-            const alpha = Math.max(0, 1 - sc.t / sc.life);
-            ctx.save();
-            ctx.translate(Math.round(sc.x), Math.round(sc.y));
-            ctx.rotate(sc.angle);
-            ctx.globalAlpha = alpha;
-            ctx.strokeStyle = sc.color;
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            ctx.moveTo(-sc.length / 2, 0);
-            ctx.lineTo(sc.length / 2, 0);
-            ctx.stroke();
-            ctx.strokeStyle = "#fde047";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(-sc.length / 3, -1);
-            ctx.lineTo(sc.length / 3, 1);
-            ctx.stroke();
-            ctx.restore();
-          }
-          for (const b of bones) {
-            const alpha = Math.max(0, 1 - b.t / b.life * 0.8);
-            ctx.save();
-            ctx.translate(Math.round(b.x), Math.round(b.y));
-            ctx.rotate(b.rotation);
-            ctx.globalAlpha = alpha;
-            if (b.isSkull) {
-              ctx.fillStyle = "#0f172a";
-              ctx.fillRect(-3, -3, 6, 6);
-              ctx.fillStyle = "#f8fafc";
-              ctx.fillRect(-2, -2, 5, 5);
-              ctx.fillStyle = "#ef4444";
-              ctx.fillRect(-1, -1, 1, 1);
-              ctx.fillRect(1, -1, 1, 1);
-            } else {
-              ctx.fillStyle = "#0f172a";
-              ctx.fillRect(-3, -1, 6, 3);
-              ctx.fillStyle = "#cbd5e1";
-              ctx.fillRect(-2, 0, 5, 2);
-              ctx.fillStyle = "#ffffff";
-              ctx.fillRect(-2, 0, 2, 1);
-            }
-            ctx.restore();
-          }
-          for (const p of particles) {
-            const alpha = Math.max(0, 1 - p.t / p.life);
-            ctx.fillStyle = p.color;
-            ctx.globalAlpha = alpha;
-            ctx.fillRect(Math.round(p.x - p.size / 2), Math.round(p.y - p.size / 2), p.size, p.size);
-          }
-        }
-        if (this.showDamageNumbers !== false) {
-          for (const d of damageTexts) {
-            const alpha = Math.max(0, 1 - d.t / d.life);
-            ctx.save();
-            ctx.globalAlpha = alpha;
-            const fontSize = Math.round(13 * (d.scale || 1));
-            ctx.font = `bold ${fontSize}px "Courier New", monospace, sans-serif`;
-            ctx.textAlign = "center";
-            ctx.fillStyle = "#080a0f";
-            ctx.fillText(d.text, Math.round(d.x) + 1, Math.round(d.y) + 1);
-            ctx.fillText(d.text, Math.round(d.x) - 1, Math.round(d.y) - 1);
-            ctx.fillStyle = d.color || (d.isCrit ? "#fde047" : "#e0f2fe");
-            ctx.fillText(d.text, Math.round(d.x), Math.round(d.y));
-            ctx.restore();
-          }
-        }
-        ctx.restore();
-      }
-    };
-  })();
 
   // src/entities/enemy.js
   var ENEMY_COLORS = {
@@ -3317,324 +5001,6 @@
         ctx.fillStyle = pct > 0.4 ? "#ef4444" : "#b91c1c";
         ctx.fillRect(bx, by, Math.round(barW * pct), barH);
       }
-    }
-  };
-
-  // src/entities/pickup.js
-  var GemPickup = class {
-    constructor(x, y, xpValue = 10, type = "cyan") {
-      this.x = x;
-      this.y = y;
-      this.xpValue = xpValue;
-      this.type = type;
-      this.r = 6;
-      this.dead = false;
-      this.timer = Math.random() * Math.PI * 2;
-      this.flying = false;
-      this.flySpeed = 60;
-    }
-    update(dt, player) {
-      if (this.dead) return;
-      this.timer += dt * 3.5;
-      const dx = player.x - this.x;
-      const dy = player.y - 8 - this.y;
-      const dist2 = dx * dx + dy * dy;
-      const dist = Math.sqrt(dist2);
-      const magnetRange = player.magnetRadius || 85;
-      if (dist < magnetRange) {
-        this.flying = true;
-      }
-      if (this.flying) {
-        this.flySpeed = Math.min(520, this.flySpeed + dt * 650);
-        if (dist > 1) {
-          this.x += dx / dist * this.flySpeed * dt;
-          this.y += dy / dist * this.flySpeed * dt;
-        }
-        if (dist < player.r + this.r + 4) {
-          this.dead = true;
-          const color = this.type === "emerald" ? "#34d399" : "#38bdf8";
-          FX.burst(this.x, this.y, color, 5, 70);
-          player.gainXp(this.xpValue);
-        }
-      }
-    }
-    draw(ctx) {
-      if (this.dead) return;
-      const bob = Math.sin(this.timer) * 3;
-      Sprites.drawShadow(ctx, this.x, this.y + 4, 4);
-      const sprite = Sprites.getGemSprite(this.type, 0);
-      const sw = sprite.width;
-      const sh = sprite.height;
-      ctx.drawImage(
-        sprite,
-        Math.round(this.x - sw / 2),
-        Math.round(this.y - sh / 2 + bob)
-      );
-    }
-  };
-
-  // src/core/crafting.js
-  var MATERIALS_DEF = {
-    slime_gel: {
-      id: "slime_gel",
-      name: "Gel Silvano",
-      icon: "\u{1F9EA}",
-      desc: "Materia gelatinosa pura raccolta dagli Slime del Bosco.",
-      color: "#22c55e",
-      rarity: "Comune"
-    },
-    ice_crystal: {
-      id: "ice_crystal",
-      name: "Cristallo Gelido",
-      icon: "\u2744\uFE0F",
-      desc: "Ghiaccio perenne non fondente che brilla sulle vette innevate.",
-      color: "#38bdf8",
-      rarity: "Non Comune"
-    },
-    sun_amber: {
-      id: "sun_amber",
-      name: "Ambra delle Sabbie",
-      icon: "\u2600\uFE0F",
-      desc: "Gemma solare fossilizzata tra le dune ardenti del deserto.",
-      color: "#f59e0b",
-      rarity: "Non Comune"
-    },
-    magma_core: {
-      id: "magma_core",
-      name: "Nucleo di Lava",
-      icon: "\u{1F525}",
-      desc: "Frammento incandescente di roccia e fuoco elementale della caldera.",
-      color: "#ef4444",
-      rarity: "Raro"
-    },
-    ancient_bone: {
-      id: "ancient_bone",
-      name: "Osso Antico",
-      icon: "\u{1F9B4}",
-      desc: "Resto pietrificato degli scheletri a guardia delle antiche rovine.",
-      color: "#cbd5e1",
-      rarity: "Comune"
-    },
-    iron_scrap: {
-      id: "iron_scrap",
-      name: "Metallo Temprato",
-      icon: "\u2699\uFE0F",
-      desc: "Lingotti e frammenti di metallo usati per forgiare armi robuste.",
-      color: "#94a3b8",
-      rarity: "Comune"
-    },
-    arcane_rune: {
-      id: "arcane_rune",
-      name: "Runa Arcana",
-      icon: "\u2728",
-      desc: "Raro artefatto runico carico di antica magia elementale.",
-      color: "#c084fc",
-      rarity: "Raro"
-    }
-  };
-  var WEAPONS_DEF = {
-    staff: {
-      id: "staff",
-      name: "Bastone dell'Arcimago",
-      icon: "\u{1FA84}",
-      typeName: "Magia a Distanza (Dardi Autoguidati)",
-      desc: "Scaglia dardi arcani luminosi che inseguono i bersagli pi\xF9 vicini con precisione fatata.",
-      maxLevel: 5,
-      unlockCost: null,
-      // Sbloccato di default
-      baseStats: {
-        damage: 18,
-        cooldown: 0.85,
-        range: 320,
-        projectiles: 1,
-        speed: 380
-      },
-      upgrades: [
-        {
-          level: 2,
-          gold: 80,
-          materials: { slime_gel: 4, arcane_rune: 1 },
-          benefit: "+6 Danno, +1 Dardo magico",
-          stats: { damageBonus: 6, extraProjectiles: 1, cooldownReduction: 0.05 }
-        },
-        {
-          level: 3,
-          gold: 160,
-          materials: { slime_gel: 6, ice_crystal: 3, arcane_rune: 2 },
-          benefit: "+8 Danno, -15% Tempo di Ricarica",
-          stats: { damageBonus: 14, extraProjectiles: 1, cooldownReduction: 0.15 }
-        },
-        {
-          level: 4,
-          gold: 260,
-          materials: { ice_crystal: 5, magma_core: 3, arcane_rune: 3 },
-          benefit: "+10 Danno, +1 Dardo aggiuntivo (3 dardi)",
-          stats: { damageBonus: 24, extraProjectiles: 2, cooldownReduction: 0.18 }
-        },
-        {
-          level: 5,
-          gold: 400,
-          materials: { magma_core: 6, arcane_rune: 5 },
-          benefit: "+16 Danno, Dardi di Mana Instabile ad alta velocit\xE0",
-          stats: { damageBonus: 40, extraProjectiles: 2, cooldownReduction: 0.25 }
-        }
-      ]
-    },
-    sword: {
-      id: "sword",
-      name: "Spada da Cavaliere",
-      icon: "\u{1F5E1}\uFE0F",
-      typeName: "Mischia ad Area (Fendenti Ravvicinati)",
-      desc: "Esegue rapidi fendenti semicircolari ad ampio raggio con elevato danno da taglio e potente spinta indietro (knockback).",
-      maxLevel: 5,
-      unlockCost: {
-        gold: 120,
-        materials: { iron_scrap: 4, ancient_bone: 3 }
-      },
-      baseStats: {
-        damage: 28,
-        cooldown: 0.55,
-        range: 92,
-        knockback: 180,
-        arcAngle: Math.PI * 0.95
-      },
-      upgrades: [
-        {
-          level: 2,
-          gold: 100,
-          materials: { iron_scrap: 5, ancient_bone: 4 },
-          benefit: "+8 Danno da taglio, +16px Ampiezza fendente",
-          stats: { damageBonus: 8, rangeBonus: 16, cooldownReduction: 0.04 }
-        },
-        {
-          level: 3,
-          gold: 180,
-          materials: { iron_scrap: 8, sun_amber: 3, ancient_bone: 5 },
-          benefit: "+12 Danno, +35% Spinta Indietro (Knockback)",
-          stats: { damageBonus: 20, rangeBonus: 22, knockbackBonus: 70 }
-        },
-        {
-          level: 4,
-          gold: 280,
-          materials: { iron_scrap: 10, magma_core: 3, arcane_rune: 2 },
-          benefit: "+15 Danno, -20% Tempo di Recupero tra i colpi",
-          stats: { damageBonus: 35, rangeBonus: 30, cooldownReduction: 0.12 }
-        },
-        {
-          level: 5,
-          gold: 420,
-          materials: { iron_scrap: 15, magma_core: 5, arcane_rune: 4 },
-          benefit: "+22 Danno, Lama di Fiamme Runica a Vortice 360\xB0",
-          stats: { damageBonus: 57, rangeBonus: 42, fullCircle: true }
-        }
-      ]
-    },
-    bow: {
-      id: "bow",
-      name: "Arco dei Guardaboschi",
-      icon: "\u{1F3F9}",
-      typeName: "Frecce Perforanti a Lungo Raggio",
-      desc: "Scocca frecce aerodinamiche ad altissima velocit\xE0 che trapassano i nemici in linea retta a grande distanza.",
-      maxLevel: 5,
-      unlockCost: {
-        gold: 120,
-        materials: { ancient_bone: 4, sun_amber: 3 }
-      },
-      baseStats: {
-        damage: 22,
-        cooldown: 0.7,
-        range: 440,
-        pierce: 2,
-        speed: 520
-      },
-      upgrades: [
-        {
-          level: 2,
-          gold: 100,
-          materials: { ancient_bone: 5, sun_amber: 4 },
-          benefit: "+6 Danno, +1 Bersaglio trapassabile (Pierce 3)",
-          stats: { damageBonus: 6, extraPierce: 1, cooldownReduction: 0.05 }
-        },
-        {
-          level: 3,
-          gold: 180,
-          materials: { sun_amber: 6, ice_crystal: 4, iron_scrap: 4 },
-          benefit: "+10 Danno, +25% Velocit\xE0 di volo della freccia",
-          stats: { damageBonus: 16, extraPierce: 1, speedBonus: 130 }
-        },
-        {
-          level: 4,
-          gold: 280,
-          materials: { sun_amber: 8, magma_core: 4, arcane_rune: 2 },
-          benefit: "+14 Danno, Tiro Doppio (2 frecce parallele)",
-          stats: { damageBonus: 30, extraPierce: 2, extraArrows: 1 }
-        },
-        {
-          level: 5,
-          gold: 420,
-          materials: { sun_amber: 10, arcane_rune: 4, magma_core: 5 },
-          benefit: "+20 Danno, Frecce di Cristallo Solare a Perforazione Totale",
-          stats: { damageBonus: 50, infinitePierce: true, extraArrows: 1 }
-        }
-      ]
-    }
-  };
-
-  // src/entities/item_pickup.js
-  var ItemPickup = class {
-    constructor(x, y, itemId = "slime_gel") {
-      this.x = x;
-      this.y = y;
-      this.itemId = itemId;
-      this.def = MATERIALS_DEF[itemId] || { name: "Artefatto", icon: "\u{1F4E6}", color: "#f8fafc" };
-      this.r = 8;
-      this.dead = false;
-      this.timer = Math.random() * Math.PI * 2;
-      this.flying = false;
-      this.flySpeed = 70;
-    }
-    update(dt, player, onCollect) {
-      if (this.dead) return;
-      this.timer += dt * 4;
-      const dx = player.x - this.x;
-      const dy = player.y - 8 - this.y;
-      const dist2 = dx * dx + dy * dy;
-      const dist = Math.sqrt(dist2);
-      const magnetRange = (player.magnetRadius || 85) * 1.15;
-      if (dist < magnetRange) {
-        this.flying = true;
-      }
-      if (this.flying) {
-        this.flySpeed = Math.min(560, this.flySpeed + dt * 700);
-        if (dist > 1) {
-          this.x += dx / dist * this.flySpeed * dt;
-          this.y += dy / dist * this.flySpeed * dt;
-        }
-        if (dist < player.r + this.r + 4) {
-          this.dead = true;
-          FX.burst(this.x, this.y, this.def.color, 8, 95);
-          FX.addFloatingText(this.x, this.y - 18, `+1 ${this.def.name}`, this.def.color);
-          if (onCollect) {
-            onCollect(this.itemId);
-          }
-        }
-      }
-    }
-    draw(ctx) {
-      if (this.dead) return;
-      const bob = Math.sin(this.timer) * 3.5;
-      Sprites.drawShadow(ctx, this.x, this.y + 4, 5);
-      ctx.save();
-      const drawY = Math.round(this.y + bob - 6);
-      ctx.fillStyle = this.def.color + "33";
-      ctx.beginPath();
-      ctx.arc(Math.round(this.x), drawY, 11, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.font = "14px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(this.def.icon, Math.round(this.x), drawY);
-      ctx.restore();
     }
   };
 
@@ -4051,13 +5417,13 @@
     /**
      * Configura l'arma equipaggiata e le sue statistiche forgiate
      */
-    setWeapon(weaponId = "staff", level = 1, bonusDamage = 0) {
+    setWeapon(weaponId = "staff", level = 1, bonusDamage = 0, cooldownReduction = 0) {
       const def = WEAPONS_DEF[weaponId] || WEAPONS_DEF.staff;
       this.weaponId = def.id;
       this.weaponLevel = Math.max(1, Math.min(def.maxLevel, level));
       this.weaponName = def.name;
       let totalDmgBonus = 0;
-      let cdReduction = 0;
+      let cdReduction = cooldownReduction || 0;
       let extraProj = 0;
       let extraPierce = 0;
       let rangeBonus = 0;
@@ -4080,26 +5446,45 @@
         }
       }
       if (this.weaponId === "sword") {
-        this.baseCooldown = Math.max(0.28, def.baseStats.cooldown - cdReduction);
+        this.baseCooldown = Math.max(0.2, def.baseStats.cooldown - cdReduction);
         this.attackRange = def.baseStats.range + rangeBonus;
         this.swordDamage = def.baseStats.damage + totalDmgBonus + bonusDamage;
         this.swordRange = this.attackRange;
         this.swordArc = fullCircle ? Math.PI * 2 : def.baseStats.arcAngle;
         this.swordKnockback = def.baseStats.knockback + knockbackBonus;
       } else if (this.weaponId === "bow") {
-        this.baseCooldown = Math.max(0.35, def.baseStats.cooldown - cdReduction);
+        this.baseCooldown = Math.max(0.25, def.baseStats.cooldown - cdReduction);
         this.attackRange = def.baseStats.range;
         this.bowDamage = def.baseStats.damage + totalDmgBonus + bonusDamage;
         this.bowPierce = def.baseStats.pierce + extraPierce;
         this.bowArrowsCount = 1 + extraArrows;
         this.bowSpeed = def.baseStats.speed;
       } else {
-        this.baseCooldown = Math.max(0.4, def.baseStats.cooldown - cdReduction);
+        this.baseCooldown = Math.max(0.28, def.baseStats.cooldown - cdReduction);
         this.attackRange = def.baseStats.range;
         this.staffDamage = def.baseStats.damage + totalDmgBonus + bonusDamage;
         this.projectilesPerShot = def.baseStats.projectiles + extraProj;
       }
       this.cooldownTimer = 0;
+    }
+    dealDamageToTarget(target, baseDmg, angle, knockback, attackType, player) {
+      let finalDmg = baseDmg;
+      let isCrit = false;
+      if (player && player.critChance > 0 && Math.random() * 100 < player.critChance) {
+        isCrit = true;
+        const critExtra = (player.critDamage || 50) / 100;
+        finalDmg = Math.round(finalDmg * (1 + critExtra));
+      }
+      target.takeDamage(finalDmg, angle, knockback, attackType);
+      if (isCrit) {
+        FX.burst(target.x, target.y - 8, "#f59e0b", 8, 140);
+        FX.addFloatingText(target.x, target.y - 28, `\u{1F4A5} ${finalDmg} CRIT!`, "#fde047");
+      }
+      if (player && player.lifeSteal > 0 && player.hp > 0 && player.hp < player.maxHp) {
+        const heal = Math.max(1, Math.round(finalDmg * (player.lifeSteal / 100)));
+        player.hp = Math.min(player.maxHp, player.hp + heal);
+        FX.spark(player.x, player.y - 8, "#22c55e", 2);
+      }
     }
     getAllTargets() {
       return [...this.trainingTargets, ...this.enemies];
@@ -4275,7 +5660,7 @@
             if (odx * odx + ody * ody < (target.r + 14) * (target.r + 14)) {
               const angle = Math.atan2(ody, odx);
               const dmg = Math.round(14 * this.damageMultiplier);
-              target.takeDamage(dmg, angle, 90, "magic");
+              this.dealDamageToTarget(target, dmg, angle, 90, "magic", player);
               this.orbitDamageTimer = 0.28;
               camera.kick(0.12);
               break;
@@ -4300,7 +5685,7 @@
             p.hitTargets.add(t);
             const angle = Math.atan2(p.vy, p.vx);
             const attackType = p.type === "arrow" ? "pierce" : "magic";
-            t.takeDamage(p.dmg, angle, p.type === "arrow" ? 140 : 115, attackType);
+            this.dealDamageToTarget(t, p.dmg, angle, p.type === "arrow" ? 140 : 115, attackType, player);
             camera.kick(0.15);
             p.pierce--;
             if (p.pierce <= 0) {
@@ -4341,7 +5726,7 @@
           let diff = Math.abs(enemyAngle - angle);
           while (diff > Math.PI) diff = Math.abs(diff - Math.PI * 2);
           if (arc >= Math.PI * 1.9 || diff <= arc / 2 + 0.2) {
-            t.takeDamage(dmg, enemyAngle, knockback, "slash");
+            this.dealDamageToTarget(t, dmg, enemyAngle, knockback, "slash", player);
             FX.burst(t.x, t.y - 8, "#f8fafc", 5, 120);
             FX.spark(t.x, t.y - 8, "#fde047", 4);
           }
@@ -4757,6 +6142,8 @@
             gold_gain: 0
           },
           inventory: {
+            copper_ore: 6,
+            ancient_wood: 4,
             slime_gel: 4,
             ice_crystal: 0,
             sun_amber: 0,
@@ -4771,12 +6158,22 @@
             bow: 0
           },
           equippedWeapon: "staff",
+          equipment: {
+            armor: null,
+            helmet: null,
+            boots: null,
+            amulet: null,
+            ring: null
+          },
+          craftedItems: [],
           inAppPurchases: []
         };
         localStorage.setItem(key, JSON.stringify(p));
       }
       if (!p.inventory) {
         p.inventory = {
+          copper_ore: 6,
+          ancient_wood: 4,
           slime_gel: 4,
           ice_crystal: 0,
           sun_amber: 0,
@@ -4792,6 +6189,12 @@
       if (!p.equippedWeapon) {
         p.equippedWeapon = "staff";
       }
+      if (!p.equipment) {
+        p.equipment = { armor: null, helmet: null, boots: null, amulet: null, ring: null };
+      }
+      if (!Array.isArray(p.craftedItems)) {
+        p.craftedItems = [];
+      }
       if (!p.inAppPurchases) {
         p.inAppPurchases = [];
       }
@@ -4803,12 +6206,60 @@
     }
     _formatProfile(profile) {
       const talents = profile.talents || {};
+      const equipment = profile.equipment || {};
+      const bonusHpTalent = (talents.max_hp || 0) * (TALENTS_DEF.max_hp?.bonusPerRank || 15);
+      const bonusDmgTalent = (talents.damage || 0) * (TALENTS_DEF.damage?.bonusPerRank || 3);
+      const speedMultTalent = (talents.speed || 0) * (TALENTS_DEF.speed?.bonusPerRank || 0.04);
+      const magnetMultTalent = (talents.magnet || 0) * (TALENTS_DEF.magnet?.bonusPerRank || 0.08);
+      const goldMultTalent = (talents.gold_gain || 0) * (TALENTS_DEF.gold_gain?.bonusPerRank || 0.1);
+      let bonusHp = bonusHpTalent;
+      let defense = 0;
+      let bonusDamage = bonusDmgTalent;
+      let speedBonusTotal = 0;
+      let critChance = 0;
+      let critDamage = 50;
+      let hpRegen = 0;
+      let lifeSteal = 0;
+      let dodgeChance = 0;
+      let cooldownReduction = 0;
+      let ignoreWaterSlow = false;
+      if (equipment && typeof equipment === "object") {
+        for (const [slot, eqId] of Object.entries(equipment)) {
+          if (!eqId) continue;
+          const eqDef = EQUIPMENT_DEF[eqId];
+          if (eqDef && eqDef.stats) {
+            const s = eqDef.stats;
+            if (s.maxHp) bonusHp += s.maxHp;
+            if (s.defense) defense += s.defense;
+            if (s.bonusDamage) bonusDamage += s.bonusDamage;
+            if (s.speedBonus) speedBonusTotal += s.speedBonus;
+            if (s.critChance) critChance += s.critChance;
+            if (s.critDamage) critDamage += s.critDamage;
+            if (s.hpRegen) hpRegen += s.hpRegen;
+            if (s.lifeSteal) lifeSteal += s.lifeSteal;
+            if (s.dodgeChance) dodgeChance += s.dodgeChance;
+            if (s.cooldownReduction) cooldownReduction += s.cooldownReduction;
+            if (s.ignoreWaterSlow) ignoreWaterSlow = true;
+          }
+        }
+      }
+      const damageReductionPercent = defense > 0 ? Math.round(defense / (defense + 100) * 100) : 0;
       const calculatedStats = {
-        bonusHp: (talents.max_hp || 0) * 15,
-        bonusDamage: (talents.damage || 0) * 3,
-        speedMultiplier: 1 + (talents.speed || 0) * 0.06,
-        magnetMultiplier: 1 + (talents.magnet || 0) * 0.2,
-        goldMultiplier: 1 + (talents.gold_gain || 0) * 0.15
+        bonusHp,
+        defense,
+        damageReductionPercent,
+        bonusDamage,
+        speedMultiplier: 1 + speedMultTalent + speedBonusTotal / 100,
+        speedBonusPercent: Math.round(speedMultTalent * 100 + speedBonusTotal),
+        magnetMultiplier: 1 + magnetMultTalent,
+        goldMultiplier: 1 + goldMultTalent,
+        critChance: Math.min(75, critChance),
+        critDamage,
+        hpRegen,
+        lifeSteal,
+        dodgeChance: Math.min(50, dodgeChance),
+        cooldownReduction: Math.min(0.4, cooldownReduction),
+        ignoreWaterSlow
       };
       const talentsCatalog = Object.values(TALENTS_DEF).map((def) => {
         const rank = talents[def.id] || 0;
@@ -4847,12 +6298,64 @@
         ...mat,
         count: profile.inventory[mat.id] || 0
       }));
+      const equipmentCatalog = Object.values(EQUIPMENT_DEF).map((def) => {
+        const isEquipped = profile.equipment && profile.equipment[def.slot] === def.id;
+        const isOwned = (profile.craftedItems || []).includes(def.id);
+        let canCraft = profile.gold >= (def.craftCost?.gold || 0);
+        if (canCraft && def.craftCost?.materials) {
+          for (const [mId, amt] of Object.entries(def.craftCost.materials)) {
+            if ((profile.inventory[mId] || 0) < amt) {
+              canCraft = false;
+              break;
+            }
+          }
+        }
+        return {
+          ...def,
+          isEquipped,
+          isOwned,
+          canCraft
+        };
+      });
+      const refiningCatalog = REFINING_RECIPES.map((rec) => {
+        let canRefine = profile.gold >= (rec.goldCost || 0);
+        if (canRefine && rec.inputs) {
+          for (const [mId, amt] of Object.entries(rec.inputs)) {
+            if ((profile.inventory[mId] || 0) < amt) {
+              canRefine = false;
+              break;
+            }
+          }
+        }
+        return {
+          ...rec,
+          canRefine,
+          outputDef: MATERIALS_DEF[rec.output.itemId] || { name: rec.output.itemId, icon: "\u{1F4E6}", color: "#fff" }
+        };
+      });
+      const salvageCatalog = (profile.craftedItems || []).map((eqId) => {
+        const def = EQUIPMENT_DEF[eqId] || { id: eqId, name: eqId, slot: "unknown", icon: "\u{1F4E6}", rarity: "Comune", salvageYield: {} };
+        const isEquipped = profile.equipment && profile.equipment[def.slot] === eqId;
+        return {
+          ...def,
+          isEquipped
+        };
+      });
+      const equippedPieces = {};
+      for (const slot of ["armor", "helmet", "boots", "amulet", "ring"]) {
+        const eqId = profile.equipment ? profile.equipment[slot] : null;
+        equippedPieces[slot] = eqId ? EQUIPMENT_DEF[eqId] || null : null;
+      }
       return {
         ...profile,
         calculatedStats,
         talentsCatalog,
         weaponsCatalog,
-        inventoryCatalog
+        inventoryCatalog,
+        equipmentCatalog,
+        refiningCatalog,
+        salvageCatalog,
+        equippedPieces
       };
     }
     // =========================================================================
@@ -4969,6 +6472,168 @@
         throw new Error("Devi prima forgiare quest'arma dal Fabbro!");
       }
       p.equippedWeapon = weaponId;
+      this._saveLocalProfile(p);
+      return this._formatProfile(p);
+    }
+    async craftEquipment(equipId) {
+      if (this.isOnline) {
+        try {
+          const res = await fetch(`${API_BASE}/api/blacksmith/craft-equipment`, {
+            method: "POST",
+            headers: this._authHeaders(),
+            body: JSON.stringify({ nickname: this.nickname, equipId })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) return json.profile;
+          }
+        } catch (err) {
+          console.warn("Errore server forgiatura equipaggiamento, fallback offline:", err);
+        }
+      }
+      const p = this._getLocalProfile(this.nickname);
+      const def = EQUIPMENT_DEF[equipId];
+      if (!def) throw new Error("Pezzo d'equipaggiamento non valido");
+      const goldCost = def.craftCost?.gold || 0;
+      const matsCost = def.craftCost?.materials || {};
+      if (p.gold < goldCost) throw new Error(`Oro insufficiente: servono ${goldCost} oro`);
+      for (const [mId, req] of Object.entries(matsCost)) {
+        if ((p.inventory[mId] || 0) < req) {
+          const matDef = MATERIALS_DEF[mId] || { name: mId };
+          throw new Error(`Materiale insufficiente: servono ${req}x ${matDef.name}`);
+        }
+      }
+      p.gold -= goldCost;
+      for (const [mId, req] of Object.entries(matsCost)) {
+        p.inventory[mId] = Math.max(0, (p.inventory[mId] || 0) - req);
+      }
+      p.craftedItems = p.craftedItems || [];
+      p.craftedItems.push(equipId);
+      p.equipment = p.equipment || {};
+      if (!p.equipment[def.slot]) {
+        p.equipment[def.slot] = equipId;
+      }
+      this._saveLocalProfile(p);
+      return this._formatProfile(p);
+    }
+    async equipItem(equipId) {
+      if (this.isOnline) {
+        try {
+          const res = await fetch(`${API_BASE}/api/equipment/equip`, {
+            method: "POST",
+            headers: this._authHeaders(),
+            body: JSON.stringify({ nickname: this.nickname, equipId })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) return json.profile;
+          }
+        } catch {
+        }
+      }
+      const p = this._getLocalProfile(this.nickname);
+      const def = EQUIPMENT_DEF[equipId];
+      if (!def) throw new Error("Oggetto non valido");
+      if (!p.craftedItems || !p.craftedItems.includes(equipId)) {
+        throw new Error("Non possiedi questo oggetto!");
+      }
+      p.equipment = p.equipment || {};
+      p.equipment[def.slot] = equipId;
+      this._saveLocalProfile(p);
+      return this._formatProfile(p);
+    }
+    async unequipItem(slot) {
+      if (this.isOnline) {
+        try {
+          const res = await fetch(`${API_BASE}/api/equipment/unequip`, {
+            method: "POST",
+            headers: this._authHeaders(),
+            body: JSON.stringify({ nickname: this.nickname, slot })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) return json.profile;
+          }
+        } catch {
+        }
+      }
+      const p = this._getLocalProfile(this.nickname);
+      p.equipment = p.equipment || {};
+      p.equipment[slot] = null;
+      this._saveLocalProfile(p);
+      return this._formatProfile(p);
+    }
+    async refineResource(recipeId, quantity = 1) {
+      if (this.isOnline) {
+        try {
+          const res = await fetch(`${API_BASE}/api/blacksmith/refine`, {
+            method: "POST",
+            headers: this._authHeaders(),
+            body: JSON.stringify({ nickname: this.nickname, recipeId, quantity })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) return json.profile;
+          }
+        } catch (err) {
+          console.warn("Errore server raffinazione, fallback offline:", err);
+        }
+      }
+      const p = this._getLocalProfile(this.nickname);
+      const recipe = REFINING_RECIPES.find((r) => r.id === recipeId);
+      if (!recipe) throw new Error("Ricetta non valida");
+      const times = Math.max(1, Math.min(50, Math.floor(quantity)));
+      const totalGold = (recipe.goldCost || 0) * times;
+      if (p.gold < totalGold) throw new Error(`Oro insufficiente: servono ${totalGold} oro`);
+      for (const [mId, req] of Object.entries(recipe.inputs)) {
+        const totalReq = req * times;
+        if ((p.inventory[mId] || 0) < totalReq) {
+          const matDef = MATERIALS_DEF[mId] || { name: mId };
+          throw new Error(`Materiali insufficienti: servono ${totalReq}x ${matDef.name}`);
+        }
+      }
+      p.gold -= totalGold;
+      for (const [mId, req] of Object.entries(recipe.inputs)) {
+        p.inventory[mId] = Math.max(0, (p.inventory[mId] || 0) - req * times);
+      }
+      const outId = recipe.output.itemId;
+      const outAmt = (recipe.output.count || 1) * times;
+      p.inventory[outId] = (p.inventory[outId] || 0) + outAmt;
+      this._saveLocalProfile(p);
+      return this._formatProfile(p);
+    }
+    async salvageItem(equipId) {
+      if (this.isOnline) {
+        try {
+          const res = await fetch(`${API_BASE}/api/blacksmith/salvage`, {
+            method: "POST",
+            headers: this._authHeaders(),
+            body: JSON.stringify({ nickname: this.nickname, equipId })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) return json.profile;
+          }
+        } catch (err) {
+          console.warn("Errore server salvage, fallback offline:", err);
+        }
+      }
+      const p = this._getLocalProfile(this.nickname);
+      const def = EQUIPMENT_DEF[equipId];
+      if (!def) throw new Error("Oggetto non valido");
+      const idx = (p.craftedItems || []).indexOf(equipId);
+      if (idx === -1) throw new Error("Non possiedi questo oggetto!");
+      p.craftedItems.splice(idx, 1);
+      if (p.equipment && p.equipment[def.slot] === equipId) {
+        if (!p.craftedItems.includes(equipId)) {
+          p.equipment[def.slot] = null;
+        }
+      }
+      if (def.salvageYield) {
+        for (const [mId, count] of Object.entries(def.salvageYield)) {
+          p.inventory[mId] = (p.inventory[mId] || 0) + count;
+        }
+      }
       this._saveLocalProfile(p);
       return this._formatProfile(p);
     }
@@ -5166,6 +6831,22 @@
     const btnCloseTeleport = document.getElementById("btn-close-teleport");
     const btnResumeFromTeleport = document.getElementById("btn-resume-from-teleport");
     const teleportDestinationsList = document.getElementById("teleport-destinations-list");
+    const bsTabBtnCraft = document.getElementById("bs-tab-btn-craft");
+    const bsTabBtnRefine = document.getElementById("bs-tab-btn-refine");
+    const bsTabBtnSalvage = document.getElementById("bs-tab-btn-salvage");
+    const bsTabBtnHero = document.getElementById("bs-tab-btn-hero");
+    const bsTabCraft = document.getElementById("bs-tab-craft");
+    const bsTabRefine = document.getElementById("bs-tab-refine");
+    const bsTabSalvage = document.getElementById("bs-tab-salvage");
+    const bsTabHero = document.getElementById("bs-tab-hero");
+    const blacksmithRefineContainer = document.getElementById("blacksmith-refine-container");
+    const blacksmithSalvageContainer = document.getElementById("blacksmith-salvage-container");
+    const blacksmithHeroContainer = document.getElementById("blacksmith-hero-container");
+    const ingameTabBtnEquipment = document.getElementById("ingame-tab-btn-equipment");
+    const ingameTabEquipment = document.getElementById("ingame-tab-equipment");
+    const ingameHeroContainer = document.getElementById("ingame-hero-container");
+    let currentCraftCategory = "all";
+    let currentBsTab = "craft";
     let gameState = "MENU";
     let currentProfile = null;
     let runSurvivalSeconds = 0;
@@ -5190,7 +6871,10 @@
         isMouseDown = true;
         if (gameState === "PLAYING" && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen && !isTeleportOpen) {
           const aim = camera.screenToWorld(e.clientX, e.clientY, canvas);
-          handleWorldClickInteraction(aim);
+          const didInteract = handleWorldClickInteraction(aim);
+          if (didInteract) {
+            isMouseDown = false;
+          }
         }
       }
     });
@@ -5746,27 +7430,282 @@
         ingameForgeContainer.appendChild(card);
       });
     }
-    function renderBlacksmithForge(bs) {
+    function renderHeroOverview(container) {
+      if (!container || !currentProfile) return;
+      container.innerHTML = "";
+      const stats = currentProfile.calculatedStats || {};
+      const eq = currentProfile.equippedPieces || {};
+      const equippedWeaponDef = WEAPONS_DEF[combat.weaponId] || WEAPONS_DEF.staff;
+      const weaponLvl = currentProfile.weapons && currentProfile.weapons[combat.weaponId] || 1;
+      const overview = document.createElement("div");
+      overview.className = "hero-overview-container";
+      const paperdollBox = document.createElement("div");
+      paperdollBox.className = "hero-paperdoll-box";
+      paperdollBox.innerHTML = `
+      <div style="font-size: 13px; font-weight: 800; color: #fde047; text-align: center;">\u{1F464} Slot Equipaggiamento</div>
+      <div class="hero-paperdoll-grid">
+        <!-- RIGA 1: Vuoto, Elmo, Amuleto -->
+        <div style="opacity: 0;"></div>
+        <div class="paperdoll-slot ${eq.helmet ? "equipped rarity-" + (eq.helmet.rarity || "common").toLowerCase() : ""}" data-slot="helmet" title="${eq.helmet ? eq.helmet.name + " (Clicca per rimuovere)" : "Slot Elmo (Vuoto)"}">
+          <div class="${eq.helmet ? "paperdoll-item-icon" : "paperdoll-placeholder-icon"}">${eq.helmet ? eq.helmet.icon : "\u{1FA96}"}</div>
+          <div class="paperdoll-slot-label">${eq.helmet ? eq.helmet.name.slice(0, 10) : "Elmo"}</div>
+        </div>
+        <div class="paperdoll-slot ${eq.amulet ? "equipped rarity-" + (eq.amulet.rarity || "common").toLowerCase() : ""}" data-slot="amulet" title="${eq.amulet ? eq.amulet.name + " (Clicca per rimuovere)" : "Slot Amuleto (Vuoto)"}">
+          <div class="${eq.amulet ? "paperdoll-item-icon" : "paperdoll-placeholder-icon"}">${eq.amulet ? eq.amulet.icon : "\u{1F4FF}"}</div>
+          <div class="paperdoll-slot-label">${eq.amulet ? eq.amulet.name.slice(0, 10) : "Amuleto"}</div>
+        </div>
+
+        <!-- RIGA 2: Arma, Corazza, Anello -->
+        <div class="paperdoll-slot equipped" data-slot="weapon" title="${equippedWeaponDef.name} Lv.${weaponLvl}">
+          <div class="paperdoll-item-icon">${equippedWeaponDef.icon}</div>
+          <div class="paperdoll-slot-label">Arma (Lv.${weaponLvl})</div>
+        </div>
+        <div class="paperdoll-slot ${eq.armor ? "equipped rarity-" + (eq.armor.rarity || "common").toLowerCase() : ""}" data-slot="armor" title="${eq.armor ? eq.armor.name + " (Clicca per rimuovere)" : "Slot Corazza (Vuoto)"}">
+          <div class="${eq.armor ? "paperdoll-item-icon" : "paperdoll-placeholder-icon"}">${eq.armor ? eq.armor.icon : "\u{1F6E1}\uFE0F"}</div>
+          <div class="paperdoll-slot-label">${eq.armor ? eq.armor.name.slice(0, 10) : "Corazza"}</div>
+        </div>
+        <div class="paperdoll-slot ${eq.ring ? "equipped rarity-" + (eq.ring.rarity || "common").toLowerCase() : ""}" data-slot="ring" title="${eq.ring ? eq.ring.name + " (Clicca per rimuovere)" : "Slot Anello (Vuoto)"}">
+          <div class="${eq.ring ? "paperdoll-item-icon" : "paperdoll-placeholder-icon"}">${eq.ring ? eq.ring.icon : "\u{1F48D}"}</div>
+          <div class="paperdoll-slot-label">${eq.ring ? eq.ring.name.slice(0, 10) : "Anello"}</div>
+        </div>
+
+        <!-- RIGA 3: Vuoto, Stivali, Vuoto -->
+        <div style="opacity: 0;"></div>
+        <div class="paperdoll-slot ${eq.boots ? "equipped rarity-" + (eq.boots.rarity || "common").toLowerCase() : ""}" data-slot="boots" title="${eq.boots ? eq.boots.name + " (Clicca per rimuovere)" : "Slot Stivali (Vuoto)"}">
+          <div class="${eq.boots ? "paperdoll-item-icon" : "paperdoll-placeholder-icon"}">${eq.boots ? eq.boots.icon : "\u{1F97E}"}</div>
+          <div class="paperdoll-slot-label">${eq.boots ? eq.boots.name.slice(0, 10) : "Stivali"}</div>
+        </div>
+        <div style="opacity: 0;"></div>
+      </div>
+      <div style="font-size: 10px; color: #94a3b8; text-align: center;">\u{1F4A1} Clicca su uno slot equipaggiato per rimuoverlo</div>
+    `;
+      paperdollBox.querySelectorAll(".paperdoll-slot").forEach((el) => {
+        const slot = el.dataset.slot;
+        if (slot && slot !== "weapon" && eq[slot]) {
+          el.addEventListener("click", async () => {
+            try {
+              currentProfile = await API.unequipItem(slot);
+              player.applyPermanentStats(currentProfile.calculatedStats);
+              showWeaponNotification(`\u{1F6E1}\uFE0F Rimosso ${eq[slot].name}!`);
+              renderHeroOverview(container);
+              if (activeBlacksmith) renderBlacksmithCraft(currentCraftCategory, activeBlacksmith);
+            } catch (err) {
+              alert(err.message);
+            }
+          });
+        }
+      });
+      const statsPanel = document.createElement("div");
+      statsPanel.className = "hero-stats-panel";
+      statsPanel.innerHTML = `
+      <div class="hero-stats-title">\u2694\uFE0F Parametri Combattivi Totali</div>
+      <div class="hero-stat-row"><span>\u{1F49A} Salute Massima:</span><span class="hero-stat-val">${player.maxHp} HP</span></div>
+      <div class="hero-stat-row"><span>\u{1F6E1}\uFE0F Difesa Totale:</span><span class="hero-stat-val">${stats.defense || 0} (${stats.damageReductionPercent || 0}% Riduzione Danno)</span></div>
+      <div class="hero-stat-row"><span>\u{1F5E1}\uFE0F Danno Bonus Armi:</span><span class="hero-stat-val">+${stats.bonusDamage || 0}</span></div>
+      <div class="hero-stat-row"><span>\u26A1 Velocit\xE0 di Corsa:</span><span class="hero-stat-val">+${stats.speedBonusPercent || 0}%</span></div>
+      <div class="hero-stat-row"><span>\u{1F4A5} Colpo Critico:</span><span class="hero-stat-val">${stats.critChance || 0}% (+${stats.critDamage || 50}% Danno)</span></div>
+      <div class="hero-stat-row"><span>\u{1F33F} Rigenerazione Salute:</span><span class="hero-stat-val">+${stats.hpRegen || 0} HP / sec</span></div>
+      <div class="hero-stat-row"><span>\u{1FA78} Furto Vitale (Life Steal):</span><span class="hero-stat-val">${stats.lifeSteal || 0}%</span></div>
+      <div class="hero-stat-row"><span>\u{1F4A8} Schivata Completa:</span><span class="hero-stat-val">${stats.dodgeChance || 0}%</span></div>
+      <div class="hero-stat-row"><span>\u23F1\uFE0F Riduzione Ricarica Armi:</span><span class="hero-stat-val">-${Math.round((stats.cooldownReduction || 0) * 100)}%</span></div>
+      <div class="hero-stat-row"><span>\u{1F30A} Cammina su Acqua & Guadi:</span><span class="hero-stat-val" style="color: ${stats.ignoreWaterSlow ? "#4ade80" : "#94a3b8"};">${stats.ignoreWaterSlow ? "\u2705 Piena Velocit\xE0" : "\u274C Rallentato (-40%)"}</span></div>
+    `;
+      overview.appendChild(paperdollBox);
+      overview.appendChild(statsPanel);
+      container.appendChild(overview);
+      const ownedBox = document.createElement("div");
+      ownedBox.style.marginTop = "14px";
+      ownedBox.innerHTML = `<div style="font-size: 13px; font-weight: 800; color: #fde047; margin-bottom: 8px;">\u{1F392} Oggetti Forgiati in Archivio (${currentProfile.craftedItems?.length || 0})</div>`;
+      const ownedGrid = document.createElement("div");
+      ownedGrid.className = "weapons-grid";
+      if (!currentProfile.craftedItems || currentProfile.craftedItems.length === 0) {
+        ownedGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 18px; text-align: center; color: #64748b; font-size: 12px; font-style: italic;">Non possiedi ancora oggetti forgiati. Forgiane uno dal Fabbro!</div>`;
+      } else {
+        currentProfile.craftedItems.forEach((eqId) => {
+          const def = EQUIPMENT_DEF[eqId];
+          if (!def) return;
+          const isEq = currentProfile.equipment && currentProfile.equipment[def.slot] === eqId;
+          const card = document.createElement("div");
+          const rarityClass = "rarity-" + (def.rarity || "common").toLowerCase();
+          card.className = `equip-card ${rarityClass} ${isEq ? "equipped" : ""}`;
+          let statsHtml = "";
+          if (def.stats) {
+            for (const [k, v] of Object.entries(def.stats)) {
+              if (!v) continue;
+              let label = k;
+              if (k === "maxHp") label = `+${v} Salute Massima`;
+              else if (k === "defense") label = `+${v} Difesa`;
+              else if (k === "bonusDamage") label = `+${v} Danno`;
+              else if (k === "speedBonus") label = `+${v}% Velocit\xE0`;
+              else if (k === "critChance") label = `+${v}% Critico`;
+              else if (k === "hpRegen") label = `+${v} HP/s Rigenerazione`;
+              else if (k === "lifeSteal") label = `+${v}% Furto Vitale`;
+              else if (k === "dodgeChance") label = `+${v}% Schivata`;
+              else if (k === "ignoreWaterSlow") label = `Cammina sull'acqua senza rallentare`;
+              statsHtml += `<div class="equip-stat-item">\u2726 ${label}</div>`;
+            }
+          }
+          card.innerHTML = `
+          <div>
+            <div class="equip-head">
+              <div class="equip-icon-box" style="border-color: ${def.color};">${def.icon}</div>
+              <div class="equip-meta">
+                <div class="equip-name" style="color: ${def.color};">${def.name}</div>
+                <div class="equip-tags">
+                  <span class="tag-slot">${def.slot.toUpperCase()}</span>
+                  <span class="tag-rarity" style="color: ${def.color}; border: 1px solid ${def.color};">${def.rarity}</span>
+                </div>
+              </div>
+            </div>
+            <div class="equip-stats-box">${statsHtml}</div>
+          </div>
+          <button class="btn-craft-action primary btn-toggle-equip" style="margin-top: 8px;">
+            ${isEq ? "\u2713 Equipaggiato (Clicca per rimuovere)" : "\u{1F6E1}\uFE0F Equipaggia Pezzo"}
+          </button>
+        `;
+          const btnToggle = card.querySelector(".btn-toggle-equip");
+          btnToggle?.addEventListener("click", async () => {
+            try {
+              if (isEq) {
+                currentProfile = await API.unequipItem(def.slot);
+                showWeaponNotification(`Rimosso ${def.name}`);
+              } else {
+                currentProfile = await API.equipItem(def.id);
+                showWeaponNotification(`Equipaggiato ${def.name}!`);
+              }
+              player.applyPermanentStats(currentProfile.calculatedStats);
+              renderHeroOverview(container);
+              if (activeBlacksmith) renderBlacksmithCraft(currentCraftCategory, activeBlacksmith);
+            } catch (err) {
+              alert(err.message);
+            }
+          });
+          ownedGrid.appendChild(card);
+        });
+      }
+      ownedBox.appendChild(ownedGrid);
+      container.appendChild(ownedBox);
+    }
+    function renderBlacksmithCraft(category = "all", bs) {
       if (!blacksmithForgeContainer || !currentProfile) return;
       blacksmithForgeContainer.innerHTML = "";
-      currentProfile.weaponsCatalog.forEach((w) => {
-        const card = document.createElement("div");
-        card.className = `weapon-card ${w.isEquipped ? "equipped" : ""}`;
-        let reqHtml = "";
-        let canAfford = false;
-        if (w.isMaxLevel) {
-          reqHtml = `<div class="weapon-req-box" style="color: #4ade80; text-align: center; font-weight: 700;">\u2605 Grado Massimo (LV 5)</div>`;
-        } else if (w.nextCost) {
-          const goldHas = currentProfile.gold >= (w.nextCost.gold || 0);
-          let matsOk = true;
-          let matsRows = "";
-          if (w.nextCost.materials) {
-            for (const [matId, reqAmt] of Object.entries(w.nextCost.materials)) {
-              const owned = (currentProfile.inventory && currentProfile.inventory[matId] || 0) + (combat.collectedItems && combat.collectedItems[matId] || 0);
+      currentCraftCategory = category;
+      document.querySelectorAll(".craft-filter-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.category === category);
+      });
+      if (category === "all" || category === "weapon") {
+        currentProfile.weaponsCatalog.forEach((w) => {
+          const card = document.createElement("div");
+          card.className = `weapon-card ${w.isEquipped ? "equipped" : ""}`;
+          let reqHtml = "";
+          let canAfford = false;
+          if (w.isMaxLevel) {
+            reqHtml = `<div class="weapon-req-box" style="color: #4ade80; text-align: center; font-weight: 700;">\u2605 Grado Massimo (LV 5)</div>`;
+          } else if (w.nextCost) {
+            const goldHas = currentProfile.gold >= (w.nextCost.gold || 0);
+            let matsOk = true;
+            let matsRows = "";
+            if (w.nextCost.materials) {
+              for (const [matId, reqAmt] of Object.entries(w.nextCost.materials)) {
+                const owned = (currentProfile.inventory && currentProfile.inventory[matId] || 0) + (combat.collectedItems && combat.collectedItems[matId] || 0);
+                const hasEnough = owned >= reqAmt;
+                if (!hasEnough) matsOk = false;
+                const matDef = MATERIALS_DEF[matId] || { name: matId, icon: "\u{1F4E6}" };
+                matsRows += `
+                <div class="req-item ${hasEnough ? "has" : "missing"}">
+                  <span>${matDef.icon} ${matDef.name}:</span>
+                  <span>${owned} / ${reqAmt}</span>
+                </div>
+              `;
+              }
+            }
+            canAfford = goldHas && matsOk;
+            reqHtml = `
+            <div class="weapon-req-box">
+              <div class="weapon-req-title">${w.isUnlocked ? "Requisiti Tempra:" : "Materiali Forgiatura:"}</div>
+              <div class="req-item ${goldHas ? "has" : "missing"}">
+                <span>\u{1FA99} Oro:</span>
+                <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
+              </div>
+              ${matsRows}
+              <div style="margin-top: 6px; font-size: 11px; color: #38bdf8; font-weight: 600;">\u2728 ${w.nextBenefit}</div>
+            </div>
+          `;
+          }
+          card.innerHTML = `
+          <div class="weapon-head">
+            <div class="weapon-icon">${w.icon}</div>
+            <div>
+              <div class="weapon-title">${w.name}</div>
+              <div class="weapon-type-tag">Grado Attuale: Livello ${w.currentLevel} / ${w.maxLevel}</div>
+            </div>
+          </div>
+          <div style="margin: 8px 0;">${reqHtml}</div>
+          <button class="btn-forge" ${!canAfford ? "disabled" : ""} style="width: 100%;">
+            \u{1F528} ${w.isUnlocked ? `Tempra a Livello ${w.currentLevel + 1}` : "Forgia Nuova Arma"}
+          </button>
+        `;
+          const btnForge = card.querySelector(".btn-forge");
+          if (btnForge && canAfford) {
+            btnForge.addEventListener("click", async () => {
+              try {
+                currentProfile = await API.craftOrUpgradeWeapon(w.id);
+                FX.burst(player.x, player.y, "#f59e0b", 24, 120);
+                showWeaponNotification(`\u{1F528} ${w.name} lavorata con successo da ${bs.name}!`);
+                renderBlacksmithCraft(currentCraftCategory, bs);
+                renderIngameForge();
+                renderIngameWeapons();
+                equipWeapon(combat.weaponId);
+              } catch (err) {
+                alert(err.message);
+              }
+            });
+          }
+          blacksmithForgeContainer.appendChild(card);
+        });
+      }
+      if (category !== "weapon") {
+        const filtered = (currentProfile.equipmentCatalog || []).filter((item) => {
+          if (category === "all") return true;
+          if (category === "jewelry") return item.slot === "amulet" || item.slot === "ring";
+          return item.slot === category;
+        });
+        filtered.forEach((eq) => {
+          const card = document.createElement("div");
+          const rarityClass = "rarity-" + (eq.rarity || "common").toLowerCase();
+          card.className = `equip-card ${rarityClass} ${eq.isEquipped ? "equipped" : ""}`;
+          let statsHtml = "";
+          if (eq.stats) {
+            for (const [k, v] of Object.entries(eq.stats)) {
+              if (!v) continue;
+              let label = k;
+              if (k === "maxHp") label = `+${v} Salute Massima`;
+              else if (k === "defense") label = `+${v} Difesa`;
+              else if (k === "bonusDamage") label = `+${v} Danno`;
+              else if (k === "speedBonus") label = `+${v}% Velocit\xE0`;
+              else if (k === "critChance") label = `+${v}% Critico`;
+              else if (k === "hpRegen") label = `+${v} HP/s Rigenerazione`;
+              else if (k === "lifeSteal") label = `+${v}% Furto Vitale`;
+              else if (k === "dodgeChance") label = `+${v}% Schivata`;
+              else if (k === "ignoreWaterSlow") label = `Cammina sull'acqua senza rallentare`;
+              statsHtml += `<div class="equip-stat-item">\u2726 ${label}</div>`;
+            }
+          }
+          let reqRows = "";
+          let canAfford = currentProfile.gold >= (eq.craftCost?.gold || 0);
+          reqRows += `
+          <div class="req-item ${currentProfile.gold >= (eq.craftCost?.gold || 0) ? "has" : "missing"}">
+            <span>\u{1FA99} Oro:</span>
+            <span>${currentProfile.gold} / ${eq.craftCost?.gold || 0}</span>
+          </div>
+        `;
+          if (eq.craftCost?.materials) {
+            for (const [mId, reqAmt] of Object.entries(eq.craftCost.materials)) {
+              const owned = (currentProfile.inventory && currentProfile.inventory[mId] || 0) + (combat.collectedItems && combat.collectedItems[mId] || 0);
               const hasEnough = owned >= reqAmt;
-              if (!hasEnough) matsOk = false;
-              const matDef = MATERIALS_DEF[matId] || { name: matId, icon: "\u{1F4E6}" };
-              matsRows += `
+              if (!hasEnough) canAfford = false;
+              const matDef = MATERIALS_DEF[mId] || { name: mId, icon: "\u{1F4E6}" };
+              reqRows += `
               <div class="req-item ${hasEnough ? "has" : "missing"}">
                 <span>${matDef.icon} ${matDef.name}:</span>
                 <span>${owned} / ${reqAmt}</span>
@@ -5774,50 +7713,193 @@
             `;
             }
           }
-          canAfford = goldHas && matsOk;
-          reqHtml = `
-          <div class="weapon-req-box">
-            <div class="weapon-req-title">${w.isUnlocked ? "Requisiti Tempra:" : "Materiali Forgiatura:"}</div>
-            <div class="req-item ${goldHas ? "has" : "missing"}">
-              <span>\u{1FA99} Oro:</span>
-              <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
+          card.innerHTML = `
+          <div>
+            <div class="equip-head">
+              <div class="equip-icon-box" style="border-color: ${eq.color};">${eq.icon}</div>
+              <div class="equip-meta">
+                <div class="equip-name" style="color: ${eq.color};">${eq.name}</div>
+                <div class="equip-tags">
+                  <span class="tag-slot">${eq.slot.toUpperCase()}</span>
+                  <span class="tag-rarity" style="color: ${eq.color}; border: 1px solid ${eq.color};">${eq.rarity}</span>
+                </div>
+              </div>
             </div>
-            ${matsRows}
-            <div style="margin-top: 6px; font-size: 11px; color: #38bdf8; font-weight: 600;">\u2728 ${w.nextBenefit}</div>
+            <div class="equip-desc">${eq.desc}</div>
+            <div class="equip-stats-box">${statsHtml}</div>
+            <div class="weapon-req-box">${reqRows}</div>
+          </div>
+          <button class="btn-craft-action primary btn-craft-item" ${!canAfford ? "disabled" : ""} style="margin-top: 10px;">
+            \u{1F528} Forgia ${eq.name}
+          </button>
+        `;
+          const btnCraft = card.querySelector(".btn-craft-item");
+          if (btnCraft && canAfford) {
+            btnCraft.addEventListener("click", async () => {
+              try {
+                currentProfile = await API.craftEquipment(eq.id);
+                player.applyPermanentStats(currentProfile.calculatedStats);
+                FX.burst(player.x, player.y, eq.color || "#f59e0b", 24, 130);
+                showWeaponNotification(`\u{1F528} ${eq.name} forgiato con successo da ${bs.name}!`);
+                renderBlacksmithCraft(currentCraftCategory, bs);
+              } catch (err) {
+                alert(err.message);
+              }
+            });
+          }
+          blacksmithForgeContainer.appendChild(card);
+        });
+      }
+    }
+    function renderBlacksmithRefining(bs) {
+      if (!blacksmithRefineContainer || !currentProfile) return;
+      blacksmithRefineContainer.innerHTML = "";
+      (currentProfile.refiningCatalog || []).forEach((rec) => {
+        const card = document.createElement("div");
+        card.className = "refine-card";
+        let inputsHtml = "";
+        let canAfford1 = currentProfile.gold >= (rec.goldCost || 0);
+        for (const [mId, amt] of Object.entries(rec.inputs)) {
+          const owned = currentProfile.inventory && currentProfile.inventory[mId] || 0;
+          const hasEnough = owned >= amt;
+          if (!hasEnough) canAfford1 = false;
+          const inDef = MATERIALS_DEF[mId] || { name: mId, icon: "\u{1F4E6}" };
+          inputsHtml += `
+          <div class="refine-item-token" style="color: ${hasEnough ? "#e2e8f0" : "#f87171"};">
+            ${inDef.icon} ${inDef.name}: <b>${owned}/${amt}</b>
           </div>
         `;
         }
+        const outDef = rec.outputDef;
         card.innerHTML = `
-        <div class="weapon-head">
-          <div class="weapon-icon">${w.icon}</div>
-          <div>
-            <div class="weapon-title">${w.name}</div>
-            <div class="weapon-type-tag">Grado Attuale: Livello ${w.currentLevel} / ${w.maxLevel}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 13.5px; font-weight: 800; color: #f8fafc;">${rec.name}</div>
+          <div style="font-size: 11px; color: #fde047; font-weight: 700;">\u{1FA99} ${rec.goldCost} oro</div>
+        </div>
+        <div style="font-size: 11px; color: #94a3b8; font-style: italic;">${rec.desc}</div>
+        <div class="refine-recipe-flow">
+          <div class="refine-side">${inputsHtml}</div>
+          <div class="refine-arrow">\u2794</div>
+          <div class="refine-side" style="align-items: center;">
+            <div style="font-size: 26px;">${outDef.icon}</div>
+            <div style="font-size: 11px; font-weight: 800; color: ${outDef.color || "#38bdf8"};">+${rec.output.count} ${outDef.name}</div>
           </div>
         </div>
-        <div style="margin: 8px 0;">${reqHtml}</div>
-        <button class="btn-forge" ${!canAfford ? "disabled" : ""} style="width: 100%;">
-          \u{1F528} ${w.isUnlocked ? `Tempra a Livello ${w.currentLevel + 1}` : "Forgia Nuova Arma"}
+        <div class="refine-actions-row">
+          <button class="btn-craft-action primary btn-refine-1" ${!canAfford1 ? "disabled" : ""} style="flex: 1;">
+            \u2728 Raffina 1x
+          </button>
+          <button class="btn-craft-action primary btn-refine-5" ${!canAfford1 ? "disabled" : ""} style="flex: 1;">
+            \u2728 Raffina 5x
+          </button>
+        </div>
+      `;
+        const btn1 = card.querySelector(".btn-refine-1");
+        btn1?.addEventListener("click", async () => {
+          try {
+            currentProfile = await API.refineResource(rec.id, 1);
+            FX.burst(player.x, player.y, outDef.color || "#38bdf8", 18, 100);
+            showWeaponNotification(`\u2728 Raffinato 1x ${outDef.name}!`);
+            renderBlacksmithRefining(bs);
+            renderIngameLoot();
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+        const btn5 = card.querySelector(".btn-refine-5");
+        btn5?.addEventListener("click", async () => {
+          try {
+            currentProfile = await API.refineResource(rec.id, 5);
+            FX.burst(player.x, player.y, outDef.color || "#38bdf8", 26, 140);
+            showWeaponNotification(`\u2728 Raffinato 5x ${outDef.name}!`);
+            renderBlacksmithRefining(bs);
+            renderIngameLoot();
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+        blacksmithRefineContainer.appendChild(card);
+      });
+    }
+    function renderBlacksmithSalvage(bs) {
+      if (!blacksmithSalvageContainer || !currentProfile) return;
+      blacksmithSalvageContainer.innerHTML = "";
+      const salvageable = (currentProfile.salvageCatalog || []).filter((item) => !item.isEquipped);
+      if (salvageable.length === 0) {
+        blacksmithSalvageContainer.innerHTML = `
+        <div style="grid-column: 1/-1; padding: 24px; text-align: center; color: #64748b; font-size: 13px; font-style: italic;">
+          Non possiedi pezzi forgiati non equipaggiati da smantellare.<br>
+          Forgia armature dal Fabbro o rimuovi quelle equipaggiate nella Scheda Eroe per poterle riciclare!
+        </div>
+      `;
+        return;
+      }
+      salvageable.forEach((item) => {
+        const card = document.createElement("div");
+        const rarityClass = "rarity-" + (item.rarity || "common").toLowerCase();
+        card.className = `salvage-card ${rarityClass}`;
+        let yieldHtml = "";
+        if (item.salvageYield) {
+          for (const [mId, count] of Object.entries(item.salvageYield)) {
+            const matDef = MATERIALS_DEF[mId] || { name: mId, icon: "\u{1F4E6}" };
+            yieldHtml += `<div>\u2726 +${count}x ${matDef.icon} ${matDef.name}</div>`;
+          }
+        }
+        card.innerHTML = `
+        <div class="equip-head">
+          <div class="equip-icon-box" style="border-color: ${item.color};">${item.icon}</div>
+          <div class="equip-meta">
+            <div class="equip-name" style="color: ${item.color};">${item.name}</div>
+            <div class="equip-tags">
+              <span class="tag-slot">${(item.slot || "equip").toUpperCase()}</span>
+              <span class="tag-rarity" style="color: ${item.color}; border: 1px solid ${item.color};">${item.rarity}</span>
+            </div>
+          </div>
+        </div>
+        <div class="salvage-yield-box">
+          <div style="font-size: 10px; color: #94a3b8; margin-bottom: 2px;">MATERIALI RECUPERATI:</div>
+          ${yieldHtml}
+        </div>
+        <button class="btn-craft-action btn-do-salvage" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: #fff;">
+          \u267B\uFE0F Smantella & Ricicla
         </button>
       `;
-        const btnForge = card.querySelector(".btn-forge");
-        if (btnForge && canAfford) {
-          btnForge.addEventListener("click", async () => {
-            try {
-              currentProfile = await API.craftOrUpgradeWeapon(w.id);
-              FX.burst(player.x, player.y, "#f59e0b", 24, 120);
-              showWeaponNotification(`\u{1F528} ${w.name} lavorata con successo da ${bs.name}!`);
-              renderBlacksmithForge(bs);
-              renderIngameForge();
-              renderIngameWeapons();
-              equipWeapon(combat.weaponId);
-            } catch (err) {
-              alert(err.message);
-            }
-          });
-        }
-        blacksmithForgeContainer.appendChild(card);
+        const btnSal = card.querySelector(".btn-do-salvage");
+        btnSal?.addEventListener("click", async () => {
+          try {
+            currentProfile = await API.salvageItem(item.id);
+            FX.burst(player.x, player.y, "#ef4444", 20, 110);
+            showWeaponNotification(`\u267B\uFE0F ${item.name} smantellato con successo!`);
+            renderBlacksmithSalvage(bs);
+            renderIngameLoot();
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+        blacksmithSalvageContainer.appendChild(card);
       });
+    }
+    function switchBlacksmithTab(tabName) {
+      currentBsTab = tabName;
+      [bsTabBtnCraft, bsTabBtnRefine, bsTabBtnSalvage, bsTabBtnHero].forEach((b) => b?.classList.remove("active"));
+      [bsTabCraft, bsTabRefine, bsTabSalvage, bsTabHero].forEach((p) => p?.classList.remove("active"));
+      if (tabName === "refine") {
+        bsTabBtnRefine?.classList.add("active");
+        bsTabRefine?.classList.add("active");
+        renderBlacksmithRefining(activeBlacksmith);
+      } else if (tabName === "salvage") {
+        bsTabBtnSalvage?.classList.add("active");
+        bsTabSalvage?.classList.add("active");
+        renderBlacksmithSalvage(activeBlacksmith);
+      } else if (tabName === "hero") {
+        bsTabBtnHero?.classList.add("active");
+        bsTabHero?.classList.add("active");
+        renderHeroOverview(blacksmithHeroContainer);
+      } else {
+        bsTabBtnCraft?.classList.add("active");
+        bsTabCraft?.classList.add("active");
+        renderBlacksmithCraft(currentCraftCategory, activeBlacksmith);
+      }
     }
     function openBlacksmithModal(bs) {
       if (gameState !== "PLAYING") return;
@@ -5828,10 +7910,10 @@
       closeTeleportModal();
       isBlacksmithOpen = true;
       if (bsModalName) bsModalName.textContent = bs.name;
-      if (bsModalTitle) bsModalTitle.textContent = `${bs.title} \xB7 ${bs.villageName || "Villaggio"}`;
+      if (bsModalTitle) bsModalTitle.textContent = `${bs.title} \xB7 ${bs.villageName || bs.settlementName || "Villaggio"}`;
       if (bsModalQuote) bsModalQuote.textContent = `"${bs.quote}"`;
       blacksmithModal?.classList.remove("hidden");
-      renderBlacksmithForge(bs);
+      switchBlacksmithTab("craft");
     }
     function closeBlacksmithModal() {
       isBlacksmithOpen = false;
@@ -5940,9 +8022,22 @@
         if (nearbyBs) openBlacksmithModal(nearbyBs);
       });
     }
+    if (bsTabBtnCraft) bsTabBtnCraft.addEventListener("click", () => switchBlacksmithTab("craft"));
+    if (bsTabBtnRefine) bsTabBtnRefine.addEventListener("click", () => switchBlacksmithTab("refine"));
+    if (bsTabBtnSalvage) bsTabBtnSalvage.addEventListener("click", () => switchBlacksmithTab("salvage"));
+    if (bsTabBtnHero) bsTabBtnHero.addEventListener("click", () => switchBlacksmithTab("hero"));
+    document.querySelectorAll(".craft-filter-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        document.querySelectorAll(".craft-filter-btn").forEach((b) => b.classList.remove("active"));
+        const target = e.currentTarget;
+        target.classList.add("active");
+        currentCraftCategory = target.getAttribute("data-cat") || "all";
+        renderBlacksmithCraft(currentCraftCategory, activeBlacksmith);
+      });
+    });
     function switchIngameTab(tabName) {
-      [ingameTabBtnLoot, ingameTabBtnTalents, ingameTabBtnForge, ingameTabBtnWeapons].forEach((b) => b?.classList.remove("active"));
-      [ingameTabLoot, ingameTabTalents, ingameTabForge, ingameTabWeapons].forEach((p) => p?.classList.remove("active"));
+      [ingameTabBtnLoot, ingameTabBtnTalents, ingameTabBtnForge, ingameTabBtnWeapons, ingameTabBtnEquipment].forEach((b) => b?.classList.remove("active"));
+      [ingameTabLoot, ingameTabTalents, ingameTabForge, ingameTabWeapons, ingameTabEquipment].forEach((p) => p?.classList.remove("active"));
       if (tabName === "loot") {
         ingameTabBtnLoot?.classList.add("active");
         ingameTabLoot?.classList.add("active");
@@ -5955,6 +8050,10 @@
         ingameTabBtnWeapons?.classList.add("active");
         ingameTabWeapons?.classList.add("active");
         renderIngameWeapons();
+      } else if (tabName === "equipment") {
+        ingameTabBtnEquipment?.classList.add("active");
+        ingameTabEquipment?.classList.add("active");
+        renderHeroOverview(ingameHeroContainer);
       } else {
         ingameTabBtnForge?.classList.add("active");
         ingameTabForge?.classList.add("active");
@@ -5986,6 +8085,7 @@
     if (ingameTabBtnTalents) ingameTabBtnTalents.addEventListener("click", () => switchIngameTab("talents"));
     if (ingameTabBtnForge) ingameTabBtnForge.addEventListener("click", () => switchIngameTab("forge"));
     if (ingameTabBtnWeapons) ingameTabBtnWeapons.addEventListener("click", () => switchIngameTab("weapons"));
+    if (ingameTabBtnEquipment) ingameTabBtnEquipment.addEventListener("click", () => switchIngameTab("equipment"));
     function renderMinimap() {
       if (!minimapCtx || !minimapCanvas || gameState !== "PLAYING") return;
       const w = minimapCanvas.width;
@@ -6569,6 +8669,23 @@
           return true;
         }
       }
+      const clickedNode = world.getResourceNodeAt(aimWorld.x, aimWorld.y, 36);
+      if (clickedNode) {
+        if (Math.hypot(player.x - clickedNode.x, player.y - clickedNode.y) <= 85) {
+          if (!clickedNode.isDepleted) {
+            if (!clickedNode.isHarvesting) {
+              clickedNode.startHarvest(player);
+              showWeaponNotification(`\u26CF\uFE0F Raccolta di ${clickedNode.def.name}... Resta vicino!`);
+            }
+          } else {
+            showWeaponNotification(`\u23F3 Questo giacimento \xE8 esaurito! Ricrescer\xE0 tra poco.`);
+          }
+          return true;
+        } else {
+          showWeaponNotification(`\u26CF\uFE0F Avvicinati a ${clickedNode.def.name} per raccogliere!`);
+          return true;
+        }
+      }
       return false;
     }
     function handleInteraction() {
@@ -6577,6 +8694,15 @@
         openBlacksmithModal(currentNearbyInteractable.data);
       } else if (currentNearbyInteractable.type === "waypoint") {
         openTeleportModal();
+      } else if (currentNearbyInteractable.type === "resource_node") {
+        const node = currentNearbyInteractable.data;
+        if (node.isHarvesting) {
+        } else if (node.isDepleted) {
+          showWeaponNotification(`\u23F3 Questo giacimento \xE8 esaurito! Ricrescer\xE0 tra poco.`);
+        } else {
+          node.startHarvest(player);
+          showWeaponNotification(`\u26CF\uFE0F Raccolta di ${node.def.name}... Resta vicino!`);
+        }
       } else if (currentNearbyInteractable.type === "chest") {
         const ch = currentNearbyInteractable.data;
         if (ch.isLocked && ch.poi && ch.poi.bossKind) {
@@ -6904,6 +9030,25 @@
                 };
               }
             }
+            if (!foundInteractable) {
+              const nearbyNode = world.getNearbyResourceNode(player.x, player.y, 75);
+              if (nearbyNode) {
+                if (nearbyNode.isHarvesting) {
+                  const pct = Math.round(nearbyNode.progress * 100);
+                  foundInteractable = {
+                    type: "resource_node",
+                    data: nearbyNode,
+                    label: `Estraendo ${nearbyNode.def.name}... (${pct}%)`
+                  };
+                } else if (!nearbyNode.isDepleted) {
+                  foundInteractable = {
+                    type: "resource_node",
+                    data: nearbyNode,
+                    label: `Estrai ${nearbyNode.def.name} (${nearbyNode.charges}/${nearbyNode.maxCharges}) [E o Click]`
+                  };
+                }
+              }
+            }
             currentNearbyInteractable = foundInteractable;
             if (hudInteractPrompt && hudInteractLabel) {
               if (foundInteractable && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen && !isTeleportOpen) {
@@ -6913,6 +9058,7 @@
                 hudInteractPrompt.classList.add("hidden");
               }
             }
+            world.updateResourceNodes(dt, player, combat);
             chests.forEach((ch) => ch.update(dt, player));
             mysteryPillars.forEach((p) => p.update(dt));
             enemyRespawnTimer += dt;

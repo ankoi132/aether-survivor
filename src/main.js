@@ -15,7 +15,7 @@ import { Chest } from './entities/chest.js';
 import { CombatSystem } from './systems/combat.js';
 import { ProgressionSystem } from './systems/progression.js';
 import { API } from './core/api.js';
-import { MATERIALS_DEF, WEAPONS_DEF } from './core/crafting.js';
+import { MATERIALS_DEF, WEAPONS_DEF, EQUIPMENT_DEF, REFINING_RECIPES } from './core/crafting.js';
 import { FX } from './core/fx.js';
 import { Tiles } from './world/tiles.js';
 import { Sprites } from './core/sprites.js';
@@ -178,6 +178,26 @@ window.addEventListener('DOMContentLoaded', async () => {
   const btnResumeFromTeleport = document.getElementById('btn-resume-from-teleport');
   const teleportDestinationsList = document.getElementById('teleport-destinations-list');
 
+  // Elementi Nuove Schede Fabbro & Equipaggiamento
+  const bsTabBtnCraft = document.getElementById('bs-tab-btn-craft');
+  const bsTabBtnRefine = document.getElementById('bs-tab-btn-refine');
+  const bsTabBtnSalvage = document.getElementById('bs-tab-btn-salvage');
+  const bsTabBtnHero = document.getElementById('bs-tab-btn-hero');
+  const bsTabCraft = document.getElementById('bs-tab-craft');
+  const bsTabRefine = document.getElementById('bs-tab-refine');
+  const bsTabSalvage = document.getElementById('bs-tab-salvage');
+  const bsTabHero = document.getElementById('bs-tab-hero');
+  const blacksmithRefineContainer = document.getElementById('blacksmith-refine-container');
+  const blacksmithSalvageContainer = document.getElementById('blacksmith-salvage-container');
+  const blacksmithHeroContainer = document.getElementById('blacksmith-hero-container');
+
+  const ingameTabBtnEquipment = document.getElementById('ingame-tab-btn-equipment');
+  const ingameTabEquipment = document.getElementById('ingame-tab-equipment');
+  const ingameHeroContainer = document.getElementById('ingame-hero-container');
+
+  let currentCraftCategory = 'all';
+  let currentBsTab = 'craft';
+
   // Stato Globale
   let gameState = 'MENU'; // 'MENU' | 'PLAYING' | 'GAMEOVER'
   let currentProfile = null;
@@ -205,10 +225,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   window.addEventListener('mousedown', (e) => {
     if (e.button === 0) {
       isMouseDown = true;
-      // Se clicchi sul canvas di gioco, verifica se stai cliccando su forziere, fabbro o runa
+      // Se clicchi sul canvas di gioco, verifica se stai cliccando su forziere, fabbro, nodo risorsa o portale
       if (gameState === 'PLAYING' && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen && !isTeleportOpen) {
         const aim = camera.screenToWorld(e.clientX, e.clientY, canvas);
-        handleWorldClickInteraction(aim);
+        const didInteract = handleWorldClickInteraction(aim);
+        if (didInteract) {
+          isMouseDown = false;
+        }
       }
     }
   });
@@ -856,32 +879,326 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // =========================================================================
+  // SCHEDA EROE, PAPERDOLL 6 SLOT & ATTRIBUTI DIABLO STYLE (Condiviso Fabbro/Zaino)
+  // =========================================================================
+  function renderHeroOverview(container) {
+    if (!container || !currentProfile) return;
+    container.innerHTML = '';
+
+    const stats = currentProfile.calculatedStats || {};
+    const eq = currentProfile.equippedPieces || {};
+    const equippedWeaponDef = WEAPONS_DEF[combat.weaponId] || WEAPONS_DEF.staff;
+    const weaponLvl = (currentProfile.weapons && currentProfile.weapons[combat.weaponId]) || 1;
+
+    const overview = document.createElement('div');
+    overview.className = 'hero-overview-container';
+
+    // 1. Paperdoll 6 Slot
+    const paperdollBox = document.createElement('div');
+    paperdollBox.className = 'hero-paperdoll-box';
+    paperdollBox.innerHTML = `
+      <div style="font-size: 13px; font-weight: 800; color: #fde047; text-align: center;">👤 Slot Equipaggiamento</div>
+      <div class="hero-paperdoll-grid">
+        <!-- RIGA 1: Vuoto, Elmo, Amuleto -->
+        <div style="opacity: 0;"></div>
+        <div class="paperdoll-slot ${eq.helmet ? 'equipped rarity-' + (eq.helmet.rarity || 'common').toLowerCase() : ''}" data-slot="helmet" title="${eq.helmet ? eq.helmet.name + ' (Clicca per rimuovere)' : 'Slot Elmo (Vuoto)'}">
+          <div class="${eq.helmet ? 'paperdoll-item-icon' : 'paperdoll-placeholder-icon'}">${eq.helmet ? eq.helmet.icon : '🪖'}</div>
+          <div class="paperdoll-slot-label">${eq.helmet ? eq.helmet.name.slice(0, 10) : 'Elmo'}</div>
+        </div>
+        <div class="paperdoll-slot ${eq.amulet ? 'equipped rarity-' + (eq.amulet.rarity || 'common').toLowerCase() : ''}" data-slot="amulet" title="${eq.amulet ? eq.amulet.name + ' (Clicca per rimuovere)' : 'Slot Amuleto (Vuoto)'}">
+          <div class="${eq.amulet ? 'paperdoll-item-icon' : 'paperdoll-placeholder-icon'}">${eq.amulet ? eq.amulet.icon : '📿'}</div>
+          <div class="paperdoll-slot-label">${eq.amulet ? eq.amulet.name.slice(0, 10) : 'Amuleto'}</div>
+        </div>
+
+        <!-- RIGA 2: Arma, Corazza, Anello -->
+        <div class="paperdoll-slot equipped" data-slot="weapon" title="${equippedWeaponDef.name} Lv.${weaponLvl}">
+          <div class="paperdoll-item-icon">${equippedWeaponDef.icon}</div>
+          <div class="paperdoll-slot-label">Arma (Lv.${weaponLvl})</div>
+        </div>
+        <div class="paperdoll-slot ${eq.armor ? 'equipped rarity-' + (eq.armor.rarity || 'common').toLowerCase() : ''}" data-slot="armor" title="${eq.armor ? eq.armor.name + ' (Clicca per rimuovere)' : 'Slot Corazza (Vuoto)'}">
+          <div class="${eq.armor ? 'paperdoll-item-icon' : 'paperdoll-placeholder-icon'}">${eq.armor ? eq.armor.icon : '🛡️'}</div>
+          <div class="paperdoll-slot-label">${eq.armor ? eq.armor.name.slice(0, 10) : 'Corazza'}</div>
+        </div>
+        <div class="paperdoll-slot ${eq.ring ? 'equipped rarity-' + (eq.ring.rarity || 'common').toLowerCase() : ''}" data-slot="ring" title="${eq.ring ? eq.ring.name + ' (Clicca per rimuovere)' : 'Slot Anello (Vuoto)'}">
+          <div class="${eq.ring ? 'paperdoll-item-icon' : 'paperdoll-placeholder-icon'}">${eq.ring ? eq.ring.icon : '💍'}</div>
+          <div class="paperdoll-slot-label">${eq.ring ? eq.ring.name.slice(0, 10) : 'Anello'}</div>
+        </div>
+
+        <!-- RIGA 3: Vuoto, Stivali, Vuoto -->
+        <div style="opacity: 0;"></div>
+        <div class="paperdoll-slot ${eq.boots ? 'equipped rarity-' + (eq.boots.rarity || 'common').toLowerCase() : ''}" data-slot="boots" title="${eq.boots ? eq.boots.name + ' (Clicca per rimuovere)' : 'Slot Stivali (Vuoto)'}">
+          <div class="${eq.boots ? 'paperdoll-item-icon' : 'paperdoll-placeholder-icon'}">${eq.boots ? eq.boots.icon : '🥾'}</div>
+          <div class="paperdoll-slot-label">${eq.boots ? eq.boots.name.slice(0, 10) : 'Stivali'}</div>
+        </div>
+        <div style="opacity: 0;"></div>
+      </div>
+      <div style="font-size: 10px; color: #94a3b8; text-align: center;">💡 Clicca su uno slot equipaggiato per rimuoverlo</div>
+    `;
+
+    // Click sullo slot per rimuoverlo (unequip)
+    paperdollBox.querySelectorAll('.paperdoll-slot').forEach(el => {
+      const slot = el.dataset.slot;
+      if (slot && slot !== 'weapon' && eq[slot]) {
+        el.addEventListener('click', async () => {
+          try {
+            currentProfile = await API.unequipItem(slot);
+            player.applyPermanentStats(currentProfile.calculatedStats);
+            showWeaponNotification(`🛡️ Rimosso ${eq[slot].name}!`);
+            renderHeroOverview(container);
+            if (activeBlacksmith) renderBlacksmithCraft(currentCraftCategory, activeBlacksmith);
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+      }
+    });
+
+    // 2. Pannello Statistiche Diablo
+    const statsPanel = document.createElement('div');
+    statsPanel.className = 'hero-stats-panel';
+    statsPanel.innerHTML = `
+      <div class="hero-stats-title">⚔️ Parametri Combattivi Totali</div>
+      <div class="hero-stat-row"><span>💚 Salute Massima:</span><span class="hero-stat-val">${player.maxHp} HP</span></div>
+      <div class="hero-stat-row"><span>🛡️ Difesa Totale:</span><span class="hero-stat-val">${stats.defense || 0} (${stats.damageReductionPercent || 0}% Riduzione Danno)</span></div>
+      <div class="hero-stat-row"><span>🗡️ Danno Bonus Armi:</span><span class="hero-stat-val">+${stats.bonusDamage || 0}</span></div>
+      <div class="hero-stat-row"><span>⚡ Velocità di Corsa:</span><span class="hero-stat-val">+${stats.speedBonusPercent || 0}%</span></div>
+      <div class="hero-stat-row"><span>💥 Colpo Critico:</span><span class="hero-stat-val">${stats.critChance || 0}% (+${stats.critDamage || 50}% Danno)</span></div>
+      <div class="hero-stat-row"><span>🌿 Rigenerazione Salute:</span><span class="hero-stat-val">+${stats.hpRegen || 0} HP / sec</span></div>
+      <div class="hero-stat-row"><span>🩸 Furto Vitale (Life Steal):</span><span class="hero-stat-val">${stats.lifeSteal || 0}%</span></div>
+      <div class="hero-stat-row"><span>💨 Schivata Completa:</span><span class="hero-stat-val">${stats.dodgeChance || 0}%</span></div>
+      <div class="hero-stat-row"><span>⏱️ Riduzione Ricarica Armi:</span><span class="hero-stat-val">-${Math.round((stats.cooldownReduction || 0) * 100)}%</span></div>
+      <div class="hero-stat-row"><span>🌊 Cammina su Acqua & Guadi:</span><span class="hero-stat-val" style="color: ${stats.ignoreWaterSlow ? '#4ade80' : '#94a3b8'};">${stats.ignoreWaterSlow ? '✅ Piena Velocità' : '❌ Rallentato (-40%)'}</span></div>
+    `;
+
+    overview.appendChild(paperdollBox);
+    overview.appendChild(statsPanel);
+    container.appendChild(overview);
+
+    // 3. Forziere Pezzi Forgiati Posseduti
+    const ownedBox = document.createElement('div');
+    ownedBox.style.marginTop = '14px';
+    ownedBox.innerHTML = `<div style="font-size: 13px; font-weight: 800; color: #fde047; margin-bottom: 8px;">🎒 Oggetti Forgiati in Archivio (${currentProfile.craftedItems?.length || 0})</div>`;
+
+    const ownedGrid = document.createElement('div');
+    ownedGrid.className = 'weapons-grid';
+
+    if (!currentProfile.craftedItems || currentProfile.craftedItems.length === 0) {
+      ownedGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 18px; text-align: center; color: #64748b; font-size: 12px; font-style: italic;">Non possiedi ancora oggetti forgiati. Forgiane uno dal Fabbro!</div>`;
+    } else {
+      currentProfile.craftedItems.forEach(eqId => {
+        const def = EQUIPMENT_DEF[eqId];
+        if (!def) return;
+        const isEq = currentProfile.equipment && currentProfile.equipment[def.slot] === eqId;
+
+        const card = document.createElement('div');
+        const rarityClass = 'rarity-' + (def.rarity || 'common').toLowerCase();
+        card.className = `equip-card ${rarityClass} ${isEq ? 'equipped' : ''}`;
+
+        let statsHtml = '';
+        if (def.stats) {
+          for (const [k, v] of Object.entries(def.stats)) {
+            if (!v) continue;
+            let label = k;
+            if (k === 'maxHp') label = `+${v} Salute Massima`;
+            else if (k === 'defense') label = `+${v} Difesa`;
+            else if (k === 'bonusDamage') label = `+${v} Danno`;
+            else if (k === 'speedBonus') label = `+${v}% Velocità`;
+            else if (k === 'critChance') label = `+${v}% Critico`;
+            else if (k === 'hpRegen') label = `+${v} HP/s Rigenerazione`;
+            else if (k === 'lifeSteal') label = `+${v}% Furto Vitale`;
+            else if (k === 'dodgeChance') label = `+${v}% Schivata`;
+            else if (k === 'ignoreWaterSlow') label = `Cammina sull'acqua senza rallentare`;
+            statsHtml += `<div class="equip-stat-item">✦ ${label}</div>`;
+          }
+        }
+
+        card.innerHTML = `
+          <div>
+            <div class="equip-head">
+              <div class="equip-icon-box" style="border-color: ${def.color};">${def.icon}</div>
+              <div class="equip-meta">
+                <div class="equip-name" style="color: ${def.color};">${def.name}</div>
+                <div class="equip-tags">
+                  <span class="tag-slot">${def.slot.toUpperCase()}</span>
+                  <span class="tag-rarity" style="color: ${def.color}; border: 1px solid ${def.color};">${def.rarity}</span>
+                </div>
+              </div>
+            </div>
+            <div class="equip-stats-box">${statsHtml}</div>
+          </div>
+          <button class="btn-craft-action primary btn-toggle-equip" style="margin-top: 8px;">
+            ${isEq ? '✓ Equipaggiato (Clicca per rimuovere)' : '🛡️ Equipaggia Pezzo'}
+          </button>
+        `;
+
+        const btnToggle = card.querySelector('.btn-toggle-equip');
+        btnToggle?.addEventListener('click', async () => {
+          try {
+            if (isEq) {
+              currentProfile = await API.unequipItem(def.slot);
+              showWeaponNotification(`Rimosso ${def.name}`);
+            } else {
+              currentProfile = await API.equipItem(def.id);
+              showWeaponNotification(`Equipaggiato ${def.name}!`);
+            }
+            player.applyPermanentStats(currentProfile.calculatedStats);
+            renderHeroOverview(container);
+            if (activeBlacksmith) renderBlacksmithCraft(currentCraftCategory, activeBlacksmith);
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+
+        ownedGrid.appendChild(card);
+      });
+    }
+
+    ownedBox.appendChild(ownedGrid);
+    container.appendChild(ownedBox);
+  }
+
   // Modale Fucina Dedicata del Fabbro NPC (Dove avviene la forgiatura reale!)
-  function renderBlacksmithForge(bs) {
+  function renderBlacksmithCraft(category = 'all', bs) {
     if (!blacksmithForgeContainer || !currentProfile) return;
     blacksmithForgeContainer.innerHTML = '';
+    currentCraftCategory = category;
 
-    currentProfile.weaponsCatalog.forEach(w => {
-      const card = document.createElement('div');
-      card.className = `weapon-card ${w.isEquipped ? 'equipped' : ''}`;
+    // Aggiorna filtri categoria attivi
+    document.querySelectorAll('.craft-filter-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.category === category);
+    });
 
-      let reqHtml = '';
-      let canAfford = false;
+    // 1. Armi (se categoria è all o weapon)
+    if (category === 'all' || category === 'weapon') {
+      currentProfile.weaponsCatalog.forEach(w => {
+        const card = document.createElement('div');
+        card.className = `weapon-card ${w.isEquipped ? 'equipped' : ''}`;
 
-      if (w.isMaxLevel) {
-        reqHtml = `<div class="weapon-req-box" style="color: #4ade80; text-align: center; font-weight: 700;">★ Grado Massimo (LV 5)</div>`;
-      } else if (w.nextCost) {
-        const goldHas = currentProfile.gold >= (w.nextCost.gold || 0);
-        let matsOk = true;
-        let matsRows = '';
+        let reqHtml = '';
+        let canAfford = false;
 
-        if (w.nextCost.materials) {
-          for (const [matId, reqAmt] of Object.entries(w.nextCost.materials)) {
-            const owned = ((currentProfile.inventory && currentProfile.inventory[matId]) || 0) + ((combat.collectedItems && combat.collectedItems[matId]) || 0);
+        if (w.isMaxLevel) {
+          reqHtml = `<div class="weapon-req-box" style="color: #4ade80; text-align: center; font-weight: 700;">★ Grado Massimo (LV 5)</div>`;
+        } else if (w.nextCost) {
+          const goldHas = currentProfile.gold >= (w.nextCost.gold || 0);
+          let matsOk = true;
+          let matsRows = '';
+
+          if (w.nextCost.materials) {
+            for (const [matId, reqAmt] of Object.entries(w.nextCost.materials)) {
+              const owned = ((currentProfile.inventory && currentProfile.inventory[matId]) || 0) + ((combat.collectedItems && combat.collectedItems[matId]) || 0);
+              const hasEnough = owned >= reqAmt;
+              if (!hasEnough) matsOk = false;
+              const matDef = MATERIALS_DEF[matId] || { name: matId, icon: '📦' };
+              matsRows += `
+                <div class="req-item ${hasEnough ? 'has' : 'missing'}">
+                  <span>${matDef.icon} ${matDef.name}:</span>
+                  <span>${owned} / ${reqAmt}</span>
+                </div>
+              `;
+            }
+          }
+
+          canAfford = goldHas && matsOk;
+
+          reqHtml = `
+            <div class="weapon-req-box">
+              <div class="weapon-req-title">${w.isUnlocked ? 'Requisiti Tempra:' : 'Materiali Forgiatura:'}</div>
+              <div class="req-item ${goldHas ? 'has' : 'missing'}">
+                <span>🪙 Oro:</span>
+                <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
+              </div>
+              ${matsRows}
+              <div style="margin-top: 6px; font-size: 11px; color: #38bdf8; font-weight: 600;">✨ ${w.nextBenefit}</div>
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="weapon-head">
+            <div class="weapon-icon">${w.icon}</div>
+            <div>
+              <div class="weapon-title">${w.name}</div>
+              <div class="weapon-type-tag">Grado Attuale: Livello ${w.currentLevel} / ${w.maxLevel}</div>
+            </div>
+          </div>
+          <div style="margin: 8px 0;">${reqHtml}</div>
+          <button class="btn-forge" ${!canAfford ? 'disabled' : ''} style="width: 100%;">
+            🔨 ${w.isUnlocked ? `Tempra a Livello ${w.currentLevel + 1}` : 'Forgia Nuova Arma'}
+          </button>
+        `;
+
+        const btnForge = card.querySelector('.btn-forge');
+        if (btnForge && canAfford) {
+          btnForge.addEventListener('click', async () => {
+            try {
+              currentProfile = await API.craftOrUpgradeWeapon(w.id);
+              FX.burst(player.x, player.y, '#f59e0b', 24, 120);
+              showWeaponNotification(`🔨 ${w.name} lavorata con successo da ${bs.name}!`);
+              renderBlacksmithCraft(currentCraftCategory, bs);
+              renderIngameForge();
+              renderIngameWeapons();
+              equipWeapon(combat.weaponId);
+            } catch (err) {
+              alert(err.message);
+            }
+          });
+        }
+
+        blacksmithForgeContainer.appendChild(card);
+      });
+    }
+
+    // 2. Pezzi d'Equipaggiamento Diablo (Armor, Helmet, Boots, Jewelry)
+    if (category !== 'weapon') {
+      const filtered = (currentProfile.equipmentCatalog || []).filter(item => {
+        if (category === 'all') return true;
+        if (category === 'jewelry') return item.slot === 'amulet' || item.slot === 'ring';
+        return item.slot === category;
+      });
+
+      filtered.forEach(eq => {
+        const card = document.createElement('div');
+        const rarityClass = 'rarity-' + (eq.rarity || 'common').toLowerCase();
+        card.className = `equip-card ${rarityClass} ${eq.isEquipped ? 'equipped' : ''}`;
+
+        let statsHtml = '';
+        if (eq.stats) {
+          for (const [k, v] of Object.entries(eq.stats)) {
+            if (!v) continue;
+            let label = k;
+            if (k === 'maxHp') label = `+${v} Salute Massima`;
+            else if (k === 'defense') label = `+${v} Difesa`;
+            else if (k === 'bonusDamage') label = `+${v} Danno`;
+            else if (k === 'speedBonus') label = `+${v}% Velocità`;
+            else if (k === 'critChance') label = `+${v}% Critico`;
+            else if (k === 'hpRegen') label = `+${v} HP/s Rigenerazione`;
+            else if (k === 'lifeSteal') label = `+${v}% Furto Vitale`;
+            else if (k === 'dodgeChance') label = `+${v}% Schivata`;
+            else if (k === 'ignoreWaterSlow') label = `Cammina sull'acqua senza rallentare`;
+            statsHtml += `<div class="equip-stat-item">✦ ${label}</div>`;
+          }
+        }
+
+        // Requisiti di forgiatura
+        let reqRows = '';
+        let canAfford = currentProfile.gold >= (eq.craftCost?.gold || 0);
+
+        reqRows += `
+          <div class="req-item ${currentProfile.gold >= (eq.craftCost?.gold || 0) ? 'has' : 'missing'}">
+            <span>🪙 Oro:</span>
+            <span>${currentProfile.gold} / ${eq.craftCost?.gold || 0}</span>
+          </div>
+        `;
+
+        if (eq.craftCost?.materials) {
+          for (const [mId, reqAmt] of Object.entries(eq.craftCost.materials)) {
+            const owned = ((currentProfile.inventory && currentProfile.inventory[mId]) || 0) + ((combat.collectedItems && combat.collectedItems[mId]) || 0);
             const hasEnough = owned >= reqAmt;
-            if (!hasEnough) matsOk = false;
-            const matDef = MATERIALS_DEF[matId] || { name: matId, icon: '📦' };
-            matsRows += `
+            if (!hasEnough) canAfford = false;
+            const matDef = MATERIALS_DEF[mId] || { name: mId, icon: '📦' };
+            reqRows += `
               <div class="req-item ${hasEnough ? 'has' : 'missing'}">
                 <span>${matDef.icon} ${matDef.name}:</span>
                 <span>${owned} / ${reqAmt}</span>
@@ -890,54 +1207,217 @@ window.addEventListener('DOMContentLoaded', async () => {
           }
         }
 
-        canAfford = goldHas && matsOk;
-
-        reqHtml = `
-          <div class="weapon-req-box">
-            <div class="weapon-req-title">${w.isUnlocked ? 'Requisiti Tempra:' : 'Materiali Forgiatura:'}</div>
-            <div class="req-item ${goldHas ? 'has' : 'missing'}">
-              <span>🪙 Oro:</span>
-              <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
+        card.innerHTML = `
+          <div>
+            <div class="equip-head">
+              <div class="equip-icon-box" style="border-color: ${eq.color};">${eq.icon}</div>
+              <div class="equip-meta">
+                <div class="equip-name" style="color: ${eq.color};">${eq.name}</div>
+                <div class="equip-tags">
+                  <span class="tag-slot">${eq.slot.toUpperCase()}</span>
+                  <span class="tag-rarity" style="color: ${eq.color}; border: 1px solid ${eq.color};">${eq.rarity}</span>
+                </div>
+              </div>
             </div>
-            ${matsRows}
-            <div style="margin-top: 6px; font-size: 11px; color: #38bdf8; font-weight: 600;">✨ ${w.nextBenefit}</div>
+            <div class="equip-desc">${eq.desc}</div>
+            <div class="equip-stats-box">${statsHtml}</div>
+            <div class="weapon-req-box">${reqRows}</div>
+          </div>
+          <button class="btn-craft-action primary btn-craft-item" ${!canAfford ? 'disabled' : ''} style="margin-top: 10px;">
+            🔨 Forgia ${eq.name}
+          </button>
+        `;
+
+        const btnCraft = card.querySelector('.btn-craft-item');
+        if (btnCraft && canAfford) {
+          btnCraft.addEventListener('click', async () => {
+            try {
+              currentProfile = await API.craftEquipment(eq.id);
+              player.applyPermanentStats(currentProfile.calculatedStats);
+              FX.burst(player.x, player.y, eq.color || '#f59e0b', 24, 130);
+              showWeaponNotification(`🔨 ${eq.name} forgiato con successo da ${bs.name}!`);
+              renderBlacksmithCraft(currentCraftCategory, bs);
+            } catch (err) {
+              alert(err.message);
+            }
+          });
+        }
+
+        blacksmithForgeContainer.appendChild(card);
+      });
+    }
+  }
+
+  // Raffineria Risorse Fabbro (Albion Online Style)
+  function renderBlacksmithRefining(bs) {
+    if (!blacksmithRefineContainer || !currentProfile) return;
+    blacksmithRefineContainer.innerHTML = '';
+
+    (currentProfile.refiningCatalog || []).forEach(rec => {
+      const card = document.createElement('div');
+      card.className = 'refine-card';
+
+      let inputsHtml = '';
+      let canAfford1 = currentProfile.gold >= (rec.goldCost || 0);
+
+      for (const [mId, amt] of Object.entries(rec.inputs)) {
+        const owned = (currentProfile.inventory && currentProfile.inventory[mId]) || 0;
+        const hasEnough = owned >= amt;
+        if (!hasEnough) canAfford1 = false;
+        const inDef = MATERIALS_DEF[mId] || { name: mId, icon: '📦' };
+        inputsHtml += `
+          <div class="refine-item-token" style="color: ${hasEnough ? '#e2e8f0' : '#f87171'};">
+            ${inDef.icon} ${inDef.name}: <b>${owned}/${amt}</b>
           </div>
         `;
       }
 
+      const outDef = rec.outputDef;
+
       card.innerHTML = `
-        <div class="weapon-head">
-          <div class="weapon-icon">${w.icon}</div>
-          <div>
-            <div class="weapon-title">${w.name}</div>
-            <div class="weapon-type-tag">Grado Attuale: Livello ${w.currentLevel} / ${w.maxLevel}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 13.5px; font-weight: 800; color: #f8fafc;">${rec.name}</div>
+          <div style="font-size: 11px; color: #fde047; font-weight: 700;">🪙 ${rec.goldCost} oro</div>
+        </div>
+        <div style="font-size: 11px; color: #94a3b8; font-style: italic;">${rec.desc}</div>
+        <div class="refine-recipe-flow">
+          <div class="refine-side">${inputsHtml}</div>
+          <div class="refine-arrow">➔</div>
+          <div class="refine-side" style="align-items: center;">
+            <div style="font-size: 26px;">${outDef.icon}</div>
+            <div style="font-size: 11px; font-weight: 800; color: ${outDef.color || '#38bdf8'};">+${rec.output.count} ${outDef.name}</div>
           </div>
         </div>
-        <div style="margin: 8px 0;">${reqHtml}</div>
-        <button class="btn-forge" ${!canAfford ? 'disabled' : ''} style="width: 100%;">
-          🔨 ${w.isUnlocked ? `Tempra a Livello ${w.currentLevel + 1}` : 'Forgia Nuova Arma'}
+        <div class="refine-actions-row">
+          <button class="btn-craft-action primary btn-refine-1" ${!canAfford1 ? 'disabled' : ''} style="flex: 1;">
+            ✨ Raffina 1x
+          </button>
+          <button class="btn-craft-action primary btn-refine-5" ${!canAfford1 ? 'disabled' : ''} style="flex: 1;">
+            ✨ Raffina 5x
+          </button>
+        </div>
+      `;
+
+      const btn1 = card.querySelector('.btn-refine-1');
+      btn1?.addEventListener('click', async () => {
+        try {
+          currentProfile = await API.refineResource(rec.id, 1);
+          FX.burst(player.x, player.y, outDef.color || '#38bdf8', 18, 100);
+          showWeaponNotification(`✨ Raffinato 1x ${outDef.name}!`);
+          renderBlacksmithRefining(bs);
+          renderIngameLoot();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      const btn5 = card.querySelector('.btn-refine-5');
+      btn5?.addEventListener('click', async () => {
+        try {
+          currentProfile = await API.refineResource(rec.id, 5);
+          FX.burst(player.x, player.y, outDef.color || '#38bdf8', 26, 140);
+          showWeaponNotification(`✨ Raffinato 5x ${outDef.name}!`);
+          renderBlacksmithRefining(bs);
+          renderIngameLoot();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      blacksmithRefineContainer.appendChild(card);
+    });
+  }
+
+  // Smantellamento & Salvage Fabbro (Diablo Style)
+  function renderBlacksmithSalvage(bs) {
+    if (!blacksmithSalvageContainer || !currentProfile) return;
+    blacksmithSalvageContainer.innerHTML = '';
+
+    const salvageable = (currentProfile.salvageCatalog || []).filter(item => !item.isEquipped);
+
+    if (salvageable.length === 0) {
+      blacksmithSalvageContainer.innerHTML = `
+        <div style="grid-column: 1/-1; padding: 24px; text-align: center; color: #64748b; font-size: 13px; font-style: italic;">
+          Non possiedi pezzi forgiati non equipaggiati da smantellare.<br>
+          Forgia armature dal Fabbro o rimuovi quelle equipaggiate nella Scheda Eroe per poterle riciclare!
+        </div>
+      `;
+      return;
+    }
+
+    salvageable.forEach(item => {
+      const card = document.createElement('div');
+      const rarityClass = 'rarity-' + (item.rarity || 'common').toLowerCase();
+      card.className = `salvage-card ${rarityClass}`;
+
+      let yieldHtml = '';
+      if (item.salvageYield) {
+        for (const [mId, count] of Object.entries(item.salvageYield)) {
+          const matDef = MATERIALS_DEF[mId] || { name: mId, icon: '📦' };
+          yieldHtml += `<div>✦ +${count}x ${matDef.icon} ${matDef.name}</div>`;
+        }
+      }
+
+      card.innerHTML = `
+        <div class="equip-head">
+          <div class="equip-icon-box" style="border-color: ${item.color};">${item.icon}</div>
+          <div class="equip-meta">
+            <div class="equip-name" style="color: ${item.color};">${item.name}</div>
+            <div class="equip-tags">
+              <span class="tag-slot">${(item.slot || 'equip').toUpperCase()}</span>
+              <span class="tag-rarity" style="color: ${item.color}; border: 1px solid ${item.color};">${item.rarity}</span>
+            </div>
+          </div>
+        </div>
+        <div class="salvage-yield-box">
+          <div style="font-size: 10px; color: #94a3b8; margin-bottom: 2px;">MATERIALI RECUPERATI:</div>
+          ${yieldHtml}
+        </div>
+        <button class="btn-craft-action btn-do-salvage" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: #fff;">
+          ♻️ Smantella & Ricicla
         </button>
       `;
 
-      const btnForge = card.querySelector('.btn-forge');
-      if (btnForge && canAfford) {
-        btnForge.addEventListener('click', async () => {
-          try {
-            currentProfile = await API.craftOrUpgradeWeapon(w.id);
-            FX.burst(player.x, player.y, '#f59e0b', 24, 120);
-            showWeaponNotification(`🔨 ${w.name} lavorata con successo da ${bs.name}!`);
-            renderBlacksmithForge(bs);
-            renderIngameForge();
-            renderIngameWeapons();
-            equipWeapon(combat.weaponId);
-          } catch (err) {
-            alert(err.message);
-          }
-        });
-      }
+      const btnSal = card.querySelector('.btn-do-salvage');
+      btnSal?.addEventListener('click', async () => {
+        try {
+          currentProfile = await API.salvageItem(item.id);
+          FX.burst(player.x, player.y, '#ef4444', 20, 110);
+          showWeaponNotification(`♻️ ${item.name} smantellato con successo!`);
+          renderBlacksmithSalvage(bs);
+          renderIngameLoot();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
 
-      blacksmithForgeContainer.appendChild(card);
+      blacksmithSalvageContainer.appendChild(card);
     });
+  }
+
+  // Cambio scheda nel Modale Fabbro
+  function switchBlacksmithTab(tabName) {
+    currentBsTab = tabName;
+    [bsTabBtnCraft, bsTabBtnRefine, bsTabBtnSalvage, bsTabBtnHero].forEach(b => b?.classList.remove('active'));
+    [bsTabCraft, bsTabRefine, bsTabSalvage, bsTabHero].forEach(p => p?.classList.remove('active'));
+
+    if (tabName === 'refine') {
+      bsTabBtnRefine?.classList.add('active');
+      bsTabRefine?.classList.add('active');
+      renderBlacksmithRefining(activeBlacksmith);
+    } else if (tabName === 'salvage') {
+      bsTabBtnSalvage?.classList.add('active');
+      bsTabSalvage?.classList.add('active');
+      renderBlacksmithSalvage(activeBlacksmith);
+    } else if (tabName === 'hero') {
+      bsTabBtnHero?.classList.add('active');
+      bsTabHero?.classList.add('active');
+      renderHeroOverview(blacksmithHeroContainer);
+    } else {
+      bsTabBtnCraft?.classList.add('active');
+      bsTabCraft?.classList.add('active');
+      renderBlacksmithCraft(currentCraftCategory, activeBlacksmith);
+    }
   }
 
   function openBlacksmithModal(bs) {
@@ -950,11 +1430,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     isBlacksmithOpen = true;
     if (bsModalName) bsModalName.textContent = bs.name;
-    if (bsModalTitle) bsModalTitle.textContent = `${bs.title} · ${bs.villageName || 'Villaggio'}`;
+    if (bsModalTitle) bsModalTitle.textContent = `${bs.title} · ${bs.villageName || bs.settlementName || 'Villaggio'}`;
     if (bsModalQuote) bsModalQuote.textContent = `"${bs.quote}"`;
 
     blacksmithModal?.classList.remove('hidden');
-    renderBlacksmithForge(bs);
+    switchBlacksmithTab('craft');
   }
 
   function closeBlacksmithModal() {
@@ -1098,9 +1578,26 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Schede Modale Fabbro (Forgia, Raffineria, Salvage, Scheda Eroe)
+  if (bsTabBtnCraft) bsTabBtnCraft.addEventListener('click', () => switchBlacksmithTab('craft'));
+  if (bsTabBtnRefine) bsTabBtnRefine.addEventListener('click', () => switchBlacksmithTab('refine'));
+  if (bsTabBtnSalvage) bsTabBtnSalvage.addEventListener('click', () => switchBlacksmithTab('salvage'));
+  if (bsTabBtnHero) bsTabBtnHero.addEventListener('click', () => switchBlacksmithTab('hero'));
+
+  // Filtri categoria Forgiatura (Tutto, Armi, Corazze, Elmi, Stivali, Gioielli)
+  document.querySelectorAll('.craft-filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.craft-filter-btn').forEach(b => b.classList.remove('active'));
+      const target = e.currentTarget;
+      target.classList.add('active');
+      currentCraftCategory = target.getAttribute('data-cat') || 'all';
+      renderBlacksmithCraft(currentCraftCategory, activeBlacksmith);
+    });
+  });
+
   function switchIngameTab(tabName) {
-    [ingameTabBtnLoot, ingameTabBtnTalents, ingameTabBtnForge, ingameTabBtnWeapons].forEach(b => b?.classList.remove('active'));
-    [ingameTabLoot, ingameTabTalents, ingameTabForge, ingameTabWeapons].forEach(p => p?.classList.remove('active'));
+    [ingameTabBtnLoot, ingameTabBtnTalents, ingameTabBtnForge, ingameTabBtnWeapons, ingameTabBtnEquipment].forEach(b => b?.classList.remove('active'));
+    [ingameTabLoot, ingameTabTalents, ingameTabForge, ingameTabWeapons, ingameTabEquipment].forEach(p => p?.classList.remove('active'));
 
     if (tabName === 'loot') {
       ingameTabBtnLoot?.classList.add('active');
@@ -1114,6 +1611,10 @@ window.addEventListener('DOMContentLoaded', async () => {
       ingameTabBtnWeapons?.classList.add('active');
       ingameTabWeapons?.classList.add('active');
       renderIngameWeapons();
+    } else if (tabName === 'equipment') {
+      ingameTabBtnEquipment?.classList.add('active');
+      ingameTabEquipment?.classList.add('active');
+      renderHeroOverview(ingameHeroContainer);
     } else {
       ingameTabBtnForge?.classList.add('active');
       ingameTabForge?.classList.add('active');
@@ -1150,6 +1651,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (ingameTabBtnTalents) ingameTabBtnTalents.addEventListener('click', () => switchIngameTab('talents'));
   if (ingameTabBtnForge) ingameTabBtnForge.addEventListener('click', () => switchIngameTab('forge'));
   if (ingameTabBtnWeapons) ingameTabBtnWeapons.addEventListener('click', () => switchIngameTab('weapons'));
+  if (ingameTabBtnEquipment) ingameTabBtnEquipment.addEventListener('click', () => switchIngameTab('equipment'));
 
   // =========================================================================
   // 7. MINIMAPPA LIVE RADAR & MAPPA TATTICA ESPANSA
@@ -1903,6 +2405,25 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
+    // 5. Click su Nodo di Risorsa (Minerali, Fior di Loto, Geodi, ecc. - Albion Style)
+    const clickedNode = world.getResourceNodeAt(aimWorld.x, aimWorld.y, 36);
+    if (clickedNode) {
+      if (Math.hypot(player.x - clickedNode.x, player.y - clickedNode.y) <= 85) {
+        if (!clickedNode.isDepleted) {
+          if (!clickedNode.isHarvesting) {
+            clickedNode.startHarvest(player);
+            showWeaponNotification(`⛏️ Raccolta di ${clickedNode.def.name}... Resta vicino!`);
+          }
+        } else {
+          showWeaponNotification(`⏳ Questo giacimento è esaurito! Ricrescerà tra poco.`);
+        }
+        return true;
+      } else {
+        showWeaponNotification(`⛏️ Avvicinati a ${clickedNode.def.name} per raccogliere!`);
+        return true;
+      }
+    }
+
     return false;
   }
 
@@ -1914,6 +2435,16 @@ window.addEventListener('DOMContentLoaded', async () => {
       openBlacksmithModal(currentNearbyInteractable.data);
     } else if (currentNearbyInteractable.type === 'waypoint') {
       openTeleportModal();
+    } else if (currentNearbyInteractable.type === 'resource_node') {
+      const node = currentNearbyInteractable.data;
+      if (node.isHarvesting) {
+        // Già in canalizzazione
+      } else if (node.isDepleted) {
+        showWeaponNotification(`⏳ Questo giacimento è esaurito! Ricrescerà tra poco.`);
+      } else {
+        node.startHarvest(player);
+        showWeaponNotification(`⛏️ Raccolta di ${node.def.name}... Resta vicino!`);
+      }
     } else if (currentNearbyInteractable.type === 'chest') {
       const ch = currentNearbyInteractable.data;
 
@@ -2317,6 +2848,27 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
           }
 
+          // 5. Nodi di Raccolta Risorse (Minerali, Fior di Loto, Geodi - Albion Style) entro 75px
+          if (!foundInteractable) {
+            const nearbyNode = world.getNearbyResourceNode(player.x, player.y, 75);
+            if (nearbyNode) {
+              if (nearbyNode.isHarvesting) {
+                const pct = Math.round(nearbyNode.progress * 100);
+                foundInteractable = {
+                  type: 'resource_node',
+                  data: nearbyNode,
+                  label: `Estraendo ${nearbyNode.def.name}... (${pct}%)`
+                };
+              } else if (!nearbyNode.isDepleted) {
+                foundInteractable = {
+                  type: 'resource_node',
+                  data: nearbyNode,
+                  label: `Estrai ${nearbyNode.def.name} (${nearbyNode.charges}/${nearbyNode.maxCharges}) [E o Click]`
+                };
+              }
+            }
+          }
+
           currentNearbyInteractable = foundInteractable;
           if (hudInteractPrompt && hudInteractLabel) {
             if (foundInteractable && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen && !isTeleportOpen) {
@@ -2327,7 +2879,8 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
           }
 
-          // Aggiorna forzieri e rune
+          // Aggiorna nodi di risorsa nel mondo, forzieri e rune
+          world.updateResourceNodes(dt, player, combat);
           chests.forEach(ch => ch.update(dt, player));
           mysteryPillars.forEach(p => p.update(dt));
 

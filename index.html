@@ -359,13 +359,14 @@
         <button type="button" id="ingame-tab-btn-talents" class="tab-btn">🔮 Grimorio Talenti</button>
         <button type="button" id="ingame-tab-btn-forge" class="tab-btn">🔨 Fucina Fabbro</button>
         <button type="button" id="ingame-tab-btn-weapons" class="tab-btn">⚔️ Armeria Rapida</button>
+        <button type="button" id="ingame-tab-btn-equipment" class="tab-btn">🛡️ Equipaggiamento & Eroe</button>
       </div>
 
       <!-- Scheda 1: Risorse e Bottino Spedizione -->
       <div id="ingame-tab-loot" class="tab-content active">
         <div class="inventory-intro">
-          <div class="inventory-title">Materiali & Artefatti raccolti finora</div>
-          <div class="inventory-desc">Bottini rilasciati dai mostri sconfitti nei diversi biomi. Usali alla Fucina per creare o potenziare Spada, Arco e Bastone!</div>
+          <div class="inventory-title">Materiali & Risorse di Raccolta</div>
+          <div class="inventory-desc">Minerali grezzi, legname, erbe e anime raccolte nei 5 biomi o rilasciate dai mostri. Portali dal Fabbro per raffinarli o forgiare equipaggiamento epico!</div>
         </div>
         <div class="inventory-grid" id="ingame-loot-container">
           <!-- Popolato dinamicamente da JS -->
@@ -410,6 +411,17 @@
         </div>
       </div>
 
+      <!-- Scheda 5: Equipaggiamento e Scheda Eroe (Diablo Style) -->
+      <div id="ingame-tab-equipment" class="tab-content">
+        <div class="inventory-intro">
+          <div class="inventory-title">🛡️ Equipaggiamento & Attributi dell'Eroe</div>
+          <div class="inventory-desc">6 slot equipaggiamento (Arma, Corazza, Elmo, Stivali, Amuleto, Anello). Gli attributi migliorano difesa, colpi critici, rigenerazione e schivata!</div>
+        </div>
+        <div class="hero-overview-container" id="ingame-hero-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
       <div class="modal-actions" style="margin-top: 12px;">
         <button id="btn-resume-game" class="btn-primary" style="width: 100%;">▶️ RIPRENDI LA SPEDIZIONE [I o ESC]</button>
       </div>
@@ -434,12 +446,64 @@
 
       <!-- Fumetto di Dialogo personalizzato del Fabbro -->
       <div class="blacksmith-speech-bubble">
-        <div id="bs-modal-quote">"Salute, eroe dell'Aether! La mia forgia arde col fuoco sacro. Portami acciaio e rune e plasmerò per te armi degne di un re!"</div>
+        <div id="bs-modal-quote">"Salute, eroe dell'Aether! La mia forgia arde col fuoco sacro. Portami metalli grezzi e gemme e plasmerò per te armi e armature leggendarie!"</div>
       </div>
 
-      <!-- Griglia Forgiatura Armi -->
-      <div class="weapons-grid" id="blacksmith-forge-container">
-        <!-- Popolato dinamicamente da JS con le ricette attive -->
+      <!-- Schede Fabbro: Forgia, Raffineria, Salvage, Scheda Eroe -->
+      <div class="menu-tabs blacksmith-tabs">
+        <button type="button" id="bs-tab-btn-craft" class="tab-btn active">🔨 Forgia Equipaggiamento</button>
+        <button type="button" id="bs-tab-btn-refine" class="tab-btn">✨ Raffineria Risorse</button>
+        <button type="button" id="bs-tab-btn-salvage" class="tab-btn">♻️ Smantella & Riciclo</button>
+        <button type="button" id="bs-tab-btn-hero" class="tab-btn">👤 Scheda Eroe & Slot</button>
+      </div>
+
+      <!-- Scheda 1: Forgiatura Equipaggiamento e Armi -->
+      <div id="bs-tab-craft" class="tab-content active">
+        <!-- Filtri categoria -->
+        <div class="craft-category-filters">
+          <button type="button" class="craft-filter-btn active" data-category="all">Tutti</button>
+          <button type="button" class="craft-filter-btn" data-category="weapon">⚔️ Armi</button>
+          <button type="button" class="craft-filter-btn" data-category="armor">🛡️ Corazze</button>
+          <button type="button" class="craft-filter-btn" data-category="helmet">🪖 Elmi</button>
+          <button type="button" class="craft-filter-btn" data-category="boots">🥾 Stivali</button>
+          <button type="button" class="craft-filter-btn" data-category="jewelry">💍 Gioielli</button>
+        </div>
+        <div class="weapons-grid" id="blacksmith-forge-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <!-- Scheda 2: Raffineria Risorse (Albion Online Style) -->
+      <div id="bs-tab-refine" class="tab-content">
+        <div class="inventory-intro">
+          <div class="inventory-title">✨ Fonderia & Conceria delle Risorse</div>
+          <div class="inventory-desc">Trasforma i minerali grezzi, il legname e le erbe raccolte nei biomi in lingotti purificati, cuoio conciato e rune arcane per la forgia.</div>
+        </div>
+        <div class="refining-grid" id="blacksmith-refine-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <!-- Scheda 3: Smantella / Salvage (Diablo Style) -->
+      <div id="bs-tab-salvage" class="tab-content">
+        <div class="inventory-intro">
+          <div class="inventory-title">♻️ Smantellamento & Riciclo Materiali</div>
+          <div class="inventory-desc">Recupera metallo temprato, polvere spiritica e rune da pezzi d'equipaggiamento forgiati che non utilizzi più.</div>
+        </div>
+        <div class="salvage-grid" id="blacksmith-salvage-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <!-- Scheda 4: Scheda Eroe & Slot Paperdoll -->
+      <div id="bs-tab-hero" class="tab-content">
+        <div class="inventory-intro">
+          <div class="inventory-title">👤 Scheda Personaggio & Slot Equipaggiamento</div>
+          <div class="inventory-desc">Ispeziona gli slot equipaggiati, i bonus attivi e il calcolo complessivo degli attributi combattivi.</div>
+        </div>
+        <div class="hero-overview-container" id="blacksmith-hero-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
       </div>
 
       <div class="modal-actions" style="margin-top: 14px;">

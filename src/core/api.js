@@ -3,7 +3,7 @@
  * e Fallback Offline Automatico per Aether Survivor
  */
 import { TALENTS_DEF } from './talents.js';
-import { WEAPONS_DEF, MATERIALS_DEF } from './crafting.js';
+import { WEAPONS_DEF, MATERIALS_DEF, EQUIPMENT_DEF, REFINING_RECIPES } from './crafting.js';
 
 const API_BASE = window.location.protocol.startsWith('http') ? '' : 'http://localhost:3000';
 
@@ -172,6 +172,8 @@ class GameAPI {
           gold_gain: 0
         },
         inventory: {
+          copper_ore: 6,
+          ancient_wood: 4,
           slime_gel: 4,
           ice_crystal: 0,
           sun_amber: 0,
@@ -186,6 +188,14 @@ class GameAPI {
           bow: 0
         },
         equippedWeapon: 'staff',
+        equipment: {
+          armor: null,
+          helmet: null,
+          boots: null,
+          amulet: null,
+          ring: null
+        },
+        craftedItems: [],
         inAppPurchases: []
       };
       localStorage.setItem(key, JSON.stringify(p));
@@ -193,6 +203,8 @@ class GameAPI {
 
     if (!p.inventory) {
       p.inventory = {
+        copper_ore: 6,
+        ancient_wood: 4,
         slime_gel: 4,
         ice_crystal: 0,
         sun_amber: 0,
@@ -208,6 +220,12 @@ class GameAPI {
     if (!p.equippedWeapon) {
       p.equippedWeapon = 'staff';
     }
+    if (!p.equipment) {
+      p.equipment = { armor: null, helmet: null, boots: null, amulet: null, ring: null };
+    }
+    if (!Array.isArray(p.craftedItems)) {
+      p.craftedItems = [];
+    }
     if (!p.inAppPurchases) {
       p.inAppPurchases = [];
     }
@@ -222,12 +240,65 @@ class GameAPI {
 
   _formatProfile(profile) {
     const talents = profile.talents || {};
+    const equipment = profile.equipment || {};
+
+    const bonusHpTalent = (talents.max_hp || 0) * (TALENTS_DEF.max_hp?.bonusPerRank || 15);
+    const bonusDmgTalent = (talents.damage || 0) * (TALENTS_DEF.damage?.bonusPerRank || 3);
+    const speedMultTalent = (talents.speed || 0) * (TALENTS_DEF.speed?.bonusPerRank || 0.04);
+    const magnetMultTalent = (talents.magnet || 0) * (TALENTS_DEF.magnet?.bonusPerRank || 0.08);
+    const goldMultTalent = (talents.gold_gain || 0) * (TALENTS_DEF.gold_gain?.bonusPerRank || 0.10);
+
+    let bonusHp = bonusHpTalent;
+    let defense = 0;
+    let bonusDamage = bonusDmgTalent;
+    let speedBonusTotal = 0;
+    let critChance = 0;
+    let critDamage = 50; // +50% extra base (tot 1.5x)
+    let hpRegen = 0;
+    let lifeSteal = 0;
+    let dodgeChance = 0;
+    let cooldownReduction = 0;
+    let ignoreWaterSlow = false;
+
+    if (equipment && typeof equipment === 'object') {
+      for (const [slot, eqId] of Object.entries(equipment)) {
+        if (!eqId) continue;
+        const eqDef = EQUIPMENT_DEF[eqId];
+        if (eqDef && eqDef.stats) {
+          const s = eqDef.stats;
+          if (s.maxHp) bonusHp += s.maxHp;
+          if (s.defense) defense += s.defense;
+          if (s.bonusDamage) bonusDamage += s.bonusDamage;
+          if (s.speedBonus) speedBonusTotal += s.speedBonus;
+          if (s.critChance) critChance += s.critChance;
+          if (s.critDamage) critDamage += s.critDamage;
+          if (s.hpRegen) hpRegen += s.hpRegen;
+          if (s.lifeSteal) lifeSteal += s.lifeSteal;
+          if (s.dodgeChance) dodgeChance += s.dodgeChance;
+          if (s.cooldownReduction) cooldownReduction += s.cooldownReduction;
+          if (s.ignoreWaterSlow) ignoreWaterSlow = true;
+        }
+      }
+    }
+
+    const damageReductionPercent = defense > 0 ? Math.round((defense / (defense + 100)) * 100) : 0;
+
     const calculatedStats = {
-      bonusHp: (talents.max_hp || 0) * 15,
-      bonusDamage: (talents.damage || 0) * 3,
-      speedMultiplier: 1 + (talents.speed || 0) * 0.06,
-      magnetMultiplier: 1 + (talents.magnet || 0) * 0.20,
-      goldMultiplier: 1 + (talents.gold_gain || 0) * 0.15
+      bonusHp,
+      defense,
+      damageReductionPercent,
+      bonusDamage,
+      speedMultiplier: 1 + speedMultTalent + (speedBonusTotal / 100),
+      speedBonusPercent: Math.round((speedMultTalent * 100) + speedBonusTotal),
+      magnetMultiplier: 1 + magnetMultTalent,
+      goldMultiplier: 1 + goldMultTalent,
+      critChance: Math.min(75, critChance),
+      critDamage,
+      hpRegen,
+      lifeSteal,
+      dodgeChance: Math.min(50, dodgeChance),
+      cooldownReduction: Math.min(0.40, cooldownReduction),
+      ignoreWaterSlow
     };
 
     const talentsCatalog = Object.values(TALENTS_DEF).map(def => {
@@ -270,12 +341,68 @@ class GameAPI {
       count: profile.inventory[mat.id] || 0
     }));
 
+    const equipmentCatalog = Object.values(EQUIPMENT_DEF).map(def => {
+      const isEquipped = profile.equipment && profile.equipment[def.slot] === def.id;
+      const isOwned = (profile.craftedItems || []).includes(def.id);
+      let canCraft = profile.gold >= (def.craftCost?.gold || 0);
+      if (canCraft && def.craftCost?.materials) {
+        for (const [mId, amt] of Object.entries(def.craftCost.materials)) {
+          if ((profile.inventory[mId] || 0) < amt) {
+            canCraft = false;
+            break;
+          }
+        }
+      }
+      return {
+        ...def,
+        isEquipped,
+        isOwned,
+        canCraft
+      };
+    });
+
+    const refiningCatalog = REFINING_RECIPES.map(rec => {
+      let canRefine = profile.gold >= (rec.goldCost || 0);
+      if (canRefine && rec.inputs) {
+        for (const [mId, amt] of Object.entries(rec.inputs)) {
+          if ((profile.inventory[mId] || 0) < amt) {
+            canRefine = false;
+            break;
+          }
+        }
+      }
+      return {
+        ...rec,
+        canRefine,
+        outputDef: MATERIALS_DEF[rec.output.itemId] || { name: rec.output.itemId, icon: '📦', color: '#fff' }
+      };
+    });
+
+    const salvageCatalog = (profile.craftedItems || []).map(eqId => {
+      const def = EQUIPMENT_DEF[eqId] || { id: eqId, name: eqId, slot: 'unknown', icon: '📦', rarity: 'Comune', salvageYield: {} };
+      const isEquipped = profile.equipment && profile.equipment[def.slot] === eqId;
+      return {
+        ...def,
+        isEquipped
+      };
+    });
+
+    const equippedPieces = {};
+    for (const slot of ['armor', 'helmet', 'boots', 'amulet', 'ring']) {
+      const eqId = profile.equipment ? profile.equipment[slot] : null;
+      equippedPieces[slot] = eqId ? (EQUIPMENT_DEF[eqId] || null) : null;
+    }
+
     return {
       ...profile,
       calculatedStats,
       talentsCatalog,
       weaponsCatalog,
-      inventoryCatalog
+      inventoryCatalog,
+      equipmentCatalog,
+      refiningCatalog,
+      salvageCatalog,
+      equippedPieces
     };
   }
 
@@ -410,6 +537,193 @@ class GameAPI {
       throw new Error('Devi prima forgiare quest\'arma dal Fabbro!');
     }
     p.equippedWeapon = weaponId;
+    this._saveLocalProfile(p);
+    return this._formatProfile(p);
+  }
+
+  async craftEquipment(equipId) {
+    if (this.isOnline) {
+      try {
+        const res = await fetch(`${API_BASE}/api/blacksmith/craft-equipment`, {
+          method: 'POST',
+          headers: this._authHeaders(),
+          body: JSON.stringify({ nickname: this.nickname, equipId })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) return json.profile;
+        }
+      } catch (err) {
+        console.warn('Errore server forgiatura equipaggiamento, fallback offline:', err);
+      }
+    }
+
+    // Fallback Offline
+    const p = this._getLocalProfile(this.nickname);
+    const def = EQUIPMENT_DEF[equipId];
+    if (!def) throw new Error('Pezzo d\'equipaggiamento non valido');
+
+    const goldCost = def.craftCost?.gold || 0;
+    const matsCost = def.craftCost?.materials || {};
+
+    if (p.gold < goldCost) throw new Error(`Oro insufficiente: servono ${goldCost} oro`);
+    for (const [mId, req] of Object.entries(matsCost)) {
+      if ((p.inventory[mId] || 0) < req) {
+        const matDef = MATERIALS_DEF[mId] || { name: mId };
+        throw new Error(`Materiale insufficiente: servono ${req}x ${matDef.name}`);
+      }
+    }
+
+    p.gold -= goldCost;
+    for (const [mId, req] of Object.entries(matsCost)) {
+      p.inventory[mId] = Math.max(0, (p.inventory[mId] || 0) - req);
+    }
+    p.craftedItems = p.craftedItems || [];
+    p.craftedItems.push(equipId);
+    p.equipment = p.equipment || {};
+    if (!p.equipment[def.slot]) {
+      p.equipment[def.slot] = equipId;
+    }
+
+    this._saveLocalProfile(p);
+    return this._formatProfile(p);
+  }
+
+  async equipItem(equipId) {
+    if (this.isOnline) {
+      try {
+        const res = await fetch(`${API_BASE}/api/equipment/equip`, {
+          method: 'POST',
+          headers: this._authHeaders(),
+          body: JSON.stringify({ nickname: this.nickname, equipId })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) return json.profile;
+        }
+      } catch {}
+    }
+
+    // Fallback Offline
+    const p = this._getLocalProfile(this.nickname);
+    const def = EQUIPMENT_DEF[equipId];
+    if (!def) throw new Error('Oggetto non valido');
+    if (!p.craftedItems || !p.craftedItems.includes(equipId)) {
+      throw new Error('Non possiedi questo oggetto!');
+    }
+    p.equipment = p.equipment || {};
+    p.equipment[def.slot] = equipId;
+    this._saveLocalProfile(p);
+    return this._formatProfile(p);
+  }
+
+  async unequipItem(slot) {
+    if (this.isOnline) {
+      try {
+        const res = await fetch(`${API_BASE}/api/equipment/unequip`, {
+          method: 'POST',
+          headers: this._authHeaders(),
+          body: JSON.stringify({ nickname: this.nickname, slot })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) return json.profile;
+        }
+      } catch {}
+    }
+
+    // Fallback Offline
+    const p = this._getLocalProfile(this.nickname);
+    p.equipment = p.equipment || {};
+    p.equipment[slot] = null;
+    this._saveLocalProfile(p);
+    return this._formatProfile(p);
+  }
+
+  async refineResource(recipeId, quantity = 1) {
+    if (this.isOnline) {
+      try {
+        const res = await fetch(`${API_BASE}/api/blacksmith/refine`, {
+          method: 'POST',
+          headers: this._authHeaders(),
+          body: JSON.stringify({ nickname: this.nickname, recipeId, quantity })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) return json.profile;
+        }
+      } catch (err) {
+        console.warn('Errore server raffinazione, fallback offline:', err);
+      }
+    }
+
+    // Fallback Offline
+    const p = this._getLocalProfile(this.nickname);
+    const recipe = REFINING_RECIPES.find(r => r.id === recipeId);
+    if (!recipe) throw new Error('Ricetta non valida');
+
+    const times = Math.max(1, Math.min(50, Math.floor(quantity)));
+    const totalGold = (recipe.goldCost || 0) * times;
+    if (p.gold < totalGold) throw new Error(`Oro insufficiente: servono ${totalGold} oro`);
+
+    for (const [mId, req] of Object.entries(recipe.inputs)) {
+      const totalReq = req * times;
+      if ((p.inventory[mId] || 0) < totalReq) {
+        const matDef = MATERIALS_DEF[mId] || { name: mId };
+        throw new Error(`Materiali insufficienti: servono ${totalReq}x ${matDef.name}`);
+      }
+    }
+
+    p.gold -= totalGold;
+    for (const [mId, req] of Object.entries(recipe.inputs)) {
+      p.inventory[mId] = Math.max(0, (p.inventory[mId] || 0) - req * times);
+    }
+    const outId = recipe.output.itemId;
+    const outAmt = (recipe.output.count || 1) * times;
+    p.inventory[outId] = (p.inventory[outId] || 0) + outAmt;
+
+    this._saveLocalProfile(p);
+    return this._formatProfile(p);
+  }
+
+  async salvageItem(equipId) {
+    if (this.isOnline) {
+      try {
+        const res = await fetch(`${API_BASE}/api/blacksmith/salvage`, {
+          method: 'POST',
+          headers: this._authHeaders(),
+          body: JSON.stringify({ nickname: this.nickname, equipId })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) return json.profile;
+        }
+      } catch (err) {
+        console.warn('Errore server salvage, fallback offline:', err);
+      }
+    }
+
+    // Fallback Offline
+    const p = this._getLocalProfile(this.nickname);
+    const def = EQUIPMENT_DEF[equipId];
+    if (!def) throw new Error('Oggetto non valido');
+
+    const idx = (p.craftedItems || []).indexOf(equipId);
+    if (idx === -1) throw new Error('Non possiedi questo oggetto!');
+
+    p.craftedItems.splice(idx, 1);
+    if (p.equipment && p.equipment[def.slot] === equipId) {
+      if (!p.craftedItems.includes(equipId)) {
+        p.equipment[def.slot] = null;
+      }
+    }
+
+    if (def.salvageYield) {
+      for (const [mId, count] of Object.entries(def.salvageYield)) {
+        p.inventory[mId] = (p.inventory[mId] || 0) + count;
+      }
+    }
+
     this._saveLocalProfile(p);
     return this._formatProfile(p);
   }

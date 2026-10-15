@@ -58,7 +58,7 @@ export class CombatSystem {
   /**
    * Configura l'arma equipaggiata e le sue statistiche forgiate
    */
-  setWeapon(weaponId = 'staff', level = 1, bonusDamage = 0) {
+  setWeapon(weaponId = 'staff', level = 1, bonusDamage = 0, cooldownReduction = 0) {
     const def = WEAPONS_DEF[weaponId] || WEAPONS_DEF.staff;
     this.weaponId = def.id;
     this.weaponLevel = Math.max(1, Math.min(def.maxLevel, level));
@@ -66,7 +66,7 @@ export class CombatSystem {
 
     // Calcola bonus dai livelli di forgiatura
     let totalDmgBonus = 0;
-    let cdReduction = 0;
+    let cdReduction = cooldownReduction || 0;
     let extraProj = 0;
     let extraPierce = 0;
     let rangeBonus = 0;
@@ -91,14 +91,14 @@ export class CombatSystem {
     }
 
     if (this.weaponId === 'sword') {
-      this.baseCooldown = Math.max(0.28, def.baseStats.cooldown - cdReduction);
+      this.baseCooldown = Math.max(0.20, def.baseStats.cooldown - cdReduction);
       this.attackRange = def.baseStats.range + rangeBonus;
       this.swordDamage = def.baseStats.damage + totalDmgBonus + bonusDamage;
       this.swordRange = this.attackRange;
       this.swordArc = fullCircle ? Math.PI * 2 : def.baseStats.arcAngle;
       this.swordKnockback = def.baseStats.knockback + knockbackBonus;
     } else if (this.weaponId === 'bow') {
-      this.baseCooldown = Math.max(0.35, def.baseStats.cooldown - cdReduction);
+      this.baseCooldown = Math.max(0.25, def.baseStats.cooldown - cdReduction);
       this.attackRange = def.baseStats.range;
       this.bowDamage = def.baseStats.damage + totalDmgBonus + bonusDamage;
       this.bowPierce = def.baseStats.pierce + extraPierce;
@@ -106,13 +106,39 @@ export class CombatSystem {
       this.bowSpeed = def.baseStats.speed;
     } else {
       // staff
-      this.baseCooldown = Math.max(0.40, def.baseStats.cooldown - cdReduction);
+      this.baseCooldown = Math.max(0.28, def.baseStats.cooldown - cdReduction);
       this.attackRange = def.baseStats.range;
       this.staffDamage = def.baseStats.damage + totalDmgBonus + bonusDamage;
       this.projectilesPerShot = def.baseStats.projectiles + extraProj;
     }
 
     this.cooldownTimer = 0;
+  }
+
+  dealDamageToTarget(target, baseDmg, angle, knockback, attackType, player) {
+    let finalDmg = baseDmg;
+    let isCrit = false;
+
+    // Controllo Colpo Critico (Diablo Style)
+    if (player && player.critChance > 0 && Math.random() * 100 < player.critChance) {
+      isCrit = true;
+      const critExtra = (player.critDamage || 50) / 100;
+      finalDmg = Math.round(finalDmg * (1 + critExtra));
+    }
+
+    target.takeDamage(finalDmg, angle, knockback, attackType);
+
+    if (isCrit) {
+      FX.burst(target.x, target.y - 8, '#f59e0b', 8, 140);
+      FX.addFloatingText(target.x, target.y - 28, `💥 ${finalDmg} CRIT!`, '#fde047');
+    }
+
+    // Furto Vitale (Life Steal)
+    if (player && player.lifeSteal > 0 && player.hp > 0 && player.hp < player.maxHp) {
+      const heal = Math.max(1, Math.round(finalDmg * (player.lifeSteal / 100)));
+      player.hp = Math.min(player.maxHp, player.hp + heal);
+      FX.spark(player.x, player.y - 8, '#22c55e', 2);
+    }
   }
 
   getAllTargets() {
@@ -331,7 +357,7 @@ export class CombatSystem {
           if (odx * odx + ody * ody < (target.r + 14) * (target.r + 14)) {
             const angle = Math.atan2(ody, odx);
             const dmg = Math.round(14 * this.damageMultiplier);
-            target.takeDamage(dmg, angle, 90, 'magic');
+            this.dealDamageToTarget(target, dmg, angle, 90, 'magic', player);
             this.orbitDamageTimer = 0.28;
             camera.kick(0.12);
             break;
@@ -362,7 +388,7 @@ export class CombatSystem {
           p.hitTargets.add(t);
           const angle = Math.atan2(p.vy, p.vx);
           const attackType = p.type === 'arrow' ? 'pierce' : 'magic';
-          t.takeDamage(p.dmg, angle, p.type === 'arrow' ? 140 : 115, attackType);
+          this.dealDamageToTarget(t, p.dmg, angle, p.type === 'arrow' ? 140 : 115, attackType, player);
           camera.kick(0.15);
 
           p.pierce--;
@@ -414,7 +440,7 @@ export class CombatSystem {
         while (diff > Math.PI) diff = Math.abs(diff - Math.PI * 2);
 
         if (arc >= Math.PI * 1.9 || diff <= arc / 2 + 0.20) {
-          t.takeDamage(dmg, enemyAngle, knockback, 'slash');
+          this.dealDamageToTarget(t, dmg, enemyAngle, knockback, 'slash', player);
           FX.burst(t.x, t.y - 8, '#f8fafc', 5, 120);
           FX.spark(t.x, t.y - 8, '#fde047', 4);
         }

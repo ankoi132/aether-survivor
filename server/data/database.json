@@ -200,6 +200,48 @@
       },
       "equippedWeapon": "staff",
       "inAppPurchases": []
+    },
+    "guest": {
+      "nickname": "guest",
+      "createdAt": "2026-10-15T20:17:22.297Z",
+      "gold": 150,
+      "totalRuns": 0,
+      "totalKills": 0,
+      "highestLevel": 1,
+      "bestSurvivalSeconds": 0,
+      "talents": {
+        "max_hp": 0,
+        "damage": 0,
+        "speed": 0,
+        "magnet": 0,
+        "gold_gain": 0
+      },
+      "inventory": {
+        "copper_ore": 6,
+        "ancient_wood": 4,
+        "slime_gel": 4,
+        "ice_crystal": 0,
+        "sun_amber": 0,
+        "magma_core": 0,
+        "ancient_bone": 3,
+        "iron_scrap": 4,
+        "arcane_rune": 1
+      },
+      "weapons": {
+        "staff": 1,
+        "sword": 0,
+        "bow": 0
+      },
+      "equippedWeapon": "staff",
+      "equipment": {
+        "armor": null,
+        "helmet": null,
+        "boots": null,
+        "amulet": null,
+        "ring": null
+      },
+      "craftedItems": [],
+      "inAppPurchases": []
     }
   },
   "leaderboard": [

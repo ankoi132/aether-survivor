@@ -1232,6 +1232,195 @@ export const Tiles = (() => {
     return P.canvas();
   }
 
+  // 23. Nodi Minerari di Raccolta (Rame, Ferro, Ossidiana)
+  function paintMiningNode(oreType = 'copper') {
+    const P = Pix(22, 18);
+    const cStoneDark = pack('#1e293b');
+    const cStoneMid = pack('#334155');
+    const cStoneLight = pack('#64748b');
+    const cEdge = pack('#090d16');
+
+    let cOreDark, cOreBright, cOreShine;
+    if (oreType === 'iron') {
+      cOreDark = pack('#64748b');
+      cOreBright = pack('#cbd5e1');
+      cOreShine = pack('#ffffff');
+    } else if (oreType === 'obsidian') {
+      cOreDark = pack('#3b0764');
+      cOreBright = pack('#9333ea');
+      cOreShine = pack('#e9d5ff');
+    } else {
+      // copper
+      cOreDark = pack('#9a3412');
+      cOreBright = pack('#f97316');
+      cOreShine = pack('#ffedd5');
+    }
+
+    // Struttura rocciosa asimmetrica
+    for (let y = 3; y <= 15; y++) {
+      for (let x = 2; x <= 19; x++) {
+        const nx = (x - 10.5) / 8.5;
+        const ny = (y - 9.5) / 6.0;
+        if (nx * nx + ny * ny <= 1.0) {
+          P.set(x, y, (y > 11) ? cStoneDark : (x < 10 ? cStoneLight : cStoneMid));
+        }
+      }
+    }
+
+    // Vene di minerale prezioso e cristalli scintillanti incastonati
+    const oreSpots = [
+      { x: 7, y: 7, col: cOreShine }, { x: 8, y: 7, col: cOreBright }, { x: 8, y: 8, col: cOreDark },
+      { x: 13, y: 6, col: cOreShine }, { x: 14, y: 6, col: cOreBright }, { x: 13, y: 7, col: cOreBright },
+      { x: 10, y: 11, col: cOreBright }, { x: 11, y: 11, col: cOreShine }, { x: 11, y: 12, col: cOreDark },
+      { x: 6, y: 12, col: cOreBright }, { x: 16, y: 10, col: cOreBright }
+    ];
+    for (const spot of oreSpots) {
+      P.set(spot.x, spot.y, spot.col);
+    }
+
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 24. Loto delle Cascate (Erboristeria Fluviale)
+  function paintLotus() {
+    const P = Pix(20, 16);
+    const cLeafDark = pack('#14532d');
+    const cLeaf = pack('#16a34a');
+    const cPetalDark = pack('#0284c7');
+    const cPetalLight = pack('#38bdf8');
+    const cPetalCore = pack('#ffffff');
+    const cStamen = pack('#fde047');
+    const cEdge = pack('#022c22');
+
+    // Foglia di ninfea tonda alla base
+    for (let y = 9; y <= 14; y++) {
+      for (let x = 2; x <= 17; x++) {
+        const dx = (x - 9.5) / 7.5;
+        const dy = (y - 11.5) / 2.8;
+        if (dx * dx + dy * dy <= 1.0) {
+          P.set(x, y, (x === 10 && y === 12) ? 0 : (y > 12 ? cLeafDark : cLeaf));
+        }
+      }
+    }
+
+    // Petali di loto sbocciati verso l'alto
+    const petals = [
+      { x: 9, y: 4, col: cPetalCore }, { x: 10, y: 4, col: cPetalCore },
+      { x: 8, y: 5, col: cPetalLight }, { x: 9, y: 5, col: cPetalCore }, { x: 10, y: 5, col: cPetalCore }, { x: 11, y: 5, col: cPetalLight },
+      { x: 7, y: 6, col: cPetalDark }, { x: 8, y: 6, col: cPetalLight }, { x: 9, y: 6, col: cStamen }, { x: 10, y: 6, col: cStamen }, { x: 11, y: 6, col: cPetalLight }, { x: 12, y: 6, col: cPetalDark },
+      { x: 6, y: 7, col: cPetalDark }, { x: 7, y: 7, col: cPetalLight }, { x: 8, y: 7, col: cPetalLight }, { x: 11, y: 7, col: cPetalLight }, { x: 12, y: 7, col: cPetalLight }, { x: 13, y: 7, col: cPetalDark },
+      { x: 8, y: 8, col: cPetalDark }, { x: 9, y: 8, col: cPetalLight }, { x: 10, y: 8, col: cPetalLight }, { x: 11, y: 8, col: cPetalDark }
+    ];
+    for (const pt of petals) {
+      P.set(pt.x, pt.y, pt.col);
+    }
+
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 25. Spina Solare delle Dune (Erboristeria Desertica)
+  function paintSunSpur() {
+    const P = Pix(18, 22);
+    const cStemDark = pack('#78350f');
+    const cStem = pack('#d97706');
+    const cStemLight = pack('#f59e0b');
+    const cBloomDark = pack('#ea580c');
+    const cBloomLight = pack('#facc15');
+    const cBloomCore = pack('#ffffff');
+    const cEdge = pack('#451a03');
+
+    // Fusto spinoso desertico
+    for (let y = 8; y <= 19; y++) {
+      for (let x = 7; x <= 10; x++) {
+        P.set(x, y, (x === 7) ? cStemDark : (x === 8 ? cStem : cStemLight));
+      }
+    }
+    // Spine laterali
+    P.set(5, 11, cStemLight); P.set(6, 12, cStem);
+    P.set(12, 14, cStemLight); P.set(11, 15, cStem);
+    P.set(5, 17, cStemLight); P.set(6, 17, cStem);
+
+    // Fiore solare fiammeggiante in cima
+    const bloom = [
+      { x: 8, y: 3, col: cBloomCore }, { x: 9, y: 3, col: cBloomCore },
+      { x: 7, y: 4, col: cBloomLight }, { x: 8, y: 4, col: cBloomCore }, { x: 9, y: 4, col: cBloomCore }, { x: 10, y: 4, col: cBloomLight },
+      { x: 6, y: 5, col: cBloomDark }, { x: 7, y: 5, col: cBloomLight }, { x: 8, y: 5, col: cBloomLight }, { x: 9, y: 5, col: cBloomLight }, { x: 10, y: 5, col: cBloomLight }, { x: 11, y: 5, col: cBloomDark },
+      { x: 7, y: 6, col: cBloomDark }, { x: 8, y: 6, col: cBloomLight }, { x: 9, y: 6, col: cBloomLight }, { x: 10, y: 6, col: cBloomDark },
+      { x: 8, y: 7, col: cBloomDark }, { x: 9, y: 7, col: cBloomDark }
+    ];
+    for (const b of bloom) {
+      P.set(b.x, b.y, b.col);
+    }
+
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 26. Geode / Monolite d'Aether (Cristalli Arcani)
+  function paintAetherGeode() {
+    const P = Pix(22, 22);
+    const cRockDark = pack('#0f172a');
+    const cRockMid = pack('#1e293b');
+    const cCryDark = pack('#0284c7');
+    const cCryBright = pack('#38bdf8');
+    const cCryShine = pack('#7dd3fc');
+    const cCryCore = pack('#ffffff');
+    const cEdge = pack('#020617');
+
+    // Conchiglia rocciosa spaccata
+    for (let y = 6; y <= 18; y++) {
+      for (let x = 3; x <= 18; x++) {
+        const nx = (x - 10.5) / 7.5;
+        const ny = (y - 12.0) / 6.0;
+        if (nx * nx + ny * ny <= 1.0) {
+          P.set(x, y, (y > 14 || x < 7) ? cRockDark : cRockMid);
+        }
+      }
+    }
+
+    // Grappolo di cristalli di quarzo d'Aether appuntiti verso l'alto
+    const crystals = [
+      { x: 10, y: 3, col: cCryCore },
+      { x: 9, y: 4, col: cCryBright }, { x: 10, y: 4, col: cCryCore }, { x: 11, y: 4, col: cCryBright },
+      { x: 8, y: 5, col: cCryDark }, { x: 9, y: 5, col: cCryBright }, { x: 10, y: 5, col: cCryShine }, { x: 11, y: 5, col: cCryBright },
+      { x: 13, y: 5, col: cCryCore }, { x: 14, y: 5, col: cCryShine },
+      { x: 8, y: 6, col: cCryDark }, { x: 9, y: 6, col: cCryBright }, { x: 10, y: 6, col: cCryBright }, { x: 12, y: 6, col: cCryDark }, { x: 13, y: 6, col: cCryBright }, { x: 14, y: 6, col: cCryCore },
+      { x: 9, y: 7, col: cCryDark }, { x: 10, y: 7, col: cCryBright }, { x: 11, y: 7, col: cCryBright }, { x: 13, y: 7, col: cCryBright },
+      { x: 10, y: 8, col: cCryDark }, { x: 11, y: 8, col: cCryDark }
+    ];
+    for (const c of crystals) {
+      P.set(c.x, c.y, c.col);
+    }
+
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 27. Nodo Esaurito / Depleted (Roccia Svuotata in attesa di respawn)
+  function paintDepletedNode() {
+    const P = Pix(20, 14);
+    const cDust = pack('#334155');
+    const cCrag = pack('#475569');
+    const cHole = pack('#0f172a');
+    const cEdge = pack('#090d16');
+
+    for (let y = 3; y <= 11; y++) {
+      for (let x = 2; x <= 17; x++) {
+        const nx = (x - 9.5) / 7.5;
+        const ny = (y - 7.0) / 4.0;
+        if (nx * nx + ny * ny <= 1.0) {
+          // Cavità vuota al centro
+          const isHole = (x >= 7 && x <= 12 && y >= 5 && y <= 8);
+          P.set(x, y, isHole ? cHole : (y > 8 ? cDust : cCrag));
+        }
+      }
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
   const propCache = new Map();
 
   return {
@@ -1292,6 +1481,13 @@ export const Tiles = (() => {
         else if (type === 'runic_pillar') propCache.set(type, paintRunicPillar(false));
         else if (type === 'runic_pillar_lit') propCache.set(type, paintRunicPillar(true));
         else if (type === 'waypoint_portal') propCache.set(type, paintWaypointPortal());
+        else if (type === 'node_copper') propCache.set(type, paintMiningNode('copper'));
+        else if (type === 'node_iron') propCache.set(type, paintMiningNode('iron'));
+        else if (type === 'node_obsidian') propCache.set(type, paintMiningNode('obsidian'));
+        else if (type === 'node_lotus') propCache.set(type, paintLotus());
+        else if (type === 'node_sun') propCache.set(type, paintSunSpur());
+        else if (type === 'node_geode') propCache.set(type, paintAetherGeode());
+        else if (type === 'node_depleted') propCache.set(type, paintDepletedNode());
       }
       return propCache.get(type);
     }
