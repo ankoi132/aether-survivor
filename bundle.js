@@ -348,6 +348,22 @@
         }
         return;
       }
+      if (kind === "trail") {
+        const cDirtDark = pack("#78350f");
+        const cDirtMid = pack("#92400e");
+        const cDirtLight = pack("#b45309");
+        const cGravel = pack("#451a03");
+        for (let y = 0; y < T; y++) {
+          for (let x = 0; x < T; x++) {
+            const gx = tx * T + x, gy = ty * T + y;
+            const r = hash(gx, gy, 7);
+            let col = r > 0.65 ? cDirtLight : r > 0.3 ? cDirtMid : cDirtDark;
+            if (hash(gx >> 1, gy >> 1, 10) < 0.16) col = cGravel;
+            P.set(ox + x, oy + y, col);
+          }
+        }
+        return;
+      }
       if (kind === "shallow") {
         const cSand = pack("#0284c7");
         const cWater1 = pack("#38bdf8");
@@ -712,6 +728,403 @@
       outline(P, cEdge);
       return P.canvas();
     }
+    function paintBlacksmith() {
+      const P = Pix(38, 36);
+      const cSkin = pack("#fcd34d");
+      const cBeard = pack("#92400e");
+      const cApron = pack("#78350f");
+      const cApronDark = pack("#451a03");
+      const cSteel = pack("#cbd5e1");
+      const cSteelDark = pack("#475569");
+      const cHotMetal = pack("#f97316");
+      const cGlow = pack("#fde047");
+      const cWood = pack("#5b4a34");
+      const cEdge = pack("#090d16");
+      for (let y = 18; y <= 32; y++) {
+        for (let x = 6; x <= 18; x++) {
+          const isAnvilTop = y <= 22;
+          const isAnvilHorn = y === 20 && (x < 8 || x > 16);
+          if (isAnvilTop || isAnvilHorn || y > 22 && x >= 10 && x <= 14 || y >= 30) {
+            P.set(x, y, cSteelDark);
+          }
+        }
+      }
+      for (let x = 8; x <= 15; x++) {
+        P.set(x, 19, cHotMetal);
+        P.set(x, 18, cGlow);
+      }
+      for (let y = 26; y <= 33; y++) {
+        P.set(22, y, cApronDark);
+        P.set(23, y, cApronDark);
+        P.set(26, y, cApronDark);
+        P.set(27, y, cApronDark);
+      }
+      for (let y = 14; y <= 26; y++) {
+        for (let x = 20; x <= 29; x++) {
+          P.set(x, y, x === 20 || x === 29 ? cApronDark : cApron);
+        }
+      }
+      for (let y = 6; y <= 13; y++) {
+        for (let x = 21; x <= 28; x++) {
+          if (y <= 8) P.set(x, y, cSteel);
+          else if (y === 9 || y === 10) P.set(x, y, cSkin);
+          else P.set(x, y, cBeard);
+        }
+      }
+      P.set(22, 9, pack("#0f172a"));
+      P.set(26, 9, pack("#0f172a"));
+      for (let x = 15; x <= 20; x++) P.set(x, 12, cSkin);
+      for (let y = 8; y <= 16; y++) P.set(15, y, cWood);
+      for (let y = 6; y <= 10; y++) {
+        for (let x = 13; x <= 17; x++) P.set(x, y, cSteel);
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintWaterMill() {
+      const W = 64, H = 56;
+      const P = Pix(W, H);
+      const cStone = pack("#475569");
+      const cStoneDark = pack("#1e293b");
+      const cWood = pack("#78350f");
+      const cWoodDark = pack("#451a03");
+      const cRoof = pack("#0284c7");
+      const cRoofLight = pack("#38bdf8");
+      const cWater = pack("#7dd3fc");
+      const cEdge = pack("#090d16");
+      for (let y = 22; y <= 50; y++) {
+        for (let x = 8; x <= 44; x++) {
+          P.set(x, y, x % 5 === 0 || y % 5 === 0 ? cStoneDark : cStone);
+        }
+      }
+      for (let y = 36; y <= 49; y++) {
+        for (let x = 22; x <= 29; x++) P.set(x, y, cWoodDark);
+      }
+      for (let y = 8; y <= 23; y++) {
+        const span = Math.round((y - 8) / 15 * 22);
+        for (let x = 26 - span; x <= 26 + span; x++) {
+          P.set(x, y, y % 2 === 0 ? cRoofLight : cRoof);
+        }
+      }
+      const rcx = 52, rcy = 36, rr = 15;
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+        for (let r = 3; r <= rr; r++) {
+          const px = Math.round(rcx + Math.cos(a) * r);
+          const py = Math.round(rcy + Math.sin(a) * r);
+          P.set(px, py, cWoodDark);
+        }
+      }
+      for (let a = 0; a < Math.PI * 2; a += 0.1) {
+        P.set(Math.round(rcx + Math.cos(a) * rr), Math.round(rcy + Math.sin(a) * rr), cWood);
+      }
+      for (let x = 46; x <= 58; x++) {
+        P.set(x, 51, cWater);
+        if (x % 2 === 0) P.set(x, 52, pack("#ffffff"));
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintDesertTent() {
+      const W = 58, H = 46;
+      const P = Pix(W, H);
+      const cCloth = pack("#d97706");
+      const cClothLight = pack("#fde047");
+      const cClothRed = pack("#dc2626");
+      const cPole = pack("#78350f");
+      const cInside = pack("#451a03");
+      const cEdge = pack("#090d16");
+      for (let y = 10; y <= 40; y++) {
+        const span = Math.round(Math.sin((y - 10) / 30 * Math.PI) * 25);
+        for (let x = 29 - span; x <= 29 + span; x++) {
+          const stripe = Math.floor(Math.abs(x - 29) / 4) % 3;
+          P.set(x, y, stripe === 0 ? cClothLight : stripe === 1 ? cCloth : cClothRed);
+        }
+      }
+      for (let y = 26; y <= 40; y++) {
+        const span = Math.round((40 - y) / 14 * 8);
+        for (let x = 29 - span; x <= 29 + span; x++) P.set(x, y, cInside);
+      }
+      for (let y = 4; y <= 9; y++) P.set(29, y, cClothLight);
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintSnowCabin() {
+      const W = 62, H = 54;
+      const P = Pix(W, H);
+      const cLog = pack("#5b4a34");
+      const cLogDark = pack("#382b1d");
+      const cSnow = pack("#f8fafc");
+      const cSnowShadow = pack("#cbd5e1");
+      const cGlow = pack("#fde047");
+      const cEdge = pack("#090d16");
+      for (let y = 24; y <= 48; y++) {
+        for (let x = 8; x <= 53; x++) {
+          P.set(x, y, y % 4 === 0 ? cLogDark : cLog);
+        }
+      }
+      for (let y = 30; y <= 38; y++) {
+        for (let x = 14; x <= 20; x++) P.set(x, y, cGlow);
+        for (let x = 41; x <= 47; x++) P.set(x, y, cGlow);
+      }
+      for (let y = 34; y <= 48; y++) {
+        for (let x = 27; x <= 34; x++) P.set(x, y, cLogDark);
+      }
+      for (let y = 8; y <= 26; y++) {
+        const span = Math.round((y - 8) / 18 * 28);
+        for (let x = 31 - span; x <= 31 + span; x++) {
+          P.set(x, y, y <= 14 ? cSnow : y % 3 === 0 ? cSnowShadow : cSnow);
+        }
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintWoodCabin() {
+      const W = 58, H = 50;
+      const P = Pix(W, H);
+      const cWood = pack("#5b4a34");
+      const cMoss = pack("#15803d");
+      const cMossLight = pack("#4ade80");
+      const cDoor = pack("#3b2d1f");
+      const cGlow = pack("#a7f3d0");
+      const cEdge = pack("#090d16");
+      for (let y = 22; y <= 44; y++) {
+        for (let x = 8; x <= 50; x++) {
+          P.set(x, y, x % 5 === 0 ? cDoor : cWood);
+        }
+      }
+      for (let y = 28; y <= 34; y++) {
+        for (let x = 14; x <= 20; x++) P.set(x, y, cGlow);
+      }
+      for (let y = 30; y <= 44; y++) {
+        for (let x = 26; x <= 33; x++) P.set(x, y, cDoor);
+      }
+      for (let y = 8; y <= 23; y++) {
+        const span = Math.round((y - 8) / 15 * 26);
+        for (let x = 29 - span; x <= 29 + span; x++) {
+          P.set(x, y, (x + y) % 3 === 0 ? cMossLight : cMoss);
+        }
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintVolcanoFort() {
+      const W = 58, H = 58;
+      const P = Pix(W, H);
+      const cBasalt = pack("#18181b");
+      const cBasaltMid = pack("#27272a");
+      const cLava = pack("#ef4444");
+      const cLavaGlow = pack("#facc15");
+      const cEdge = pack("#020617");
+      for (let y = 14; y <= 52; y++) {
+        for (let x = 8; x <= 50; x++) {
+          const isLavaVein = x === 18 && y > 24 || x === 40 && y > 24;
+          P.set(x, y, isLavaVein ? cLava : x % 6 === 0 || y % 6 === 0 ? cBasalt : cBasaltMid);
+        }
+      }
+      for (let x = 8; x <= 50; x += 10) {
+        for (let y = 8; y <= 14; y++) {
+          for (let bx = 0; bx < 6; bx++) P.set(x + bx, y, cBasalt);
+        }
+      }
+      for (let y = 36; y <= 52; y++) {
+        for (let x = 24; x <= 34; x++) P.set(x, y, pack("#451a03"));
+      }
+      for (let x of [16, 38]) {
+        for (let y = 20; y <= 26; y++) P.set(x, y, cLavaGlow);
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintAetherObelisk() {
+      const W = 32, H = 64;
+      const P = Pix(W, H);
+      const cMarble = pack("#f1f5f9");
+      const cMarbleShadow = pack("#94a3b8");
+      const cCrystal = pack("#38bdf8");
+      const cCrystalCore = pack("#e0f2fe");
+      const cRune = pack("#c084fc");
+      const cEdge = pack("#090d16");
+      for (let y = 50; y <= 58; y++) {
+        for (let x = 4; x <= 27; x++) P.set(x, y, cMarble);
+      }
+      for (let y = 44; y <= 50; y++) {
+        for (let x = 8; x <= 23; x++) P.set(x, y, cMarbleShadow);
+      }
+      for (let y = 6; y <= 44; y++) {
+        const span = Math.round((y - 6) / 38 * 8) + 1;
+        for (let x = 16 - span; x <= 16 + span; x++) {
+          const isCore = x === 16;
+          const isRune = (y === 16 || y === 24 || y === 32) && Math.abs(x - 16) <= 2;
+          P.set(x, y, isRune ? cRune : isCore ? cCrystalCore : cCrystal);
+        }
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintBrazier() {
+      const P = Pix(22, 28);
+      const cIron = pack("#1e293b");
+      const cFlame1 = pack("#ef4444");
+      const cFlame2 = pack("#f97316");
+      const cFlame3 = pack("#fde047");
+      const cEdge = pack("#090d16");
+      for (let y = 14; y <= 25; y++) {
+        P.set(5, y, cIron);
+        P.set(11, y, cIron);
+        P.set(17, y, cIron);
+      }
+      for (let y = 12; y <= 16; y++) {
+        for (let x = 3; x <= 19; x++) P.set(x, y, cIron);
+      }
+      for (let y = 2; y <= 12; y++) {
+        const span = Math.round((12 - y) / 10 * 6);
+        for (let x = 11 - span; x <= 11 + span; x++) {
+          P.set(x, y, y <= 5 ? cFlame3 : y <= 9 ? cFlame2 : cFlame1);
+        }
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintPalmTree() {
+      const P = Pix(38, 48);
+      const cTrunk = pack("#78350f");
+      const cTrunkDark = pack("#451a03");
+      const cFrond = pack("#16a34a");
+      const cFrondLight = pack("#4ade80");
+      const cEdge = pack("#090d16");
+      for (let y = 18; y <= 45; y++) {
+        const curve = Math.round(Math.sin((y - 18) / 27 * Math.PI) * 5);
+        const cx = 19 + curve;
+        for (let x = cx - 2; x <= cx + 2; x++) {
+          P.set(x, y, y % 3 === 0 ? cTrunkDark : cTrunk);
+        }
+      }
+      const fronds = [
+        [-14, -8],
+        [14, -8],
+        [-12, 6],
+        [12, 6],
+        [0, -12],
+        [-8, -4],
+        [8, -4]
+      ];
+      for (const [fx, fy] of fronds) {
+        for (let i = 0; i <= 12; i++) {
+          const px = Math.round(19 + fx * i / 12);
+          const py = Math.round(18 + fy * i / 12 + i * i / 24);
+          P.set(px, py, cFrond);
+          P.set(px, py - 1, cFrondLight);
+        }
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintFountain() {
+      const P = Pix(36, 32);
+      const cStone = pack("#94a3b8");
+      const cStoneDark = pack("#475569");
+      const cWater = pack("#38bdf8");
+      const cWaterLight = pack("#e0f2fe");
+      const cEdge = pack("#090d16");
+      for (let y = 12; y <= 28; y++) {
+        for (let x = 4; x <= 32; x++) {
+          const isWater = y >= 14 && y <= 26 && x >= 7 && x <= 29;
+          P.set(x, y, isWater ? cWater : x % 3 === 0 ? cStoneDark : cStone);
+        }
+      }
+      for (let y = 4; y <= 14; y++) {
+        P.set(18, y, cWaterLight);
+        P.set(17, y + 1, cWaterLight);
+        P.set(19, y + 1, cWaterLight);
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintMushrooms() {
+      const P = Pix(26, 28);
+      const cStem = pack("#cbd5e1");
+      const cCap = pack("#a855f7");
+      const cCapLight = pack("#c084fc");
+      const cDots = pack("#38bdf8");
+      const cEdge = pack("#090d16");
+      for (let y = 14; y <= 26; y++) {
+        P.set(10, y, cStem);
+        P.set(11, y, cStem);
+        P.set(17, y + 2, cStem);
+      }
+      for (let y = 6; y <= 14; y++) {
+        const span = Math.round((y - 6) / 8 * 8);
+        for (let x = 11 - span; x <= 11 + span; x++) {
+          P.set(x, y, x % 3 === 0 && y % 3 === 0 ? cDots : y <= 8 ? cCapLight : cCap);
+        }
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintChest(isOpen = false) {
+      const P = Pix(26, 24);
+      const cWood = pack("#78350f");
+      const cWoodDark = pack("#451a03");
+      const cGold = pack("#facc15");
+      const cGoldLight = pack("#fde047");
+      const cGemRed = pack("#ef4444");
+      const cGemCyan = pack("#38bdf8");
+      const cInside = pack("#18181b");
+      const cEdge = pack("#090d16");
+      if (!isOpen) {
+        for (let y = 8; y <= 21; y++) {
+          for (let x = 3; x <= 22; x++) {
+            const isGoldTrim = x === 3 || x === 22 || x === 9 || x === 16 || y === 8 || y === 14 || y === 21;
+            P.set(x, y, isGoldTrim ? cGold : y % 2 === 0 ? cWoodDark : cWood);
+          }
+        }
+        for (let y = 13; y <= 16; y++) {
+          for (let x = 12; x <= 14; x++) P.set(x, y, cGoldLight);
+        }
+        P.set(13, 14, cEdge);
+      } else {
+        for (let y = 11; y <= 22; y++) {
+          for (let x = 3; x <= 22; x++) {
+            const isGoldTrim = x === 3 || x === 22 || y === 22;
+            P.set(x, y, isGoldTrim ? cGold : cWoodDark);
+          }
+        }
+        for (let y = 8; y <= 13; y++) {
+          for (let x = 5; x <= 20; x++) {
+            const r = hash(x, y, 77);
+            P.set(x, y, r < 0.25 ? cGemRed : r < 0.5 ? cGemCyan : r < 0.8 ? cGold : cGoldLight);
+          }
+        }
+        for (let y = 2; y <= 8; y++) {
+          for (let x = 4; x <= 21; x++) {
+            P.set(x, y, x === 4 || x === 21 || y === 2 ? cGold : cWood);
+          }
+        }
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
+    function paintRunicPillar(isLit = false) {
+      const P = Pix(20, 38);
+      const cStone = pack("#475569");
+      const cStoneLight = pack("#64748b");
+      const cRuneGlow = pack(isLit ? "#38bdf8" : "#334155");
+      const cRuneBright = pack(isLit ? "#ffffff" : "#475569");
+      const cEdge = pack("#090d16");
+      for (let y = 6; y <= 34; y++) {
+        for (let x = 4; x <= 15; x++) {
+          P.set(x, y, x === 4 || x === 15 ? cStone : cStoneLight);
+        }
+      }
+      for (let y of [12, 18, 24, 30]) {
+        P.set(9, y, cRuneBright);
+        P.set(10, y, cRuneBright);
+        P.set(8, y - 1, cRuneGlow);
+        P.set(11, y - 1, cRuneGlow);
+      }
+      outline(P, cEdge);
+      return P.canvas();
+    }
     const propCache = /* @__PURE__ */ new Map();
     return {
       T,
@@ -748,6 +1161,21 @@
           else if (type === "house_blue") propCache.set(type, paintHouse("blue"));
           else if (type === "well") propCache.set(type, paintWell());
           else if (type === "lamppost") propCache.set(type, paintLamppost());
+          else if (type === "blacksmith_npc") propCache.set(type, paintBlacksmith());
+          else if (type === "water_mill") propCache.set(type, paintWaterMill());
+          else if (type === "tent_desert") propCache.set(type, paintDesertTent());
+          else if (type === "cabin_snow") propCache.set(type, paintSnowCabin());
+          else if (type === "cabin_wood") propCache.set(type, paintWoodCabin());
+          else if (type === "fort_volcano") propCache.set(type, paintVolcanoFort());
+          else if (type === "aether_obelisk") propCache.set(type, paintAetherObelisk());
+          else if (type === "brazier_fire") propCache.set(type, paintBrazier());
+          else if (type === "palm_tree") propCache.set(type, paintPalmTree());
+          else if (type === "fountain") propCache.set(type, paintFountain());
+          else if (type === "glowing_mushrooms") propCache.set(type, paintMushrooms());
+          else if (type === "chest_closed") propCache.set(type, paintChest(false));
+          else if (type === "chest_open") propCache.set(type, paintChest(true));
+          else if (type === "runic_pillar") propCache.set(type, paintRunicPillar(false));
+          else if (type === "runic_pillar_lit") propCache.set(type, paintRunicPillar(true));
         }
         return propCache.get(type);
       }
@@ -1099,21 +1527,31 @@
       type: "capital",
       centerTx: 0,
       centerTy: 0,
-      radiusTiles: 12,
-      // ~384px raggio di protezione
+      radiusTiles: 13,
+      // ~416px raggio di protezione
       color: "#38bdf8",
+      blacksmith: {
+        id: "bs_citadel",
+        name: "Mastro Thorgar",
+        title: "Gran Fabbro Reale",
+        quote: "Salute, eroe dell'Aether! La mia forgia arde col fuoco sacro. Portami acciaio e rune e plasmer\xF2 per te armi degne di un re!",
+        tx: 5,
+        ty: 4
+      },
       buildings: [
-        { type: "house_red", tx: -7, ty: -6, wTiles: 4, hTiles: 3, name: "Taverna del Viandante" },
-        { type: "house_blue", tx: 3, ty: -6, wTiles: 4, hTiles: 3, name: "Torre dell'Arcimago" },
-        { type: "house_blue", tx: -7, ty: 3, wTiles: 4, hTiles: 3, name: "Bottega delle Pozioni" },
-        { type: "house_red", tx: 3, ty: 3, wTiles: 4, hTiles: 3, name: "Fucina & Armeria" }
+        { type: "aether_obelisk", tx: 0, ty: -3, wTiles: 2, hTiles: 4, name: "Obelisco dell'Aether" },
+        { type: "house_blue", tx: -8, ty: -7, wTiles: 4, hTiles: 3, name: "Torre dell'Arcimago" },
+        { type: "house_red", tx: 4, ty: -7, wTiles: 4, hTiles: 3, name: "Taverna della Corona" },
+        { type: "fountain", tx: -4, ty: 3, wTiles: 3, hTiles: 2, name: "Fontana delle Stelle" },
+        { type: "house_blue", tx: -8, ty: 3, wTiles: 4, hTiles: 3, name: "Bottega degli Elisir" }
       ],
       props: [
-        { type: "well", tx: 0, ty: -1 },
-        { type: "lamppost", tx: -3, ty: -3 },
-        { type: "lamppost", tx: 3, ty: -3 },
-        { type: "lamppost", tx: -3, ty: 2 },
-        { type: "lamppost", tx: 3, ty: 2 }
+        { type: "blacksmith_npc", tx: 5, ty: 4 },
+        { type: "well", tx: 0, ty: 5 },
+        { type: "lamppost", tx: -3, ty: -2 },
+        { type: "lamppost", tx: 3, ty: -2 },
+        { type: "lamppost", tx: -3, ty: 3 },
+        { type: "lamppost", tx: 3, ty: 3 }
       ]
     },
     {
@@ -1123,15 +1561,24 @@
       type: "river_town",
       centerTx: -40,
       centerTy: 22,
-      radiusTiles: 11,
+      radiusTiles: 12,
       color: "#06b6d4",
+      blacksmith: {
+        id: "bs_waterfall",
+        name: "Mastro Finn",
+        title: "Fabbro delle Maree",
+        quote: "L'acqua gelida della cascata tempra l'acciaio meglio di qualsiasi olio! Fammi vedere che rottami hai raccolto lungo il fiume!",
+        tx: -35,
+        ty: 24
+      },
       buildings: [
-        { type: "house_blue", tx: -44, ty: 18, wTiles: 4, hTiles: 3, name: "Locanda della Cascata" },
-        { type: "house_blue", tx: -36, ty: 18, wTiles: 4, hTiles: 3, name: "Bottega dei Pescatori" },
-        { type: "house_red", tx: -42, ty: 25, wTiles: 4, hTiles: 3, name: "Mulino ad Acqua" }
+        { type: "water_mill", tx: -42, ty: 25, wTiles: 4, hTiles: 3, name: "Mulino della Cascata" },
+        { type: "house_blue", tx: -45, ty: 17, wTiles: 4, hTiles: 3, name: "Locanda dei Pescatori" },
+        { type: "house_red", tx: -36, ty: 17, wTiles: 4, hTiles: 3, name: "Bottega delle Reti" }
       ],
       props: [
-        { type: "well", tx: -40, ty: 22 },
+        { type: "blacksmith_npc", tx: -35, ty: 24 },
+        { type: "well", tx: -40, ty: 20 },
         { type: "lamppost", tx: -43, ty: 21 },
         { type: "lamppost", tx: -37, ty: 21 },
         { type: "lamppost", tx: -40, ty: 26 }
@@ -1144,16 +1591,25 @@
       type: "snow_outpost",
       centerTx: 20,
       centerTy: -75,
-      radiusTiles: 10,
+      radiusTiles: 11,
       color: "#7dd3fc",
+      blacksmith: {
+        id: "bs_frostpeak",
+        name: "Mastra Astrid",
+        title: "Forgiatrice dei Ghiacci",
+        quote: "Il permafrost spezza le lame fragili. Qui tempreremo le tue armi col crio-acciaio delle vette montane!",
+        tx: 23,
+        ty: -73
+      },
       buildings: [
-        { type: "house_red", tx: 16, ty: -79, wTiles: 4, hTiles: 3, name: "Rifugio dei Ghiacci" },
-        { type: "house_blue", tx: 22, ty: -79, wTiles: 4, hTiles: 3, name: "Osservatorio Astrale" }
+        { type: "cabin_snow", tx: 15, ty: -80, wTiles: 4, hTiles: 3, name: "Rifugio del Permafrost" },
+        { type: "cabin_snow", tx: 23, ty: -80, wTiles: 4, hTiles: 3, name: "Osservatorio del Nord" }
       ],
       props: [
-        { type: "well", tx: 20, ty: -75 },
-        { type: "lamppost", tx: 17, ty: -74 },
-        { type: "lamppost", tx: 23, ty: -74 }
+        { type: "blacksmith_npc", tx: 23, ty: -73 },
+        { type: "brazier_fire", tx: 18, ty: -74 },
+        { type: "brazier_fire", tx: 22, ty: -74 },
+        { type: "well", tx: 20, ty: -76 }
       ]
     },
     {
@@ -1163,16 +1619,26 @@
       type: "desert_oasis",
       centerTx: -70,
       centerTy: 65,
-      radiusTiles: 10,
+      radiusTiles: 11,
       color: "#f59e0b",
+      blacksmith: {
+        id: "bs_oasis",
+        name: "Mastro Rashid",
+        title: "Armaiolo delle Sabbie",
+        quote: "Pace su di te, viaggiatore delle dune! Il sole ardente forgia le armi pi\xF9 flessibili e micidiali. Cosa creiamo oggi?",
+        tx: -66,
+        ty: 66
+      },
       buildings: [
-        { type: "house_red", tx: -74, ty: 61, wTiles: 4, hTiles: 3, name: "Bazaar delle Spezie" },
-        { type: "house_blue", tx: -66, ty: 61, wTiles: 4, hTiles: 3, name: "Tenda del Califfo" }
+        { type: "tent_desert", tx: -75, ty: 60, wTiles: 4, hTiles: 3, name: "Padiglione del Sultano" },
+        { type: "tent_desert", tx: -66, ty: 60, wTiles: 4, hTiles: 3, name: "Bazaar delle Dune" }
       ],
       props: [
-        { type: "well", tx: -70, ty: 65 },
-        { type: "lamppost", tx: -72, ty: 64 },
-        { type: "lamppost", tx: -68, ty: 64 }
+        { type: "blacksmith_npc", tx: -66, ty: 66 },
+        { type: "palm_tree", tx: -73, ty: 64 },
+        { type: "palm_tree", tx: -67, ty: 64 },
+        { type: "palm_tree", tx: -71, ty: 67 },
+        { type: "well", tx: -70, ty: 65 }
       ]
     },
     {
@@ -1182,16 +1648,25 @@
       type: "volcano_fort",
       centerTx: 70,
       centerTy: 45,
-      radiusTiles: 10,
+      radiusTiles: 11,
       color: "#ef4444",
+      blacksmith: {
+        id: "bs_cineris",
+        name: "Mastro Ignis",
+        title: "Fabbro di Magma",
+        quote: "Solo chi sopporta il calore dell'inferno merita una lama di vero magma! Mostrami i tuoi nuclei ardenti!",
+        tx: 74,
+        ty: 46
+      },
       buildings: [
-        { type: "house_red", tx: 66, ty: 41, wTiles: 4, hTiles: 3, name: "Fucina di Magma" },
-        { type: "house_blue", tx: 72, ty: 41, wTiles: 4, hTiles: 3, name: "Torre di Guardia" }
+        { type: "fort_volcano", tx: 66, ty: 40, wTiles: 4, hTiles: 4, name: "Bastione di Basalto" },
+        { type: "house_red", tx: 73, ty: 40, wTiles: 4, hTiles: 3, name: "Caserma delle Ceneri" }
       ],
       props: [
-        { type: "well", tx: 70, ty: 45 },
-        { type: "lamppost", tx: 67, ty: 44 },
-        { type: "lamppost", tx: 73, ty: 44 }
+        { type: "blacksmith_npc", tx: 74, ty: 46 },
+        { type: "brazier_fire", tx: 67, ty: 45 },
+        { type: "brazier_fire", tx: 73, ty: 45 },
+        { type: "well", tx: 70, ty: 46 }
       ]
     },
     {
@@ -1201,34 +1676,150 @@
       type: "forest_haven",
       centerTx: -75,
       centerTy: -35,
-      radiusTiles: 10,
+      radiusTiles: 11,
       color: "#22c55e",
+      blacksmith: {
+        id: "bs_sylva",
+        name: "Mastra Elora",
+        title: "Artigiana delle Fronde",
+        quote: "Gli alberi sussurrano i segreti della terra. Posso fondere la resina d'ambra e il metallo per darti archi e bastoni ineguagliabili.",
+        tx: -71,
+        ty: -34
+      },
       buildings: [
-        { type: "house_blue", tx: -79, ty: -39, wTiles: 4, hTiles: 3, name: "Bottega degli Antidoti" },
-        { type: "house_red", tx: -71, ty: -39, wTiles: 4, hTiles: 3, name: "Locanda della Quercia" }
+        { type: "cabin_wood", tx: -80, ty: -40, wTiles: 4, hTiles: 3, name: "Santuario della Quercia" },
+        { type: "cabin_wood", tx: -72, ty: -40, wTiles: 4, hTiles: 3, name: "Erboristeria di Sylva" }
       ],
       props: [
-        { type: "well", tx: -75, ty: -35 },
-        { type: "lamppost", tx: -77, ty: -34 },
-        { type: "lamppost", tx: -73, ty: -34 }
+        { type: "blacksmith_npc", tx: -71, ty: -34 },
+        { type: "glowing_mushrooms", tx: -77, ty: -34 },
+        { type: "glowing_mushrooms", tx: -73, ty: -36 },
+        { type: "well", tx: -75, ty: -35 }
       ]
     }
   ];
+  var POINTS_OF_INTEREST = [
+    {
+      id: "boss_forest",
+      type: "boss",
+      name: "Radura del Treant Ancestrale",
+      title: "Custode delle Radici",
+      biome: "forest",
+      tx: -95,
+      ty: -85,
+      bossKind: "boss_treant",
+      chestId: "chest_forest",
+      chestName: "Forziere di Smeraldo Antico",
+      color: "#22c55e",
+      icon: "\u{1F451}",
+      loot: { gold: 220, xp: 180, items: { slime_gel: 4, iron_scrap: 3, arcane_rune: 2 } }
+    },
+    {
+      id: "boss_snow",
+      type: "boss",
+      name: "Trono del Golem Glaciale",
+      title: "Signore del Permafrost",
+      biome: "snow",
+      tx: 25,
+      ty: -110,
+      bossKind: "boss_golem",
+      chestId: "chest_snow",
+      chestName: "Forziere di Cristallo Perenne",
+      color: "#7dd3fc",
+      icon: "\u{1F451}",
+      loot: { gold: 300, xp: 220, items: { ice_crystal: 4, iron_scrap: 3, arcane_rune: 2 } }
+    },
+    {
+      id: "boss_desert",
+      type: "boss",
+      name: "Tempio del Colosso delle Dune",
+      title: "Flagello delle Sabbie",
+      biome: "desert",
+      tx: -105,
+      ty: 98,
+      bossKind: "boss_scorpion",
+      chestId: "chest_desert",
+      chestName: "Forziere d'Oro della Sfinge",
+      color: "#f59e0b",
+      icon: "\u{1F451}",
+      loot: { gold: 350, xp: 260, items: { sun_amber: 5, iron_scrap: 4, arcane_rune: 2 } }
+    },
+    {
+      id: "boss_volcano",
+      type: "boss",
+      name: "Cratere del Titano di Magma",
+      title: "Incarnazione del Fuoco",
+      biome: "volcano",
+      tx: 102,
+      ty: 86,
+      bossKind: "boss_magma",
+      chestId: "chest_volcano",
+      chestName: "Forziere di Ossidiana Vulcanica",
+      color: "#ef4444",
+      icon: "\u{1F451}",
+      loot: { gold: 450, xp: 320, items: { magma_core: 5, iron_scrap: 4, arcane_rune: 3 } }
+    },
+    {
+      id: "mystery_waterfall",
+      type: "mystery",
+      name: "Grotta Segreta delle Cascate",
+      title: "Enigma delle Tre Rune",
+      biome: "river",
+      tx: -52,
+      ty: 22,
+      chestId: "chest_waterfall",
+      chestName: "Forziere Sommerso delle Cascate",
+      color: "#06b6d4",
+      icon: "\u{1F52E}",
+      loot: { gold: 400, xp: 300, items: { arcane_rune: 3, ice_crystal: 4, slime_gel: 4 } }
+    }
+  ];
   var ROAD_SEGMENTS = [
-    { x1: 0, y1: 0, x2: 20, y2: -75 },
-    // Cittadella -> Frostpeak (Nord)
-    { x1: 0, y1: 0, x2: -40, y2: 22 },
-    // Cittadella -> Borgo delle Cascate (Ovest/Sud-Ovest)
-    { x1: 0, y1: 0, x2: 70, y2: 45 },
-    // Cittadella -> Cineris (Est)
-    { x1: 0, y1: 0, x2: -70, y2: 65 },
-    // Cittadella -> Al-Zahir (Sud-Ovest)
-    { x1: 0, y1: 0, x2: -75, y2: -35 },
-    // Cittadella -> Sylva (Ovest)
-    { x1: -40, y1: 22, x2: -70, y2: 65 },
-    // Borgo delle Cascate -> Al-Zahir
-    { x1: -40, y1: 22, x2: -75, y2: -35 }
-    // Borgo delle Cascate -> Sylva
+    // 1. Strada Imperiale del Nord: Cittadella -> Valico dei Monti -> Frostpeak
+    { x1: 0, y1: 0, x2: 8, y2: -35 },
+    { x1: 8, y1: -35, x2: 20, y2: -75 },
+    // 2. Via Fluviale dell'Ovest: Cittadella -> Ponte dell'Aether -> Borgo delle Cascate
+    { x1: 0, y1: 0, x2: -20, y2: 10 },
+    { x1: -20, y1: 10, x2: -40, y2: 22 },
+    // 3. Via delle Ceneri (Est): Cittadella -> Gola di Zolfo -> Rocca di Cineris
+    { x1: 0, y1: 0, x2: 35, y2: 20 },
+    { x1: 35, y1: 20, x2: 70, y2: 45 },
+    // 4. Pista Carovaniera di Al-Zahir: Cittadella -> Dune Basse -> Oasi di Al-Zahir
+    { x1: 0, y1: 0, x2: -35, y2: 35 },
+    { x1: -35, y1: 35, x2: -70, y2: 65 },
+    // 5. Cammino Silvano: Cittadella -> Radura di Mezzo -> Borgo di Sylva
+    { x1: 0, y1: 0, x2: -35, y2: -18 },
+    { x1: -35, y1: -18, x2: -75, y2: -35 },
+    // 6. Raccordo Borgo delle Cascate <-> Oasi di Al-Zahir
+    { x1: -40, y1: 22, x2: -55, y2: 45 },
+    { x1: -55, y1: 45, x2: -70, y2: 65 },
+    // 7. Raccordo Borgo delle Cascate <-> Borgo di Sylva
+    { x1: -40, y1: 22, x2: -58, y2: -8 },
+    { x1: -58, y1: -8, x2: -75, y2: -35 }
+  ];
+  var TRAIL_SEGMENTS = [
+    // Sentiero 1: Sylva -> Radura del Treant Ancestrale (Boss Bosco)
+    { x1: -75, y1: -35, x2: -86, y2: -60 },
+    { x1: -86, y1: -60, x2: -95, y2: -85 },
+    // Sentiero 2: Frostpeak -> Trono del Golem dei Ghiacci (Boss Montagne)
+    { x1: 20, y1: -75, x2: 22, y2: -92 },
+    { x1: 22, y1: -92, x2: 25, y2: -110 },
+    // Sentiero 3: Al-Zahir -> Tempio della Sfinge (Boss Deserto)
+    { x1: -70, y1: 65, x2: -88, y2: 82 },
+    { x1: -88, y1: 82, x2: -105, y2: 98 },
+    // Sentiero 4: Cineris -> Cratere del Titano di Magma (Boss Vulcano)
+    { x1: 70, y1: 45, x2: 86, y2: 65 },
+    { x1: 86, y1: 65, x2: 102, y2: 86 },
+    // Sentiero 5: Borgo delle Cascate -> Grotta del Mistero sotto la Cascata
+    { x1: -40, y1: 22, x2: -46, y2: 22 },
+    { x1: -46, y1: 22, x2: -52, y2: 22 },
+    // Sentieri di raccordo trasversale tra biomi:
+    // Frostpeak -> Passaggio Orientale verso Cineris
+    { x1: 20, y1: -75, x2: 50, y2: -20 },
+    { x1: 50, y1: -20, x2: 70, y2: 45 },
+    // Sylva -> Alture di Frostpeak
+    { x1: -75, y1: -35, x2: -30, y2: -55 },
+    { x1: -30, y1: -55, x2: 20, y2: -75 }
   ];
   function distToSegment(px, py, x1, y1, x2, y2) {
     const dx = x2 - x1;
@@ -1260,6 +1851,7 @@
       this.TILE_BRIDGE = 9;
       this.TILE_SHALLOW_WATER = 10;
       this.TILE_ROAD = 11;
+      this.TILE_TRAIL = 12;
       this.MAP_RADIUS = 120;
       this.minTile = -this.MAP_RADIUS;
       this.maxTile = this.MAP_RADIUS;
@@ -1310,7 +1902,7 @@
       return Math.sin(ty * 0.038) * 44 - 18 + Math.cos(ty * 0.08) * 9;
     }
     /**
-     * Verifica se un tile fa parte di una strada principale
+     * Verifica se un tile fa parte di una strada maestra lastricata
      */
     isRoad(tx, ty) {
       for (const seg of ROAD_SEGMENTS) {
@@ -1320,6 +1912,39 @@
         }
       }
       return false;
+    }
+    /**
+     * Verifica se un tile fa parte di un sentiero selvaggio di terra e ghiaia
+     */
+    isTrail(tx, ty) {
+      for (const seg of TRAIL_SEGMENTS) {
+        const d = distToSegment(tx, ty, seg.x1, seg.y1, seg.x2, seg.y2);
+        if (d <= 1.25) {
+          return true;
+        }
+      }
+      return false;
+    }
+    /**
+     * Cerca l'NPC Fabbro più vicino entro un dato raggio dal giocatore
+     */
+    getNearbyBlacksmith(playerX, playerY, maxDist = 75) {
+      for (const s of SETTLEMENTS) {
+        if (!s.blacksmith) continue;
+        const bx = s.blacksmith.tx * this.TS + this.TS / 2;
+        const by = s.blacksmith.ty * this.TS + this.TS;
+        if (Math.hypot(playerX - bx, playerY - by) <= maxDist) {
+          return {
+            ...s.blacksmith,
+            settlementName: s.name,
+            settlementId: s.id,
+            settlementColor: s.color,
+            worldX: bx,
+            worldY: by
+          };
+        }
+      }
+      return null;
     }
     /**
      * Determina a quale bioma appartiene una coordinata con transizioni organiche e sfumate:
@@ -1381,13 +2006,17 @@
         return this.TILE_FLOOR;
       }
       const onRoad = this.isRoad(tx, ty);
+      const onTrail = this.isTrail(tx, ty);
       const riverCx = this.getRiverCenterX(ty);
       const distRiver = Math.abs(tx - riverCx);
-      if (onRoad && distRiver <= 2.8) {
+      if ((onRoad || onTrail) && distRiver <= 2.8) {
         return this.TILE_BRIDGE;
       }
       if (onRoad) {
         return this.TILE_ROAD;
+      }
+      if (onTrail) {
+        return this.TILE_TRAIL;
       }
       if (distRiver <= 2.4) {
         const isFord = Math.abs(ty - 22) <= 3 && Math.abs(tx - -40) <= 14 || Math.floor(Math.abs(ty) / 16) % 3 === 0 && distRiver <= 1.6;
@@ -1401,35 +2030,35 @@
       const lakeNoise = this.hash2D(Math.floor(tx / 3), Math.floor(ty / 3), 101);
       const propNoise = this.hash2D(tx, ty, 77);
       if (biome === "river") {
-        if (propNoise > 0.84) return this.TILE_TREE;
-        if (propNoise > 0.8) return this.TILE_ROCK;
+        if (propNoise > 0.9) return this.TILE_TREE;
+        if (propNoise > 0.87) return this.TILE_ROCK;
         return this.TILE_FLOOR;
       }
       if (biome === "snow") {
-        if (wallNoise > 0.82) return this.TILE_WALL;
-        if (lakeNoise > 0.84) return this.TILE_WATER;
-        if (propNoise > 0.78) return this.TILE_PINE;
-        if (propNoise > 0.74) return this.TILE_ROCK;
+        if (wallNoise > 0.94) return this.TILE_WALL;
+        if (lakeNoise > 0.94) return this.TILE_WATER;
+        if (propNoise > 0.88) return this.TILE_PINE;
+        if (propNoise > 0.85) return this.TILE_ROCK;
         return this.TILE_FLOOR;
       }
       if (biome === "desert") {
-        if (wallNoise > 0.84) return this.TILE_WALL;
-        if (lakeNoise > 0.91) return this.TILE_WATER;
-        if (propNoise > 0.82) return this.TILE_CACTUS;
-        if (propNoise > 0.78) return this.TILE_SAND_ROCK;
+        if (wallNoise > 0.94) return this.TILE_WALL;
+        if (lakeNoise > 0.96) return this.TILE_WATER;
+        if (propNoise > 0.9) return this.TILE_CACTUS;
+        if (propNoise > 0.87) return this.TILE_SAND_ROCK;
         return this.TILE_FLOOR;
       }
       if (biome === "volcano") {
-        if (wallNoise > 0.81) return this.TILE_WALL;
-        if (lakeNoise > 0.76) return this.TILE_WATER;
-        if (propNoise > 0.79) return this.TILE_VOLCANO_ROCK;
-        if (propNoise > 0.75) return this.TILE_ROCK;
+        if (wallNoise > 0.94) return this.TILE_WALL;
+        if (lakeNoise > 0.92) return this.TILE_WATER;
+        if (propNoise > 0.89) return this.TILE_VOLCANO_ROCK;
+        if (propNoise > 0.86) return this.TILE_ROCK;
         return this.TILE_FLOOR;
       }
-      if (wallNoise > 0.86) return this.TILE_WALL;
-      if (lakeNoise > 0.82) return this.TILE_WATER;
-      if (propNoise > 0.77) return this.TILE_TREE;
-      if (propNoise > 0.73) return this.TILE_ROCK;
+      if (wallNoise > 0.95) return this.TILE_WALL;
+      if (lakeNoise > 0.93) return this.TILE_WATER;
+      if (propNoise > 0.88) return this.TILE_TREE;
+      if (propNoise > 0.85) return this.TILE_ROCK;
       return this.TILE_FLOOR;
     }
     getKind(tx, ty) {
@@ -1438,12 +2067,13 @@
       if (t === this.TILE_WATER) return "liquid";
       if (t === this.TILE_BRIDGE) return "bridge";
       if (t === this.TILE_ROAD) return "road";
+      if (t === this.TILE_TRAIL) return "trail";
       if (t === this.TILE_SHALLOW_WATER) return "shallow";
       return "floor";
     }
     isSolid(tx, ty) {
       const t = this.getTileType(tx, ty);
-      if (t === this.TILE_BRIDGE || t === this.TILE_SHALLOW_WATER || t === this.TILE_ROAD) {
+      if (t === this.TILE_BRIDGE || t === this.TILE_SHALLOW_WATER || t === this.TILE_ROAD || t === this.TILE_TRAIL) {
         return false;
       }
       return t === this.TILE_WALL || t === this.TILE_WATER || t === this.TILE_TREE || t === this.TILE_PINE || t === this.TILE_CACTUS || t === this.TILE_VOLCANO_ROCK || t === this.TILE_SAND_ROCK || t === this.TILE_ROCK || this.isBuildingSolid(tx, ty);
@@ -1660,10 +2290,57 @@
                   if (!sprite) return;
                   const sw = sprite.width * this.PX;
                   const sh = sprite.height * this.PX;
-                  if (p.type === "house_red" || p.type === "house_blue") {
+                  if (p.type === "house_red" || p.type === "house_blue" || p.type === "water_mill" || p.type === "tent_desert" || p.type === "cabin_snow" || p.type === "cabin_wood" || p.type === "fort_volcano") {
                     ctx.fillStyle = "rgba(6, 8, 14, 0.45)";
-                    ctx.fillRect(Math.round(p.x - sw / 2 + 10), Math.round(p.y - 8), sw - 20, 14);
+                    ctx.fillRect(Math.round(p.x - sw / 2 + 8), Math.round(p.y - 8), sw - 16, 14);
                     ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 8), sw, sh);
+                  } else if (p.type === "blacksmith_npc") {
+                    Sprites.drawShadow(ctx, p.x, p.y - 2, 16);
+                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
+                    ctx.save();
+                    ctx.font = "bold 10px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+                    ctx.fillRect(Math.round(p.x - 38), Math.round(p.y - sh - 14), 76, 16);
+                    ctx.strokeStyle = "#f59e0b";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(Math.round(p.x - 38), Math.round(p.y - sh - 14), 76, 16);
+                    ctx.fillStyle = "#fde047";
+                    ctx.fillText("\u{1F528} Fabbro [E]", Math.round(p.x), Math.round(p.y - sh - 2));
+                    ctx.restore();
+                  } else if (p.type === "aether_obelisk") {
+                    Sprites.drawShadow(ctx, p.x, p.y - 2, 22);
+                    const glow = ctx.createRadialGradient(p.x, p.y - 36, 10, p.x, p.y - 36, 80);
+                    glow.addColorStop(0, "rgba(56, 189, 248, 0.28)");
+                    glow.addColorStop(1, "rgba(56, 189, 248, 0)");
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y - 36, 80, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 8), sw, sh);
+                  } else if (p.type === "brazier_fire") {
+                    Sprites.drawShadow(ctx, p.x, p.y - 2, 10);
+                    const glow = ctx.createRadialGradient(p.x, p.y - 14, 4, p.x, p.y - 14, 42);
+                    glow.addColorStop(0, "rgba(249, 115, 22, 0.28)");
+                    glow.addColorStop(1, "rgba(249, 115, 22, 0)");
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y - 14, 42, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
+                  } else if (p.type === "fountain") {
+                    Sprites.drawShadow(ctx, p.x, p.y - 2, 18);
+                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
+                  } else if (p.type === "glowing_mushrooms") {
+                    Sprites.drawShadow(ctx, p.x, p.y - 2, 12);
+                    const glow = ctx.createRadialGradient(p.x, p.y - 10, 4, p.x, p.y - 10, 36);
+                    glow.addColorStop(0, "rgba(168, 85, 247, 0.25)");
+                    glow.addColorStop(1, "rgba(168, 85, 247, 0)");
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y - 10, 36, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
                   } else if (p.type === "well") {
                     Sprites.drawShadow(ctx, p.x, p.y - 2, 14);
                     ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
@@ -1678,9 +2355,9 @@
                     ctx.fill();
                     ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
                   } else {
-                    const rad = p.type === "tree" || p.type === "pine" ? 14 : p.type === "cactus" ? 10 : 12;
+                    const rad = p.type === "tree" || p.type === "pine" || p.type === "palm_tree" ? 14 : p.type === "cactus" ? 10 : 12;
                     Sprites.drawShadow(ctx, p.x, p.y - 2, rad);
-                    const yOff = p.type === "tree" || p.type === "pine" ? 8 : 4;
+                    const yOff = p.type === "tree" || p.type === "pine" || p.type === "palm_tree" ? 8 : 4;
                     ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + yOff), sw, sh);
                   }
                 }
@@ -2141,7 +2818,11 @@
     slime_sand: "#f59e0b",
     slime_magma: "#ef4444",
     slime_water: "#0284c7",
-    skeleton: "#cbd5e1"
+    skeleton: "#cbd5e1",
+    boss_treant: "#22c55e",
+    boss_golem: "#7dd3fc",
+    boss_scorpion: "#f59e0b",
+    boss_magma: "#ef4444"
   };
   var Enemy = class {
     constructor(x, y, kind = "slime_forest") {
@@ -2151,7 +2832,52 @@
       this.spawnX = x;
       this.spawnY = y;
       this.color = ENEMY_COLORS[kind] || "#22c55e";
-      if (kind === "slime_forest") {
+      this.isBoss = false;
+      if (kind === "boss_treant") {
+        this.name = "Treant Ancestrale";
+        this.isBoss = true;
+        this.maxHp = 650;
+        this.baseSpd = 36;
+        this.r = 26;
+        this.aggroRadius = 320;
+        this.xpValue = 180;
+        this.gemType = "emerald";
+        this.contactDamage = 16;
+        this.goldValue = 140;
+      } else if (kind === "boss_golem") {
+        this.name = "Golem dei Ghiacci";
+        this.isBoss = true;
+        this.maxHp = 780;
+        this.baseSpd = 40;
+        this.r = 28;
+        this.aggroRadius = 340;
+        this.xpValue = 220;
+        this.gemType = "emerald";
+        this.contactDamage = 20;
+        this.goldValue = 180;
+      } else if (kind === "boss_scorpion") {
+        this.name = "Colosso delle Dune";
+        this.isBoss = true;
+        this.maxHp = 880;
+        this.baseSpd = 52;
+        this.r = 28;
+        this.aggroRadius = 350;
+        this.xpValue = 260;
+        this.gemType = "emerald";
+        this.contactDamage = 24;
+        this.goldValue = 220;
+      } else if (kind === "boss_magma") {
+        this.name = "Titano di Magma";
+        this.isBoss = true;
+        this.maxHp = 1050;
+        this.baseSpd = 45;
+        this.r = 30;
+        this.aggroRadius = 360;
+        this.xpValue = 320;
+        this.gemType = "emerald";
+        this.contactDamage = 28;
+        this.goldValue = 260;
+      } else if (kind === "slime_forest") {
         this.name = "Slime Silvano";
         this.maxHp = 35;
         this.baseSpd = 50;
@@ -2380,7 +3106,17 @@
         }
         return;
       }
-      Sprites.drawShadow(ctx, this.x, this.y + 4, this.kind.startsWith("slime") ? 9 : 10);
+      const shadowR = this.isBoss ? this.r + 4 : this.kind.startsWith("slime") ? 9 : 10;
+      Sprites.drawShadow(ctx, this.x, this.y + (this.isBoss ? 8 : 4), shadowR);
+      if (this.isBoss) {
+        const glow = ctx.createRadialGradient(this.x, this.y - 12, 10, this.x, this.y - 12, 54);
+        glow.addColorStop(0, (this.color || "#ef4444") + "55");
+        glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - 12, 54, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.save();
       if (this.squashTimer > 0) {
         const flinchAmt = this.squashTimer / 0.15 * 0.22;
@@ -2391,7 +3127,13 @@
       if (this.flashTimer > 0) {
         ctx.filter = "brightness(2.8)";
       }
-      if (this.kind.startsWith("slime_")) {
+      if (this.isBoss) {
+        const isWalking = this.state === "CHASE" || this.state === "WANDER" && this.isWanderMoving;
+        const sprite = this.kind === "boss_treant" || this.kind === "boss_magma" ? Sprites.getSkeletonSprite(this.dir, isWalking, this.frame) : Sprites.getSlimeSprite(this.kind === "boss_golem" ? "ice" : "sand", this.frame);
+        const sw = sprite.width * 2.2;
+        const sh = sprite.height * 2.2;
+        ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 12), sw, sh);
+      } else if (this.kind.startsWith("slime_")) {
         const slimeType = this.kind.replace("slime_", "");
         const sprite = Sprites.getSlimeSprite(slimeType, this.frame);
         const sw = sprite.width;
@@ -2411,7 +3153,24 @@
         ctx.textAlign = "center";
         ctx.fillText("!", Math.round(this.x), Math.round(this.y - 28));
       }
-      if (this.hp < this.maxHp) {
+      if (this.isBoss) {
+        const barW = 74;
+        const barH = 5;
+        const bx = Math.round(this.x - barW / 2);
+        const by = Math.round(this.y - 56);
+        ctx.font = "bold 10px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#fde047";
+        ctx.fillText(`\u{1F451} ${this.name}`, Math.round(this.x), by - 4);
+        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+        ctx.fillRect(bx - 2, by - 2, barW + 4, barH + 4);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx - 2, by - 2, barW + 4, barH + 4);
+        const pct = Math.max(0, this.hp / this.maxHp);
+        ctx.fillStyle = pct > 0.4 ? "#ef4444" : "#b91c1c";
+        ctx.fillRect(bx, by, Math.round(barW * pct), barH);
+      } else if (this.hp < this.maxHp) {
         const barW = 24;
         const barH = 3;
         const bx = Math.round(this.x - barW / 2);
@@ -2422,207 +3181,6 @@
         ctx.fillStyle = pct > 0.4 ? "#ef4444" : "#b91c1c";
         ctx.fillRect(bx, by, Math.round(barW * pct), barH);
       }
-    }
-  };
-
-  // src/entities/projectile.js
-  var Projectile = class {
-    constructor(x, y, angle, options = {}) {
-      this.x = x;
-      this.y = y;
-      this.angle = angle;
-      this.type = options.type || "dart";
-      this.speed = options.speed || (this.type === "arrow" ? 520 : 340);
-      this.vx = Math.cos(angle) * this.speed;
-      this.vy = Math.sin(angle) * this.speed;
-      this.dmg = options.dmg || 18;
-      this.r = options.r || (this.type === "arrow" ? 6 : 5);
-      this.pierce = options.pierce || (this.type === "arrow" ? 2 : 1);
-      this.life = options.life || (this.type === "arrow" ? 1 : 1.1);
-      this.t = 0;
-      this.dead = false;
-      this.hitTargets = /* @__PURE__ */ new Set();
-      this.trailTimer = 0;
-      this.color = options.color || (this.type === "arrow" ? "#f59e0b" : "#38bdf8");
-      this.coreColor = "#ffffff";
-    }
-    update(dt, world) {
-      this.t += dt;
-      if (this.t >= this.life) {
-        this.dead = true;
-        return;
-      }
-      this.x += this.vx * dt;
-      this.y += this.vy * dt;
-      this.trailTimer += dt;
-      if (this.trailTimer >= 0.04) {
-        this.trailTimer = 0;
-        if (this.type === "arrow") {
-          FX.spark(this.x, this.y, "#fef08a", 1.5);
-        } else {
-          FX.spark(this.x, this.y, "#bae6fd", 2);
-        }
-      }
-      const tx = world.tileOf(this.x);
-      const ty = world.tileOf(this.y);
-      if (world.isSolid(tx, ty)) {
-        this.dead = true;
-        FX.burst(this.x, this.y, this.type === "arrow" ? "#d97706" : "#93c5fd", 6, 80);
-      }
-    }
-    draw(ctx) {
-      ctx.save();
-      if (this.type === "arrow") {
-        ctx.translate(Math.round(this.x), Math.round(this.y));
-        ctx.rotate(this.angle);
-        ctx.fillStyle = "rgba(254, 240, 138, 0.3)";
-        ctx.fillRect(-16, -2, 12, 4);
-        ctx.fillStyle = "#0f172a";
-        ctx.fillRect(-12, -2, 22, 4);
-        ctx.fillStyle = "#92400e";
-        ctx.fillRect(-11, -1, 20, 2);
-        ctx.fillStyle = "#0f172a";
-        ctx.fillRect(8, -3, 5, 6);
-        ctx.fillStyle = "#e2e8f0";
-        ctx.fillRect(9, -2, 4, 4);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(10, -1, 3, 2);
-        ctx.fillStyle = "#38bdf8";
-        ctx.fillRect(-12, -4, 4, 2);
-        ctx.fillRect(-12, 2, 4, 2);
-        ctx.fillStyle = "#bae6fd";
-        ctx.fillRect(-10, -3, 2, 1);
-        ctx.fillRect(-10, 2, 2, 1);
-      } else {
-        ctx.fillStyle = "rgba(56, 189, 248, 0.35)";
-        ctx.beginPath();
-        ctx.arc(Math.round(this.x), Math.round(this.y), this.r * 1.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(Math.round(this.x), Math.round(this.y), this.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = this.coreColor;
-        ctx.beginPath();
-        ctx.arc(Math.round(this.x), Math.round(this.y), this.r * 0.45, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-    }
-  };
-
-  // src/entities/target.js
-  var TrainingTarget = class {
-    constructor(x, y, name = "Fantoccio da Guerra", maxHp = 60) {
-      this.startX = x;
-      this.startY = y;
-      this.x = x;
-      this.y = y;
-      this.name = name;
-      this.maxHp = maxHp;
-      this.hp = maxHp;
-      this.r = 13;
-      this.vx = 0;
-      this.vy = 0;
-      this.flash = 0;
-      this.squashTimer = 0;
-      this.dead = false;
-      this.respawnTimer = 0;
-    }
-    takeDamage(amount, knockAngle = 0, knockForce = 120, attackType = "magic") {
-      if (this.dead) return;
-      this.hp = Math.max(0, this.hp - amount);
-      this.flash = 0.12;
-      this.squashTimer = 0.15;
-      this.vx = Math.cos(knockAngle) * knockForce;
-      this.vy = Math.sin(knockAngle) * knockForce;
-      if (attackType === "slash") {
-        FX.addSlashCut(this.x, this.y - 8, knockAngle, 32);
-        FX.addShockwave(this.x, this.y - 8, 18, "#ffffff", 0.15);
-        FX.addDamageNumber(this.x, this.y - 20, amount, true);
-      } else if (attackType === "pierce") {
-        FX.burst(this.x, this.y - 8, "#fef08a", 5, 105);
-        FX.addShockwave(this.x, this.y - 8, 14, "#f59e0b", 0.14);
-        FX.addDamageNumber(this.x, this.y - 20, amount, false);
-      } else {
-        FX.burst(this.x, this.y - 8, "#38bdf8", 6, 85);
-        FX.addDamageNumber(this.x, this.y - 20, amount, false);
-      }
-      if (this.hp <= 0) {
-        this.dead = true;
-        this.respawnTimer = 2.4;
-        FX.addShockwave(this.x, this.y - 6, 28, "#b45309", 0.22);
-        FX.addBones(this.x, this.y - 6, 5);
-        FX.addSmokePuff(this.x, this.y - 10, "#78716c");
-        FX.burst(this.x, this.y - 10, "#f59e0b", 14, 140);
-      }
-    }
-    update(dt, world) {
-      if (this.dead) {
-        this.respawnTimer -= dt;
-        if (this.respawnTimer <= 0) {
-          this.dead = false;
-          this.hp = this.maxHp;
-          this.x = this.startX;
-          this.y = this.startY;
-          this.vx = 0;
-          this.vy = 0;
-          this.squashTimer = 0;
-          this.flash = 0;
-          FX.addShockwave(this.x, this.y - 6, 20, "#22c55e", 0.18);
-          FX.burst(this.x, this.y - 10, "#22c55e", 12, 100);
-        }
-        return;
-      }
-      if (this.flash > 0) this.flash -= dt;
-      if (this.squashTimer > 0) this.squashTimer -= dt;
-      this.x += this.vx * dt;
-      this.y += this.vy * dt;
-      this.vx *= Math.exp(-9 * dt);
-      this.vy *= Math.exp(-9 * dt);
-      world.collide(this);
-    }
-    draw(ctx) {
-      if (this.dead) return;
-      Sprites.drawShadow(ctx, this.x, this.y + 2, 11);
-      const P = Sprites.PX;
-      const cx = Math.round(this.x);
-      const cy = Math.round(this.y);
-      ctx.save();
-      if (this.squashTimer > 0) {
-        const progress = this.squashTimer / 0.15;
-        const scaleX = 1 + Math.sin(progress * Math.PI) * 0.24;
-        const scaleY = 1 - Math.sin(progress * Math.PI) * 0.18;
-        ctx.translate(cx, cy);
-        ctx.scale(scaleX, scaleY);
-        ctx.translate(-cx, -cy);
-      }
-      ctx.fillStyle = "#451a03";
-      ctx.fillRect(cx - 2 * P, cy - 10 * P, 4 * P, 10 * P);
-      ctx.fillStyle = this.flash > 0 ? "#ffffff" : "#ca8a04";
-      ctx.fillRect(cx - 5 * P, cy - 14 * P, 10 * P, 8 * P);
-      if (this.flash <= 0) {
-        ctx.fillStyle = "#78350f";
-        ctx.fillRect(cx - 5 * P, cy - 12 * P, 10 * P, 2 * P);
-        ctx.fillStyle = "#dc2626";
-        ctx.fillRect(cx - 2 * P, cy - 11 * P, 4 * P, 4 * P);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(cx - 1 * P, cy - 10 * P, 2 * P, 2 * P);
-      }
-      ctx.fillStyle = this.flash > 0 ? "#ffffff" : "#64748b";
-      ctx.fillRect(cx - 4 * P, cy - 18 * P, 8 * P, 5 * P);
-      ctx.fillStyle = "#334155";
-      ctx.fillRect(cx - 3 * P, cy - 16 * P, 6 * P, 1.5 * P);
-      const barW = 28;
-      const barH = 4;
-      const barX = Math.round(this.x - barW / 2);
-      const barY = Math.round(this.y - 24 * P);
-      ctx.fillStyle = "rgba(8, 10, 16, 0.75)";
-      ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
-      const hpRatio = this.hp / this.maxHp;
-      ctx.fillStyle = hpRatio > 0.5 ? "#22c55e" : hpRatio > 0.25 ? "#eab308" : "#ef4444";
-      ctx.fillRect(barX, barY, Math.round(barW * hpRatio), barH);
-      ctx.restore();
     }
   };
 
@@ -2944,6 +3502,297 @@
     }
   };
 
+  // src/entities/chest.js
+  var Chest = class {
+    constructor(x, y, poiDef) {
+      this.x = x;
+      this.y = y;
+      this.poi = poiDef;
+      this.id = poiDef.chestId;
+      this.name = poiDef.chestName;
+      this.isLocked = true;
+      this.isOpen = false;
+      this.loot = poiDef.loot || { gold: 200, xp: 150, items: { iron_scrap: 2 } };
+      this.r = 18;
+      this.pulseTimer = 0;
+    }
+    unlock() {
+      if (!this.isLocked) return;
+      this.isLocked = false;
+      FX.burst(this.x, this.y - 10, "#fde047", 18, 120);
+      FX.floatingText(this.x, this.y - 28, "\u{1F513} Forziere Sbloccato!", "#fde047");
+    }
+    open(combat, player) {
+      if (this.isOpen || this.isLocked) return false;
+      this.isOpen = true;
+      combat.goldEarned += this.loot.gold || 150;
+      combat.pickups.push(new GemPickup(this.x, this.y + 4, this.loot.xp || 180, "emerald"));
+      if (this.loot.items) {
+        let angle = 0;
+        const count = Object.keys(this.loot.items).length;
+        const step = Math.PI * 2 / Math.max(1, count);
+        for (const [matId, amt] of Object.entries(this.loot.items)) {
+          for (let i = 0; i < amt; i++) {
+            const dist = 24 + i * 8;
+            const ox = Math.cos(angle) * dist;
+            const oy = Math.sin(angle) * dist;
+            combat.itemPickups.push(new ItemPickup(this.x + ox, this.y + oy, matId));
+          }
+          angle += step;
+        }
+      }
+      FX.burst(this.x, this.y - 8, "#f59e0b", 25, 140);
+      FX.burst(this.x, this.y - 8, "#38bdf8", 16, 100);
+      FX.floatingText(this.x, this.y - 32, `+${this.loot.gold} \u{1FA99}`, "#fde047");
+      return true;
+    }
+    update(dt, player) {
+      this.pulseTimer += dt;
+    }
+    draw(ctx) {
+      Sprites.drawShadow(ctx, this.x, this.y + 2, 14);
+      if (!this.isLocked && !this.isOpen) {
+        const pulse = 0.5 + Math.sin(this.pulseTimer * 4) * 0.3;
+        const glow = ctx.createRadialGradient(this.x, this.y - 6, 4, this.x, this.y - 6, 32);
+        glow.addColorStop(0, `rgba(250, 204, 21, ${0.4 * pulse})`);
+        glow.addColorStop(1, "rgba(250, 204, 21, 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - 6, 32, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const spriteType = this.isOpen ? "chest_open" : "chest_closed";
+      const sprite = Tiles.getPropSprite(spriteType);
+      if (sprite) {
+        const sw = sprite.width * 2;
+        const sh = sprite.height * 2;
+        ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 8), sw, sh);
+      }
+      ctx.save();
+      ctx.font = "bold 9px sans-serif";
+      ctx.textAlign = "center";
+      if (this.isOpen) {
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillText("\u2713 Forziere Riscattato", Math.round(this.x), Math.round(this.y - 24));
+      } else if (this.isLocked) {
+        ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
+        ctx.fillRect(Math.round(this.x - 48), Math.round(this.y - 34), 96, 14);
+        ctx.fillStyle = "#ef4444";
+        ctx.fillText(`\u{1F512} ${this.poi.title}`, Math.round(this.x), Math.round(this.y - 23));
+      } else {
+        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+        ctx.fillRect(Math.round(this.x - 44), Math.round(this.y - 36), 88, 16);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(Math.round(this.x - 44), Math.round(this.y - 36), 88, 16);
+        ctx.fillStyle = "#fde047";
+        ctx.fillText("\u2B50 [E] Apri Forziere", Math.round(this.x), Math.round(this.y - 24));
+      }
+      ctx.restore();
+    }
+  };
+
+  // src/entities/projectile.js
+  var Projectile = class {
+    constructor(x, y, angle, options = {}) {
+      this.x = x;
+      this.y = y;
+      this.angle = angle;
+      this.type = options.type || "dart";
+      this.speed = options.speed || (this.type === "arrow" ? 520 : 340);
+      this.vx = Math.cos(angle) * this.speed;
+      this.vy = Math.sin(angle) * this.speed;
+      this.dmg = options.dmg || 18;
+      this.r = options.r || (this.type === "arrow" ? 6 : 5);
+      this.pierce = options.pierce || (this.type === "arrow" ? 2 : 1);
+      this.life = options.life || (this.type === "arrow" ? 1 : 1.1);
+      this.t = 0;
+      this.dead = false;
+      this.hitTargets = /* @__PURE__ */ new Set();
+      this.trailTimer = 0;
+      this.color = options.color || (this.type === "arrow" ? "#f59e0b" : "#38bdf8");
+      this.coreColor = "#ffffff";
+    }
+    update(dt, world) {
+      this.t += dt;
+      if (this.t >= this.life) {
+        this.dead = true;
+        return;
+      }
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+      this.trailTimer += dt;
+      if (this.trailTimer >= 0.04) {
+        this.trailTimer = 0;
+        if (this.type === "arrow") {
+          FX.spark(this.x, this.y, "#fef08a", 1.5);
+        } else {
+          FX.spark(this.x, this.y, "#bae6fd", 2);
+        }
+      }
+      const tx = world.tileOf(this.x);
+      const ty = world.tileOf(this.y);
+      if (world.isSolid(tx, ty)) {
+        this.dead = true;
+        FX.burst(this.x, this.y, this.type === "arrow" ? "#d97706" : "#93c5fd", 6, 80);
+      }
+    }
+    draw(ctx) {
+      ctx.save();
+      if (this.type === "arrow") {
+        ctx.translate(Math.round(this.x), Math.round(this.y));
+        ctx.rotate(this.angle);
+        ctx.fillStyle = "rgba(254, 240, 138, 0.3)";
+        ctx.fillRect(-16, -2, 12, 4);
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(-12, -2, 22, 4);
+        ctx.fillStyle = "#92400e";
+        ctx.fillRect(-11, -1, 20, 2);
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(8, -3, 5, 6);
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fillRect(9, -2, 4, 4);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(10, -1, 3, 2);
+        ctx.fillStyle = "#38bdf8";
+        ctx.fillRect(-12, -4, 4, 2);
+        ctx.fillRect(-12, 2, 4, 2);
+        ctx.fillStyle = "#bae6fd";
+        ctx.fillRect(-10, -3, 2, 1);
+        ctx.fillRect(-10, 2, 2, 1);
+      } else {
+        ctx.fillStyle = "rgba(56, 189, 248, 0.35)";
+        ctx.beginPath();
+        ctx.arc(Math.round(this.x), Math.round(this.y), this.r * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(Math.round(this.x), Math.round(this.y), this.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = this.coreColor;
+        ctx.beginPath();
+        ctx.arc(Math.round(this.x), Math.round(this.y), this.r * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  };
+
+  // src/entities/target.js
+  var TrainingTarget = class {
+    constructor(x, y, name = "Fantoccio da Guerra", maxHp = 60) {
+      this.startX = x;
+      this.startY = y;
+      this.x = x;
+      this.y = y;
+      this.name = name;
+      this.maxHp = maxHp;
+      this.hp = maxHp;
+      this.r = 13;
+      this.vx = 0;
+      this.vy = 0;
+      this.flash = 0;
+      this.squashTimer = 0;
+      this.dead = false;
+      this.respawnTimer = 0;
+    }
+    takeDamage(amount, knockAngle = 0, knockForce = 120, attackType = "magic") {
+      if (this.dead) return;
+      this.hp = Math.max(0, this.hp - amount);
+      this.flash = 0.12;
+      this.squashTimer = 0.15;
+      this.vx = Math.cos(knockAngle) * knockForce;
+      this.vy = Math.sin(knockAngle) * knockForce;
+      if (attackType === "slash") {
+        FX.addSlashCut(this.x, this.y - 8, knockAngle, 32);
+        FX.addShockwave(this.x, this.y - 8, 18, "#ffffff", 0.15);
+        FX.addDamageNumber(this.x, this.y - 20, amount, true);
+      } else if (attackType === "pierce") {
+        FX.burst(this.x, this.y - 8, "#fef08a", 5, 105);
+        FX.addShockwave(this.x, this.y - 8, 14, "#f59e0b", 0.14);
+        FX.addDamageNumber(this.x, this.y - 20, amount, false);
+      } else {
+        FX.burst(this.x, this.y - 8, "#38bdf8", 6, 85);
+        FX.addDamageNumber(this.x, this.y - 20, amount, false);
+      }
+      if (this.hp <= 0) {
+        this.dead = true;
+        this.respawnTimer = 2.4;
+        FX.addShockwave(this.x, this.y - 6, 28, "#b45309", 0.22);
+        FX.addBones(this.x, this.y - 6, 5);
+        FX.addSmokePuff(this.x, this.y - 10, "#78716c");
+        FX.burst(this.x, this.y - 10, "#f59e0b", 14, 140);
+      }
+    }
+    update(dt, world) {
+      if (this.dead) {
+        this.respawnTimer -= dt;
+        if (this.respawnTimer <= 0) {
+          this.dead = false;
+          this.hp = this.maxHp;
+          this.x = this.startX;
+          this.y = this.startY;
+          this.vx = 0;
+          this.vy = 0;
+          this.squashTimer = 0;
+          this.flash = 0;
+          FX.addShockwave(this.x, this.y - 6, 20, "#22c55e", 0.18);
+          FX.burst(this.x, this.y - 10, "#22c55e", 12, 100);
+        }
+        return;
+      }
+      if (this.flash > 0) this.flash -= dt;
+      if (this.squashTimer > 0) this.squashTimer -= dt;
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+      this.vx *= Math.exp(-9 * dt);
+      this.vy *= Math.exp(-9 * dt);
+      world.collide(this);
+    }
+    draw(ctx) {
+      if (this.dead) return;
+      Sprites.drawShadow(ctx, this.x, this.y + 2, 11);
+      const P = Sprites.PX;
+      const cx = Math.round(this.x);
+      const cy = Math.round(this.y);
+      ctx.save();
+      if (this.squashTimer > 0) {
+        const progress = this.squashTimer / 0.15;
+        const scaleX = 1 + Math.sin(progress * Math.PI) * 0.24;
+        const scaleY = 1 - Math.sin(progress * Math.PI) * 0.18;
+        ctx.translate(cx, cy);
+        ctx.scale(scaleX, scaleY);
+        ctx.translate(-cx, -cy);
+      }
+      ctx.fillStyle = "#451a03";
+      ctx.fillRect(cx - 2 * P, cy - 10 * P, 4 * P, 10 * P);
+      ctx.fillStyle = this.flash > 0 ? "#ffffff" : "#ca8a04";
+      ctx.fillRect(cx - 5 * P, cy - 14 * P, 10 * P, 8 * P);
+      if (this.flash <= 0) {
+        ctx.fillStyle = "#78350f";
+        ctx.fillRect(cx - 5 * P, cy - 12 * P, 10 * P, 2 * P);
+        ctx.fillStyle = "#dc2626";
+        ctx.fillRect(cx - 2 * P, cy - 11 * P, 4 * P, 4 * P);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(cx - 1 * P, cy - 10 * P, 2 * P, 2 * P);
+      }
+      ctx.fillStyle = this.flash > 0 ? "#ffffff" : "#64748b";
+      ctx.fillRect(cx - 4 * P, cy - 18 * P, 8 * P, 5 * P);
+      ctx.fillStyle = "#334155";
+      ctx.fillRect(cx - 3 * P, cy - 16 * P, 6 * P, 1.5 * P);
+      const barW = 28;
+      const barH = 4;
+      const barX = Math.round(this.x - barW / 2);
+      const barY = Math.round(this.y - 24 * P);
+      ctx.fillStyle = "rgba(8, 10, 16, 0.75)";
+      ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
+      const hpRatio = this.hp / this.maxHp;
+      ctx.fillStyle = hpRatio > 0.5 ? "#22c55e" : hpRatio > 0.25 ? "#eab308" : "#ef4444";
+      ctx.fillRect(barX, barY, Math.round(barW * hpRatio), barH);
+      ctx.restore();
+    }
+  };
+
   // src/entities/slash_effect.js
   var SlashEffect = class {
     constructor(x, y, angle, radius = 92, arc = Math.PI * 0.95) {
@@ -3113,7 +3962,15 @@
     rollMonsterDrops(kind) {
       const drops = [];
       const r = Math.random();
-      if (kind === "slime_forest") {
+      if (kind === "boss_treant") {
+        drops.push("slime_gel", "slime_gel", "iron_scrap", "arcane_rune");
+      } else if (kind === "boss_golem") {
+        drops.push("ice_crystal", "ice_crystal", "iron_scrap", "arcane_rune");
+      } else if (kind === "boss_scorpion") {
+        drops.push("sun_amber", "sun_amber", "iron_scrap", "arcane_rune");
+      } else if (kind === "boss_magma") {
+        drops.push("magma_core", "magma_core", "iron_scrap", "arcane_rune");
+      } else if (kind === "slime_forest") {
         if (r < 0.75) drops.push("slime_gel");
         if (Math.random() < 0.22) drops.push("iron_scrap");
       } else if (kind === "slime_ice") {
@@ -3183,11 +4040,20 @@
           e.hasDroppedLoot = true;
           this.kills++;
           this.goldEarned += e.goldValue || 4;
+          if (e.isBoss) {
+            camera.kick(0.48);
+            FX.burst(e.x, e.y - 12, "#fde047", 32, 180);
+            FX.burst(e.x, e.y - 12, e.color || "#ef4444", 26, 140);
+            FX.floatingText(e.x, e.y - 40, `\u{1F451} ${e.name} Sconfitto!`, "#fde047");
+            if (this.onBossKilled) {
+              this.onBossKilled(e);
+            }
+          }
           this.pickups.push(new GemPickup(e.x, e.y, e.xpValue, e.gemType));
           const drops = this.rollMonsterDrops(e.kind);
           for (const itemId of drops) {
-            const ox = Math.random() * 22 - 11;
-            const oy = Math.random() * 22 - 11;
+            const ox = Math.random() * 26 - 13;
+            const oy = Math.random() * 26 - 13;
             this.itemPickups.push(new ItemPickup(e.x + ox, e.y + oy, itemId));
           }
         }
@@ -4089,12 +4955,29 @@
     const elSumItems = document.getElementById("sum-items");
     const elSumScore = document.getElementById("sum-score");
     const btnReturnSanctuary = document.getElementById("btn-return-sanctuary");
+    const hudInteractPrompt = document.getElementById("hud-interact-prompt");
+    const hudInteractLabel = document.getElementById("hud-interact-label");
+    const blacksmithModal = document.getElementById("blacksmith-modal");
+    const bsModalName = document.getElementById("bs-modal-name");
+    const bsModalTitle = document.getElementById("bs-modal-title");
+    const bsModalQuote = document.getElementById("bs-modal-quote");
+    const blacksmithForgeContainer = document.getElementById("blacksmith-forge-container");
+    const btnCloseBlacksmith = document.getElementById("btn-close-blacksmith");
+    const btnResumeFromBlacksmith = document.getElementById("btn-resume-from-blacksmith");
+    const forgeNearBlacksmithBtnBox = document.getElementById("forge-near-blacksmith-btn-box");
+    const btnOpenNearBlacksmith = document.getElementById("btn-open-near-blacksmith");
+    const nearBsName = document.getElementById("near-bs-name");
     let gameState = "MENU";
     let currentProfile = null;
     let runSurvivalSeconds = 0;
     let isInventoryOpen = false;
     let isMapOpen = false;
     let isMenuOpen = false;
+    let isBlacksmithOpen = false;
+    let currentNearbyInteractable = null;
+    let activeBlacksmith = null;
+    let chests = [];
+    let mysteryPillars = [];
     let notificationTimeout = null;
     const camera = new Camera(768, 420);
     const world = new World(2026);
@@ -4524,9 +5407,128 @@
         ingameWeaponsContainer.appendChild(card);
       });
     }
+    class MysteryPillar {
+      constructor(x, y, index, name) {
+        this.x = x;
+        this.y = y;
+        this.index = index;
+        this.name = name;
+        this.activated = false;
+        this.r = 20;
+        this.pulseTimer = 0;
+      }
+      activate() {
+        if (this.activated) return;
+        this.activated = true;
+        FX.burst(this.x, this.y - 14, "#06b6d4", 22, 110);
+        FX.floatingText(this.x, this.y - 30, `\u2728 ${this.name} Risvegliata!`, "#67e8f9");
+      }
+      update(dt) {
+        this.pulseTimer += dt;
+      }
+      draw(ctx2) {
+        Sprites.drawShadow(ctx2, this.x, this.y - 2, 14);
+        const spriteType = this.activated ? "runic_pillar_lit" : "runic_pillar";
+        const sprite = Tiles.getPropSprite(spriteType);
+        if (this.activated) {
+          const pulse = 0.7 + Math.sin(this.pulseTimer * 4) * 0.3;
+          const glow = ctx2.createRadialGradient(this.x, this.y - 18, 4, this.x, this.y - 18, 42);
+          glow.addColorStop(0, `rgba(6, 182, 212, ${0.45 * pulse})`);
+          glow.addColorStop(1, "rgba(6, 182, 212, 0)");
+          ctx2.fillStyle = glow;
+          ctx2.beginPath();
+          ctx2.arc(this.x, this.y - 18, 42, 0, Math.PI * 2);
+          ctx2.fill();
+        }
+        if (sprite) {
+          const sw = sprite.width * 2;
+          const sh = sprite.height * 2;
+          ctx2.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 6), sw, sh);
+        }
+        ctx2.save();
+        ctx2.font = "bold 8px sans-serif";
+        ctx2.textAlign = "center";
+        if (this.activated) {
+          ctx2.fillStyle = "#67e8f9";
+          ctx2.fillText(`\u2713 ${this.name}`, Math.round(this.x), Math.round(this.y - 34));
+        } else {
+          ctx2.fillStyle = "#94a3b8";
+          ctx2.fillText(`\u{1F52E} ${this.name}`, Math.round(this.x), Math.round(this.y - 34));
+        }
+        ctx2.restore();
+      }
+    }
     function renderIngameForge() {
       if (!ingameForgeContainer || !currentProfile) return;
       ingameForgeContainer.innerHTML = "";
+      const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 110);
+      if (nearbyBs && forgeNearBlacksmithBtnBox && nearBsName) {
+        forgeNearBlacksmithBtnBox.classList.remove("hidden");
+        nearBsName.textContent = nearbyBs.name;
+      } else if (forgeNearBlacksmithBtnBox) {
+        forgeNearBlacksmithBtnBox.classList.add("hidden");
+      }
+      currentProfile.weaponsCatalog.forEach((w) => {
+        const card = document.createElement("div");
+        card.className = `weapon-card ${w.isEquipped ? "equipped" : ""}`;
+        let reqHtml = "";
+        if (w.isMaxLevel) {
+          reqHtml = `<div class="weapon-req-box" style="color: #4ade80; text-align: center; font-weight: 700;">\u2605 Grado Massimo (LV 5)</div>`;
+        } else if (w.nextCost) {
+          const goldHas = currentProfile.gold >= (w.nextCost.gold || 0);
+          let matsRows = "";
+          if (w.nextCost.materials) {
+            for (const [matId, reqAmt] of Object.entries(w.nextCost.materials)) {
+              const owned = (currentProfile.inventory && currentProfile.inventory[matId] || 0) + (combat.collectedItems && combat.collectedItems[matId] || 0);
+              const hasEnough = owned >= reqAmt;
+              const matDef = MATERIALS_DEF[matId] || { name: matId, icon: "\u{1F4E6}" };
+              matsRows += `
+              <div class="req-item ${hasEnough ? "has" : "missing"}">
+                <span>${matDef.icon} ${matDef.name}:</span>
+                <span>${owned} / ${reqAmt}</span>
+              </div>
+            `;
+            }
+          }
+          reqHtml = `
+          <div class="weapon-req-box">
+            <div class="weapon-req-title">${w.isUnlocked ? "Requisiti Potenziamento:" : "Materiali per Forgiare:"}</div>
+            <div class="req-item ${goldHas ? "has" : "missing"}">
+              <span>\u{1FA99} Oro:</span>
+              <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
+            </div>
+            ${matsRows}
+            <div style="margin-top: 6px; font-size: 11px; color: #38bdf8; font-weight: 600;">\u2728 ${w.nextBenefit}</div>
+          </div>
+        `;
+        }
+        card.innerHTML = `
+        <div class="weapon-head">
+          <div class="weapon-icon">${w.icon}</div>
+          <div>
+            <div class="weapon-title">${w.name}</div>
+            <div class="weapon-type-tag">Grado: Livello ${w.currentLevel} / ${w.maxLevel}</div>
+          </div>
+        </div>
+        <div style="margin: 8px 0;">${reqHtml}</div>
+        <button class="btn-forge btn-forge-info" style="width: 100%; opacity: 0.85;">
+          ${nearbyBs ? `\u{1F528} Parla con ${nearbyBs.name} per Forgiare` : "\u{1F4CD} Trova un Fabbro nei Villaggi per Forgiare"}
+        </button>
+      `;
+        const btnInfo = card.querySelector(".btn-forge-info");
+        btnInfo?.addEventListener("click", () => {
+          if (nearbyBs) {
+            openBlacksmithModal(nearbyBs);
+          } else {
+            showWeaponNotification("Visita l'NPC Fabbro in uno dei villaggi protetti per lavorare quest'arma!");
+          }
+        });
+        ingameForgeContainer.appendChild(card);
+      });
+    }
+    function renderBlacksmithForge(bs) {
+      if (!blacksmithForgeContainer || !currentProfile) return;
+      blacksmithForgeContainer.innerHTML = "";
       currentProfile.weaponsCatalog.forEach((w) => {
         const card = document.createElement("div");
         card.className = `weapon-card ${w.isEquipped ? "equipped" : ""}`;
@@ -4555,7 +5557,7 @@
           canAfford = goldHas && matsOk;
           reqHtml = `
           <div class="weapon-req-box">
-            <div class="weapon-req-title">${w.isUnlocked ? "Requisiti Potenziamento:" : "Materiali per Forgiare:"}</div>
+            <div class="weapon-req-title">${w.isUnlocked ? "Requisiti Tempra:" : "Materiali Forgiatura:"}</div>
             <div class="req-item ${goldHas ? "has" : "missing"}">
               <span>\u{1FA99} Oro:</span>
               <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
@@ -4570,12 +5572,12 @@
           <div class="weapon-icon">${w.icon}</div>
           <div>
             <div class="weapon-title">${w.name}</div>
-            <div class="weapon-type-tag">Grado Forgiatura: Livello ${w.currentLevel} / ${w.maxLevel}</div>
+            <div class="weapon-type-tag">Grado Attuale: Livello ${w.currentLevel} / ${w.maxLevel}</div>
           </div>
         </div>
         <div style="margin: 8px 0;">${reqHtml}</div>
         <button class="btn-forge" ${!canAfford ? "disabled" : ""} style="width: 100%;">
-          \u{1F528} ${w.isUnlocked ? `Potenzia a Livello ${w.currentLevel + 1}` : "Forgia dal Fabbro"}
+          \u{1F528} ${w.isUnlocked ? `Tempra a Livello ${w.currentLevel + 1}` : "Forgia Nuova Arma"}
         </button>
       `;
         const btnForge = card.querySelector(".btn-forge");
@@ -4583,6 +5585,9 @@
           btnForge.addEventListener("click", async () => {
             try {
               currentProfile = await API.craftOrUpgradeWeapon(w.id);
+              FX.burst(player.x, player.y, "#f59e0b", 24, 120);
+              showWeaponNotification(`\u{1F528} ${w.name} lavorata con successo da ${bs.name}!`);
+              renderBlacksmithForge(bs);
               renderIngameForge();
               renderIngameWeapons();
               equipWeapon(combat.weaponId);
@@ -4591,7 +5596,33 @@
             }
           });
         }
-        ingameForgeContainer.appendChild(card);
+        blacksmithForgeContainer.appendChild(card);
+      });
+    }
+    function openBlacksmithModal(bs) {
+      if (gameState !== "PLAYING") return;
+      activeBlacksmith = bs;
+      closeIngameInventory();
+      closeTacticalMap();
+      closeGameMenu();
+      isBlacksmithOpen = true;
+      if (bsModalName) bsModalName.textContent = bs.name;
+      if (bsModalTitle) bsModalTitle.textContent = `${bs.title} \xB7 ${bs.villageName || "Villaggio"}`;
+      if (bsModalQuote) bsModalQuote.textContent = `"${bs.quote}"`;
+      blacksmithModal?.classList.remove("hidden");
+      renderBlacksmithForge(bs);
+    }
+    function closeBlacksmithModal() {
+      isBlacksmithOpen = false;
+      activeBlacksmith = null;
+      blacksmithModal?.classList.add("hidden");
+    }
+    if (btnCloseBlacksmith) btnCloseBlacksmith.addEventListener("click", closeBlacksmithModal);
+    if (btnResumeFromBlacksmith) btnResumeFromBlacksmith.addEventListener("click", closeBlacksmithModal);
+    if (btnOpenNearBlacksmith) {
+      btnOpenNearBlacksmith.addEventListener("click", () => {
+        const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 110);
+        if (nearbyBs) openBlacksmithModal(nearbyBs);
       });
     }
     function switchIngameTab(tabName) {
@@ -4619,6 +5650,7 @@
       if (gameState !== "PLAYING") return;
       closeTacticalMap();
       closeGameMenu();
+      closeBlacksmithModal();
       isInventoryOpen = true;
       ingameModal?.classList.remove("hidden");
       switchIngameTab(tab);
@@ -4669,15 +5701,24 @@
         else minimapCtx.lineTo(mx, my);
       }
       minimapCtx.stroke();
-      minimapCtx.strokeStyle = "rgba(245, 158, 11, 0.45)";
+      minimapCtx.strokeStyle = "rgba(245, 158, 11, 0.55)";
       minimapCtx.lineWidth = 1;
-      for (const s of SETTLEMENTS) {
-        if (s.id === "citadel") continue;
+      for (const r of ROAD_SEGMENTS) {
         minimapCtx.beginPath();
-        minimapCtx.moveTo(cx, cy);
-        minimapCtx.lineTo(cx + s.centerTx * world.TS * scale, cy + s.centerTy * world.TS * scale);
+        minimapCtx.moveTo(cx + r.x1 * world.TS * scale, cy + r.y1 * world.TS * scale);
+        minimapCtx.lineTo(cx + r.x2 * world.TS * scale, cy + r.y2 * world.TS * scale);
         minimapCtx.stroke();
       }
+      minimapCtx.strokeStyle = "rgba(217, 119, 6, 0.45)";
+      minimapCtx.lineWidth = 0.8;
+      minimapCtx.setLineDash([2, 2]);
+      for (const t of TRAIL_SEGMENTS) {
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(cx + t.x1 * world.TS * scale, cy + t.y1 * world.TS * scale);
+        minimapCtx.lineTo(cx + t.x2 * world.TS * scale, cy + t.y2 * world.TS * scale);
+        minimapCtx.stroke();
+      }
+      minimapCtx.setLineDash([]);
       for (const s of SETTLEMENTS) {
         const sx = cx + s.centerTx * world.TS * scale;
         const sy = cy + s.centerTy * world.TS * scale;
@@ -4690,6 +5731,13 @@
         minimapCtx.beginPath();
         minimapCtx.arc(sx, sy, s.id === "citadel" ? 3.5 : 2.5, 0, Math.PI * 2);
         minimapCtx.fill();
+      }
+      minimapCtx.font = "7px sans-serif";
+      minimapCtx.textAlign = "center";
+      for (const poi of POINTS_OF_INTEREST) {
+        const px2 = cx + poi.tx * world.TS * scale;
+        const py2 = cy + poi.ty * world.TS * scale;
+        minimapCtx.fillText(poi.icon, px2, py2 + 2.5);
       }
       minimapCtx.fillStyle = "#f87171";
       for (const en of combat.enemies) {
@@ -4779,29 +5827,21 @@
       expandedCtx.fillStyle = "#ffffff";
       expandedCtx.font = "bold 9px sans-serif";
       expandedCtx.fillText("\u{1F30A} CASCATE", wfX - 18, wfY - 14);
-      expandedCtx.strokeStyle = "rgba(245, 158, 11, 0.7)";
-      expandedCtx.lineWidth = 1.5;
+      expandedCtx.strokeStyle = "rgba(245, 158, 11, 0.75)";
+      expandedCtx.lineWidth = 2.2;
+      for (const r of ROAD_SEGMENTS) {
+        expandedCtx.beginPath();
+        expandedCtx.moveTo(cx + r.x1 * world.TS * scale, cy + r.y1 * world.TS * scale);
+        expandedCtx.lineTo(cx + r.x2 * world.TS * scale, cy + r.y2 * world.TS * scale);
+        expandedCtx.stroke();
+      }
+      expandedCtx.strokeStyle = "rgba(217, 119, 6, 0.65)";
+      expandedCtx.lineWidth = 1.4;
       expandedCtx.setLineDash([4, 3]);
-      for (const s of SETTLEMENTS) {
-        if (s.id === "citadel") continue;
+      for (const t of TRAIL_SEGMENTS) {
         expandedCtx.beginPath();
-        expandedCtx.moveTo(cx, cy);
-        expandedCtx.lineTo(cx + s.centerTx * world.TS * scale, cy + s.centerTy * world.TS * scale);
-        expandedCtx.stroke();
-      }
-      const wfSettlement = SETTLEMENTS.find((s) => s.id === "waterfall_village");
-      const azSettlement = SETTLEMENTS.find((s) => s.id === "oasis");
-      const sylvaSettlement = SETTLEMENTS.find((s) => s.id === "sylva");
-      if (wfSettlement && azSettlement) {
-        expandedCtx.beginPath();
-        expandedCtx.moveTo(cx + wfSettlement.centerTx * world.TS * scale, cy + wfSettlement.centerTy * world.TS * scale);
-        expandedCtx.lineTo(cx + azSettlement.centerTx * world.TS * scale, cy + azSettlement.centerTy * world.TS * scale);
-        expandedCtx.stroke();
-      }
-      if (wfSettlement && sylvaSettlement) {
-        expandedCtx.beginPath();
-        expandedCtx.moveTo(cx + wfSettlement.centerTx * world.TS * scale, cy + wfSettlement.centerTy * world.TS * scale);
-        expandedCtx.lineTo(cx + sylvaSettlement.centerTx * world.TS * scale, cy + sylvaSettlement.centerTy * world.TS * scale);
+        expandedCtx.moveTo(cx + t.x1 * world.TS * scale, cy + t.y1 * world.TS * scale);
+        expandedCtx.lineTo(cx + t.x2 * world.TS * scale, cy + t.y2 * world.TS * scale);
         expandedCtx.stroke();
       }
       expandedCtx.setLineDash([]);
@@ -4820,6 +5860,11 @@
         expandedCtx.beginPath();
         expandedCtx.arc(sx, sy, 3, 0, Math.PI * 2);
         expandedCtx.fill();
+        if (s.blacksmith) {
+          expandedCtx.font = "9px sans-serif";
+          expandedCtx.textAlign = "center";
+          expandedCtx.fillText("\u{1F528}", sx + 9, sy - 2);
+        }
         expandedCtx.font = "bold 9px sans-serif";
         expandedCtx.fillStyle = s.color || "#38bdf8";
         expandedCtx.textAlign = "center";
@@ -4828,6 +5873,25 @@
         expandedCtx.fillStyle = "#94a3b8";
         expandedCtx.fillText("\u{1F6E1}\uFE0F Safe Zone", sx, sy + sr + 9);
         expandedCtx.textAlign = "left";
+      }
+      for (const poi of POINTS_OF_INTEREST) {
+        const px2 = cx + poi.tx * world.TS * scale;
+        const py2 = cy + poi.ty * world.TS * scale;
+        expandedCtx.save();
+        expandedCtx.fillStyle = poi.type === "boss" ? "rgba(239, 68, 68, 0.22)" : "rgba(6, 182, 212, 0.22)";
+        expandedCtx.beginPath();
+        expandedCtx.arc(px2, py2, 11, 0, Math.PI * 2);
+        expandedCtx.fill();
+        expandedCtx.strokeStyle = poi.color || "#fde047";
+        expandedCtx.lineWidth = 1.4;
+        expandedCtx.stroke();
+        expandedCtx.font = "11px sans-serif";
+        expandedCtx.textAlign = "center";
+        expandedCtx.fillText(poi.icon, px2, py2 + 4);
+        expandedCtx.font = "bold 8px sans-serif";
+        expandedCtx.fillStyle = poi.color || "#fde047";
+        expandedCtx.fillText(poi.name, px2, py2 + 16);
+        expandedCtx.restore();
       }
       expandedCtx.fillStyle = "#ef4444";
       for (const en of combat.enemies) {
@@ -4870,6 +5934,7 @@
       if (gameState !== "PLAYING") return;
       closeIngameInventory();
       closeGameMenu();
+      closeBlacksmithModal();
       isMapOpen = true;
       expandedMapModal?.classList.remove("hidden");
       renderTacticalMap();
@@ -4918,6 +5983,7 @@
       if (gameState !== "PLAYING") return;
       closeIngameInventory();
       closeTacticalMap();
+      closeBlacksmithModal();
       isMenuOpen = true;
       gameMenuModal?.classList.remove("hidden");
       switchGameMenuTab(tab);
@@ -5009,6 +6075,32 @@
       progression.isPausedForLevelUp = false;
       if (elWeaponIcon) elWeaponIcon.textContent = combat.weaponId === "sword" ? "\u{1F5E1}\uFE0F" : combat.weaponId === "bow" ? "\u{1F3F9}" : "\u{1FA84}";
       if (elWeaponName) elWeaponName.textContent = combat.weaponName;
+      chests = [];
+      mysteryPillars = [];
+      POINTS_OF_INTEREST.forEach((poi) => {
+        if (poi.type === "boss") {
+          const bossEnemy = new Enemy(poi.tx * world.TS, poi.ty * world.TS, poi.bossKind);
+          combat.enemies.push(bossEnemy);
+          const chest = new Chest((poi.tx + 1.8) * world.TS, poi.ty * world.TS, poi);
+          chests.push(chest);
+        } else if (poi.type === "mystery") {
+          const wfChest = new Chest(poi.tx * world.TS, poi.ty * world.TS, poi);
+          chests.push(wfChest);
+          mysteryPillars = [
+            new MysteryPillar((poi.tx - 2.2) * world.TS, (poi.ty - 1.2) * world.TS, 1, "Runa del Flusso"),
+            new MysteryPillar((poi.tx + 2.2) * world.TS, (poi.ty - 1.2) * world.TS, 2, "Runa della Marea"),
+            new MysteryPillar(poi.tx * world.TS, (poi.ty + 2.2) * world.TS, 3, "Runa degli Abissi")
+          ];
+        }
+      });
+      combat.onBossKilled = (boss) => {
+        const matchChest = chests.find((c) => c.poi && c.poi.bossKind === boss.kind);
+        if (matchChest && matchChest.isLocked) {
+          matchChest.unlock();
+          camera.kick(0.42);
+          showWeaponNotification(`\u{1F451} ${boss.name} Sconfitto! ${matchChest.name} SBLOCCATO!`);
+        }
+      };
       combat.enemies.push(new Enemy(140, -170, "slime_forest"));
       combat.enemies.push(new Enemy(180, -190, "slime_forest"));
       combat.enemies.push(new Enemy(-160, -170, "slime_ice"));
@@ -5041,11 +6133,49 @@
       closeIngameInventory();
       closeTacticalMap();
       closeGameMenu();
+      closeBlacksmithModal();
       menuScreen?.classList.add("hidden");
       gameHud?.classList.remove("hidden");
       modalGameOver?.classList.add("hidden");
-      showWeaponNotification("Tasto [I]: Zaino/Talenti \xB7 [M]: Mappa \xB7 [ESC]: Menu \xB7 [1/2/3]: Armi");
+      showWeaponNotification("Tasto [E]: Interagisci \xB7 [I]: Zaino \xB7 [M]: Mappa \xB7 [ESC]: Menu \xB7 [1/2/3]: Armi");
     }
+    function handleInteraction() {
+      if (!currentNearbyInteractable || gameState !== "PLAYING") return;
+      if (currentNearbyInteractable.type === "blacksmith") {
+        openBlacksmithModal(currentNearbyInteractable.data);
+      } else if (currentNearbyInteractable.type === "chest") {
+        const ch = currentNearbyInteractable.data;
+        if (ch.isLocked) {
+          showWeaponNotification(`\u{1F512} ${ch.name} \xE8 sigillato! Sconfiggi il Boss custode!`);
+        } else if (!ch.isOpen) {
+          const opened = ch.open(combat, player);
+          if (opened) {
+            camera.kick(0.3);
+            showWeaponNotification(`\u2728 Hai aperto ${ch.name}! Oro, XP e artefatti riscattati!`);
+            renderIngameLoot();
+            renderIngameForge();
+          }
+        }
+      } else if (currentNearbyInteractable.type === "mystery_pillar") {
+        const p = currentNearbyInteractable.data;
+        if (!p.activated) {
+          p.activate();
+          camera.kick(0.2);
+          const activeCount = mysteryPillars.filter((pil) => pil.activated).length;
+          if (activeCount === mysteryPillars.length) {
+            const wfChest = chests.find((c) => c.id === "chest_waterfall");
+            if (wfChest && wfChest.isLocked) {
+              wfChest.unlock();
+              camera.kick(0.48);
+              showWeaponNotification("\u{1F30A} Il Sigillo delle Tre Rune \xE8 infranto! Forziere Sommerso SBLOCCATO!");
+            }
+          } else {
+            showWeaponNotification(`\u{1F52E} Runa attivata (${activeCount}/${mysteryPillars.length})! Trova le altre rune della cascata!`);
+          }
+        }
+      }
+    }
+    hudInteractPrompt?.addEventListener("click", handleInteraction);
     btnStartRun?.addEventListener("click", startExpedition);
     async function handleGameOver() {
       if (gameState === "GAMEOVER") return;
@@ -5105,6 +6235,17 @@
         return;
       }
       if (gameState === "PLAYING") {
+        if (e.code === "KeyE" || e.key === "e" || e.key === "E") {
+          e.preventDefault();
+          if (isBlacksmithOpen) {
+            closeBlacksmithModal();
+            return;
+          }
+          if (!isInventoryOpen && !isMapOpen && !isMenuOpen) {
+            handleInteraction();
+          }
+          return;
+        }
         if (e.code === "KeyI" || e.code === "KeyB" || e.key === "i" || e.key === "I" || e.key === "b" || e.key === "B") {
           e.preventDefault();
           toggleIngameInventory();
@@ -5116,6 +6257,10 @@
           return;
         }
         if (e.key === "Escape" || e.code === "Escape") {
+          if (isBlacksmithOpen) {
+            closeBlacksmithModal();
+            return;
+          }
           if (isMapOpen) {
             closeTacticalMap();
             return;
@@ -5131,7 +6276,7 @@
           openGameMenu("settings");
           return;
         }
-        if (!isInventoryOpen && !isMapOpen && !isMenuOpen) {
+        if (!isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
           if (e.key === "1") equipWeapon("staff");
           else if (e.key === "2") equipWeapon("sword");
           else if (e.key === "3") equipWeapon("bow");
@@ -5184,13 +6329,59 @@
         if (gameState === "MENU") {
           updateAndDrawTitleBackground(dt, currentTime / 1e3);
         }
-        const isPaused = isInventoryOpen || isMapOpen || isMenuOpen || progression.isPausedForLevelUp;
+        const isPaused = isInventoryOpen || isMapOpen || isMenuOpen || isBlacksmithOpen || progression.isPausedForLevelUp;
         if (gameState === "PLAYING") {
           if (!isPaused) {
             runSurvivalSeconds += dt;
             player.update(dt, Input, world);
             combat.update(dt, player, world, camera);
             camera.follow(player.x, player.y, dt);
+            let foundInteractable = null;
+            const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 75);
+            if (nearbyBs) {
+              foundInteractable = {
+                type: "blacksmith",
+                data: nearbyBs,
+                label: `Parla con ${nearbyBs.name} (Fabbro)`
+              };
+            }
+            if (!foundInteractable) {
+              for (const ch of chests) {
+                const dist = Math.hypot(player.x - ch.x, player.y - ch.y);
+                if (dist <= 52 && !ch.isOpen) {
+                  foundInteractable = {
+                    type: "chest",
+                    data: ch,
+                    label: ch.isLocked ? `\u{1F512} ${ch.name} (Sigillato)` : `Apri ${ch.name}`
+                  };
+                  break;
+                }
+              }
+            }
+            if (!foundInteractable) {
+              for (const p of mysteryPillars) {
+                const dist = Math.hypot(player.x - p.x, player.y - p.y);
+                if (dist <= 50 && !p.activated) {
+                  foundInteractable = {
+                    type: "mystery_pillar",
+                    data: p,
+                    label: `Attiva ${p.name}`
+                  };
+                  break;
+                }
+              }
+            }
+            currentNearbyInteractable = foundInteractable;
+            if (hudInteractPrompt && hudInteractLabel) {
+              if (foundInteractable && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
+                hudInteractPrompt.classList.remove("hidden");
+                hudInteractLabel.textContent = foundInteractable.label;
+              } else {
+                hudInteractPrompt.classList.add("hidden");
+              }
+            }
+            chests.forEach((ch) => ch.update(dt, player));
+            mysteryPillars.forEach((p) => p.update(dt));
             enemyRespawnTimer += dt;
             if (enemyRespawnTimer >= 3 && combat.enemies.length < 75) {
               enemyRespawnTimer = 0;
@@ -5208,7 +6399,12 @@
         camera.apply(ctx);
         world.drawGround(ctx, camera);
         combat.drawPickups(ctx);
-        world.drawEntitiesAndProps(ctx, camera, [player, ...combat.getAllTargets()]);
+        world.drawEntitiesAndProps(ctx, camera, [
+          player,
+          ...chests,
+          ...mysteryPillars,
+          ...combat.getAllTargets()
+        ]);
         combat.drawOrbitOrbs(ctx, player);
         combat.drawProjectiles(ctx);
         combat.drawFX(ctx);

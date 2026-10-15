@@ -2006,5 +2006,89 @@ input:checked + .slider:before {
   box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
 }
 
+/* ==========================================================================
+   PROMPT INTERAZIONE DINAMICA HUD (Fabbro, Forzieri, Misteri)
+   ========================================================================== */
+#hud-interact-prompt {
+  position: absolute;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1.5px solid #f59e0b;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 20px rgba(245, 158, 11, 0.35);
+  border-radius: 30px;
+  padding: 8px 18px;
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 800;
+  z-index: 95;
+  animation: promptPulse 1.8s infinite ease-in-out;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+@keyframes promptPulse {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 16px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.9), 0 0 26px rgba(245, 158, 11, 0.6);
+  }
+}
+
+.interact-key-pill {
+  background: #f59e0b;
+  color: #090d16;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 900;
+  font-size: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* ==========================================================================
+   MODALE DELLA FUCINA DEL FABBRO NPC
+   ========================================================================== */
+.blacksmith-modal-box {
+  max-width: 780px;
+  width: 92%;
+  max-height: 88vh;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.95), 0 0 35px rgba(245, 158, 11, 0.25) !important;
+}
+
+.blacksmith-npc-avatar {
+  width: 48px;
+  height: 48px;
+  background: radial-gradient(circle, #f59e0b 0%, #78350f 100%);
+  border: 2px solid #fde047;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.5);
+}
+
+.blacksmith-speech-bubble {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin: 12px 0 16px 0;
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #fde047;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+
 
 

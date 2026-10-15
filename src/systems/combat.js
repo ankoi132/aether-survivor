@@ -145,7 +145,15 @@ export class CombatSystem {
     const drops = [];
     const r = Math.random();
 
-    if (kind === 'slime_forest') {
+    if (kind === 'boss_treant') {
+      drops.push('slime_gel', 'slime_gel', 'iron_scrap', 'arcane_rune');
+    } else if (kind === 'boss_golem') {
+      drops.push('ice_crystal', 'ice_crystal', 'iron_scrap', 'arcane_rune');
+    } else if (kind === 'boss_scorpion') {
+      drops.push('sun_amber', 'sun_amber', 'iron_scrap', 'arcane_rune');
+    } else if (kind === 'boss_magma') {
+      drops.push('magma_core', 'magma_core', 'iron_scrap', 'arcane_rune');
+    } else if (kind === 'slime_forest') {
       if (r < 0.75) drops.push('slime_gel');
       if (Math.random() < 0.22) drops.push('iron_scrap');
     } else if (kind === 'slime_ice') {
@@ -234,14 +242,24 @@ export class CombatSystem {
         this.kills++;
         this.goldEarned += (e.goldValue || 4);
 
+        if (e.isBoss) {
+          camera.kick(0.48);
+          FX.burst(e.x, e.y - 12, '#fde047', 32, 180);
+          FX.burst(e.x, e.y - 12, e.color || '#ef4444', 26, 140);
+          FX.floatingText(e.x, e.y - 40, `👑 ${e.name} Sconfitto!`, '#fde047');
+          if (this.onBossKilled) {
+            this.onBossKilled(e);
+          }
+        }
+
         // 1. Rilascio gemma di Mana/XP
         this.pickups.push(new GemPickup(e.x, e.y, e.xpValue, e.gemType));
 
         // 2. Rilascio di Oggetti e Artefatti da raccogliere
         const drops = this.rollMonsterDrops(e.kind);
         for (const itemId of drops) {
-          const ox = (Math.random() * 22 - 11);
-          const oy = (Math.random() * 22 - 11);
+          const ox = (Math.random() * 26 - 13);
+          const oy = (Math.random() * 26 - 13);
           this.itemPickups.push(new ItemPickup(e.x + ox, e.y + oy, itemId));
         }
       }

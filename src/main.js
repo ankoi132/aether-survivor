@@ -8,14 +8,17 @@
  */
 import { Input } from './core/input.js';
 import { Camera } from './core/camera.js';
-import { World, SETTLEMENTS } from './world/world.js';
+import { World, SETTLEMENTS, ROAD_SEGMENTS, TRAIL_SEGMENTS, POINTS_OF_INTEREST } from './world/world.js';
 import { Player } from './entities/player.js';
 import { Enemy } from './entities/enemy.js';
+import { Chest } from './entities/chest.js';
 import { CombatSystem } from './systems/combat.js';
 import { ProgressionSystem } from './systems/progression.js';
 import { API } from './core/api.js';
 import { MATERIALS_DEF, WEAPONS_DEF } from './core/crafting.js';
 import { FX } from './core/fx.js';
+import { Tiles } from './world/tiles.js';
+import { Sprites } from './core/sprites.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   const canvas = document.getElementById('gameCanvas');
@@ -154,6 +157,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   const elSumScore = document.getElementById('sum-score');
   const btnReturnSanctuary = document.getElementById('btn-return-sanctuary');
 
+  // Elementi Prompt Interattivo HUD & Modale Fabbro
+  const hudInteractPrompt = document.getElementById('hud-interact-prompt');
+  const hudInteractLabel = document.getElementById('hud-interact-label');
+  const blacksmithModal = document.getElementById('blacksmith-modal');
+  const bsModalName = document.getElementById('bs-modal-name');
+  const bsModalTitle = document.getElementById('bs-modal-title');
+  const bsModalQuote = document.getElementById('bs-modal-quote');
+  const blacksmithForgeContainer = document.getElementById('blacksmith-forge-container');
+  const btnCloseBlacksmith = document.getElementById('btn-close-blacksmith');
+  const btnResumeFromBlacksmith = document.getElementById('btn-resume-from-blacksmith');
+  const forgeNearBlacksmithBtnBox = document.getElementById('forge-near-blacksmith-btn-box');
+  const btnOpenNearBlacksmith = document.getElementById('btn-open-near-blacksmith');
+  const nearBsName = document.getElementById('near-bs-name');
+
   // Stato Globale
   let gameState = 'MENU'; // 'MENU' | 'PLAYING' | 'GAMEOVER'
   let currentProfile = null;
@@ -161,6 +178,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   let isInventoryOpen = false;
   let isMapOpen = false;
   let isMenuOpen = false;
+  let isBlacksmithOpen = false;
+  let currentNearbyInteractable = null;
+  let activeBlacksmith = null;
+  let chests = [];
+  let mysteryPillars = [];
   let notificationTimeout = null;
 
   // Istanze di gioco
@@ -665,9 +687,145 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Classe Entità Monolite Runico per il Mistero delle Cascate
+  class MysteryPillar {
+    constructor(x, y, index, name) {
+      this.x = x;
+      this.y = y;
+      this.index = index;
+      this.name = name;
+      this.activated = false;
+      this.r = 20;
+      this.pulseTimer = 0;
+    }
+
+    activate() {
+      if (this.activated) return;
+      this.activated = true;
+      FX.burst(this.x, this.y - 14, '#06b6d4', 22, 110);
+      FX.floatingText(this.x, this.y - 30, `✨ ${this.name} Risvegliata!`, '#67e8f9');
+    }
+
+    update(dt) {
+      this.pulseTimer += dt;
+    }
+
+    draw(ctx) {
+      Sprites.drawShadow(ctx, this.x, this.y - 2, 14);
+      const spriteType = this.activated ? 'runic_pillar_lit' : 'runic_pillar';
+      const sprite = Tiles.getPropSprite(spriteType);
+      if (this.activated) {
+        const pulse = 0.7 + Math.sin(this.pulseTimer * 4) * 0.3;
+        const glow = ctx.createRadialGradient(this.x, this.y - 18, 4, this.x, this.y - 18, 42);
+        glow.addColorStop(0, `rgba(6, 182, 212, ${0.45 * pulse})`);
+        glow.addColorStop(1, 'rgba(6, 182, 212, 0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - 18, 42, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (sprite) {
+        const sw = sprite.width * 2;
+        const sh = sprite.height * 2;
+        ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 6), sw, sh);
+      }
+      ctx.save();
+      ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center';
+      if (this.activated) {
+        ctx.fillStyle = '#67e8f9';
+        ctx.fillText(`✓ ${this.name}`, Math.round(this.x), Math.round(this.y - 34));
+      } else {
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(`🔮 ${this.name}`, Math.round(this.x), Math.round(this.y - 34));
+      }
+      ctx.restore();
+    }
+  }
+
+  // Visualizzazione Ricette Forgia nello Zaino (Consultazione)
   function renderIngameForge() {
     if (!ingameForgeContainer || !currentProfile) return;
     ingameForgeContainer.innerHTML = '';
+
+    // Controlla se il giocatore è vicino a un fabbro nel villaggio
+    const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 110);
+    if (nearbyBs && forgeNearBlacksmithBtnBox && nearBsName) {
+      forgeNearBlacksmithBtnBox.classList.remove('hidden');
+      nearBsName.textContent = nearbyBs.name;
+    } else if (forgeNearBlacksmithBtnBox) {
+      forgeNearBlacksmithBtnBox.classList.add('hidden');
+    }
+
+    currentProfile.weaponsCatalog.forEach(w => {
+      const card = document.createElement('div');
+      card.className = `weapon-card ${w.isEquipped ? 'equipped' : ''}`;
+
+      let reqHtml = '';
+      if (w.isMaxLevel) {
+        reqHtml = `<div class="weapon-req-box" style="color: #4ade80; text-align: center; font-weight: 700;">★ Grado Massimo (LV 5)</div>`;
+      } else if (w.nextCost) {
+        const goldHas = currentProfile.gold >= (w.nextCost.gold || 0);
+        let matsRows = '';
+
+        if (w.nextCost.materials) {
+          for (const [matId, reqAmt] of Object.entries(w.nextCost.materials)) {
+            const owned = ((currentProfile.inventory && currentProfile.inventory[matId]) || 0) + ((combat.collectedItems && combat.collectedItems[matId]) || 0);
+            const hasEnough = owned >= reqAmt;
+            const matDef = MATERIALS_DEF[matId] || { name: matId, icon: '📦' };
+            matsRows += `
+              <div class="req-item ${hasEnough ? 'has' : 'missing'}">
+                <span>${matDef.icon} ${matDef.name}:</span>
+                <span>${owned} / ${reqAmt}</span>
+              </div>
+            `;
+          }
+        }
+
+        reqHtml = `
+          <div class="weapon-req-box">
+            <div class="weapon-req-title">${w.isUnlocked ? 'Requisiti Potenziamento:' : 'Materiali per Forgiare:'}</div>
+            <div class="req-item ${goldHas ? 'has' : 'missing'}">
+              <span>🪙 Oro:</span>
+              <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
+            </div>
+            ${matsRows}
+            <div style="margin-top: 6px; font-size: 11px; color: #38bdf8; font-weight: 600;">✨ ${w.nextBenefit}</div>
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="weapon-head">
+          <div class="weapon-icon">${w.icon}</div>
+          <div>
+            <div class="weapon-title">${w.name}</div>
+            <div class="weapon-type-tag">Grado: Livello ${w.currentLevel} / ${w.maxLevel}</div>
+          </div>
+        </div>
+        <div style="margin: 8px 0;">${reqHtml}</div>
+        <button class="btn-forge btn-forge-info" style="width: 100%; opacity: 0.85;">
+          ${nearbyBs ? `🔨 Parla con ${nearbyBs.name} per Forgiare` : '📍 Trova un Fabbro nei Villaggi per Forgiare'}
+        </button>
+      `;
+
+      const btnInfo = card.querySelector('.btn-forge-info');
+      btnInfo?.addEventListener('click', () => {
+        if (nearbyBs) {
+          openBlacksmithModal(nearbyBs);
+        } else {
+          showWeaponNotification("Visita l'NPC Fabbro in uno dei villaggi protetti per lavorare quest'arma!");
+        }
+      });
+
+      ingameForgeContainer.appendChild(card);
+    });
+  }
+
+  // Modale Fucina Dedicata del Fabbro NPC (Dove avviene la forgiatura reale!)
+  function renderBlacksmithForge(bs) {
+    if (!blacksmithForgeContainer || !currentProfile) return;
+    blacksmithForgeContainer.innerHTML = '';
 
     currentProfile.weaponsCatalog.forEach(w => {
       const card = document.createElement('div');
@@ -702,7 +860,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
         reqHtml = `
           <div class="weapon-req-box">
-            <div class="weapon-req-title">${w.isUnlocked ? 'Requisiti Potenziamento:' : 'Materiali per Forgiare:'}</div>
+            <div class="weapon-req-title">${w.isUnlocked ? 'Requisiti Tempra:' : 'Materiali Forgiatura:'}</div>
             <div class="req-item ${goldHas ? 'has' : 'missing'}">
               <span>🪙 Oro:</span>
               <span>${currentProfile.gold} / ${w.nextCost.gold || 0}</span>
@@ -718,12 +876,12 @@ window.addEventListener('DOMContentLoaded', async () => {
           <div class="weapon-icon">${w.icon}</div>
           <div>
             <div class="weapon-title">${w.name}</div>
-            <div class="weapon-type-tag">Grado Forgiatura: Livello ${w.currentLevel} / ${w.maxLevel}</div>
+            <div class="weapon-type-tag">Grado Attuale: Livello ${w.currentLevel} / ${w.maxLevel}</div>
           </div>
         </div>
         <div style="margin: 8px 0;">${reqHtml}</div>
         <button class="btn-forge" ${!canAfford ? 'disabled' : ''} style="width: 100%;">
-          🔨 ${w.isUnlocked ? `Potenzia a Livello ${w.currentLevel + 1}` : 'Forgia dal Fabbro'}
+          🔨 ${w.isUnlocked ? `Tempra a Livello ${w.currentLevel + 1}` : 'Forgia Nuova Arma'}
         </button>
       `;
 
@@ -732,6 +890,9 @@ window.addEventListener('DOMContentLoaded', async () => {
         btnForge.addEventListener('click', async () => {
           try {
             currentProfile = await API.craftOrUpgradeWeapon(w.id);
+            FX.burst(player.x, player.y, '#f59e0b', 24, 120);
+            showWeaponNotification(`🔨 ${w.name} lavorata con successo da ${bs.name}!`);
+            renderBlacksmithForge(bs);
             renderIngameForge();
             renderIngameWeapons();
             equipWeapon(combat.weaponId);
@@ -741,7 +902,38 @@ window.addEventListener('DOMContentLoaded', async () => {
         });
       }
 
-      ingameForgeContainer.appendChild(card);
+      blacksmithForgeContainer.appendChild(card);
+    });
+  }
+
+  function openBlacksmithModal(bs) {
+    if (gameState !== 'PLAYING') return;
+    activeBlacksmith = bs;
+    closeIngameInventory();
+    closeTacticalMap();
+    closeGameMenu();
+
+    isBlacksmithOpen = true;
+    if (bsModalName) bsModalName.textContent = bs.name;
+    if (bsModalTitle) bsModalTitle.textContent = `${bs.title} · ${bs.villageName || 'Villaggio'}`;
+    if (bsModalQuote) bsModalQuote.textContent = `"${bs.quote}"`;
+
+    blacksmithModal?.classList.remove('hidden');
+    renderBlacksmithForge(bs);
+  }
+
+  function closeBlacksmithModal() {
+    isBlacksmithOpen = false;
+    activeBlacksmith = null;
+    blacksmithModal?.classList.add('hidden');
+  }
+
+  if (btnCloseBlacksmith) btnCloseBlacksmith.addEventListener('click', closeBlacksmithModal);
+  if (btnResumeFromBlacksmith) btnResumeFromBlacksmith.addEventListener('click', closeBlacksmithModal);
+  if (btnOpenNearBlacksmith) {
+    btnOpenNearBlacksmith.addEventListener('click', () => {
+      const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 110);
+      if (nearbyBs) openBlacksmithModal(nearbyBs);
     });
   }
 
@@ -772,6 +964,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (gameState !== 'PLAYING') return;
     closeTacticalMap();
     closeGameMenu();
+    closeBlacksmithModal();
     isInventoryOpen = true;
     ingameModal?.classList.remove('hidden');
     switchIngameTab(tab);
@@ -847,16 +1040,27 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     minimapCtx.stroke();
 
-    // 3. Strade di collegamento tra città (linee dorate tenui)
-    minimapCtx.strokeStyle = 'rgba(245, 158, 11, 0.45)';
+    // 3. Strade Maestre (linee dorate tenui)
+    minimapCtx.strokeStyle = 'rgba(245, 158, 11, 0.55)';
     minimapCtx.lineWidth = 1;
-    for (const s of SETTLEMENTS) {
-      if (s.id === 'citadel') continue;
+    for (const r of ROAD_SEGMENTS) {
       minimapCtx.beginPath();
-      minimapCtx.moveTo(cx, cy);
-      minimapCtx.lineTo(cx + s.centerTx * world.TS * scale, cy + s.centerTy * world.TS * scale);
+      minimapCtx.moveTo(cx + r.x1 * world.TS * scale, cy + r.y1 * world.TS * scale);
+      minimapCtx.lineTo(cx + r.x2 * world.TS * scale, cy + r.y2 * world.TS * scale);
       minimapCtx.stroke();
     }
+
+    // 3b. Sentieri sterrati dei Biomi (linee tratteggiate)
+    minimapCtx.strokeStyle = 'rgba(217, 119, 6, 0.45)';
+    minimapCtx.lineWidth = 0.8;
+    minimapCtx.setLineDash([2, 2]);
+    for (const t of TRAIL_SEGMENTS) {
+      minimapCtx.beginPath();
+      minimapCtx.moveTo(cx + t.x1 * world.TS * scale, cy + t.y1 * world.TS * scale);
+      minimapCtx.lineTo(cx + t.x2 * world.TS * scale, cy + t.y2 * world.TS * scale);
+      minimapCtx.stroke();
+    }
+    minimapCtx.setLineDash([]);
 
     // 4. Città e Insediamenti con perimetro Safe Zone protetto
     for (const s of SETTLEMENTS) {
@@ -875,6 +1079,15 @@ window.addEventListener('DOMContentLoaded', async () => {
       minimapCtx.beginPath();
       minimapCtx.arc(sx, sy, s.id === 'citadel' ? 3.5 : 2.5, 0, Math.PI * 2);
       minimapCtx.fill();
+    }
+
+    // 4b. Marker POI (Boss 👑 e Mistero 🔮)
+    minimapCtx.font = '7px sans-serif';
+    minimapCtx.textAlign = 'center';
+    for (const poi of POINTS_OF_INTEREST) {
+      const px = cx + poi.tx * world.TS * scale;
+      const py = cy + poi.ty * world.TS * scale;
+      minimapCtx.fillText(poi.icon, px, py + 2.5);
     }
 
     // 5. Nemici come puntini rossi (esclusi dalle città)
@@ -995,31 +1208,24 @@ window.addEventListener('DOMContentLoaded', async () => {
     expandedCtx.font = 'bold 9px sans-serif';
     expandedCtx.fillText('🌊 CASCATE', wfX - 18, wfY - 14);
 
-    // Rete Stradale (Linee dorate tratteggiate)
-    expandedCtx.strokeStyle = 'rgba(245, 158, 11, 0.7)';
-    expandedCtx.lineWidth = 1.5;
+    // Rete Stradale Maestra (Linee dorate con bagliore)
+    expandedCtx.strokeStyle = 'rgba(245, 158, 11, 0.75)';
+    expandedCtx.lineWidth = 2.2;
+    for (const r of ROAD_SEGMENTS) {
+      expandedCtx.beginPath();
+      expandedCtx.moveTo(cx + r.x1 * world.TS * scale, cy + r.y1 * world.TS * scale);
+      expandedCtx.lineTo(cx + r.x2 * world.TS * scale, cy + r.y2 * world.TS * scale);
+      expandedCtx.stroke();
+    }
+
+    // Sentieri Selvaggi dei Biomi (Linee tratteggiate ambra)
+    expandedCtx.strokeStyle = 'rgba(217, 119, 6, 0.65)';
+    expandedCtx.lineWidth = 1.4;
     expandedCtx.setLineDash([4, 3]);
-    for (const s of SETTLEMENTS) {
-      if (s.id === 'citadel') continue;
+    for (const t of TRAIL_SEGMENTS) {
       expandedCtx.beginPath();
-      expandedCtx.moveTo(cx, cy);
-      expandedCtx.lineTo(cx + s.centerTx * world.TS * scale, cy + s.centerTy * world.TS * scale);
-      expandedCtx.stroke();
-    }
-    // Tratta Cascate -> Al Zahir e Cascate -> Sylva
-    const wfSettlement = SETTLEMENTS.find(s => s.id === 'waterfall_village');
-    const azSettlement = SETTLEMENTS.find(s => s.id === 'oasis');
-    const sylvaSettlement = SETTLEMENTS.find(s => s.id === 'sylva');
-    if (wfSettlement && azSettlement) {
-      expandedCtx.beginPath();
-      expandedCtx.moveTo(cx + wfSettlement.centerTx * world.TS * scale, cy + wfSettlement.centerTy * world.TS * scale);
-      expandedCtx.lineTo(cx + azSettlement.centerTx * world.TS * scale, cy + azSettlement.centerTy * world.TS * scale);
-      expandedCtx.stroke();
-    }
-    if (wfSettlement && sylvaSettlement) {
-      expandedCtx.beginPath();
-      expandedCtx.moveTo(cx + wfSettlement.centerTx * world.TS * scale, cy + wfSettlement.centerTy * world.TS * scale);
-      expandedCtx.lineTo(cx + sylvaSettlement.centerTx * world.TS * scale, cy + sylvaSettlement.centerTy * world.TS * scale);
+      expandedCtx.moveTo(cx + t.x1 * world.TS * scale, cy + t.y1 * world.TS * scale);
+      expandedCtx.lineTo(cx + t.x2 * world.TS * scale, cy + t.y2 * world.TS * scale);
       expandedCtx.stroke();
     }
     expandedCtx.setLineDash([]); // Ripristina linea continua
@@ -1046,6 +1252,13 @@ window.addEventListener('DOMContentLoaded', async () => {
       expandedCtx.arc(sx, sy, 3, 0, Math.PI * 2);
       expandedCtx.fill();
 
+      // Fabbro nel villaggio
+      if (s.blacksmith) {
+        expandedCtx.font = '9px sans-serif';
+        expandedCtx.textAlign = 'center';
+        expandedCtx.fillText('🔨', sx + 9, sy - 2);
+      }
+
       expandedCtx.font = 'bold 9px sans-serif';
       expandedCtx.fillStyle = s.color || '#38bdf8';
       expandedCtx.textAlign = 'center';
@@ -1054,6 +1267,34 @@ window.addEventListener('DOMContentLoaded', async () => {
       expandedCtx.fillStyle = '#94a3b8';
       expandedCtx.fillText('🛡️ Safe Zone', sx, sy + sr + 9);
       expandedCtx.textAlign = 'left';
+    }
+
+    // Punti d'Interesse Speciali: Boss e Misteri delle Cascate
+    for (const poi of POINTS_OF_INTEREST) {
+      const px = cx + poi.tx * world.TS * scale;
+      const py = cy + poi.ty * world.TS * scale;
+
+      expandedCtx.save();
+      // Cerchio di rispetto POI
+      expandedCtx.fillStyle = poi.type === 'boss' ? 'rgba(239, 68, 68, 0.22)' : 'rgba(6, 182, 212, 0.22)';
+      expandedCtx.beginPath();
+      expandedCtx.arc(px, py, 11, 0, Math.PI * 2);
+      expandedCtx.fill();
+
+      expandedCtx.strokeStyle = poi.color || '#fde047';
+      expandedCtx.lineWidth = 1.4;
+      expandedCtx.stroke();
+
+      // Icona (👑 o 🔮)
+      expandedCtx.font = '11px sans-serif';
+      expandedCtx.textAlign = 'center';
+      expandedCtx.fillText(poi.icon, px, py + 4);
+
+      // Cartiglio con nome
+      expandedCtx.font = 'bold 8px sans-serif';
+      expandedCtx.fillStyle = poi.color || '#fde047';
+      expandedCtx.fillText(poi.name, px, py + 16);
+      expandedCtx.restore();
     }
 
     // Nemici come punti rossi
@@ -1107,6 +1348,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (gameState !== 'PLAYING') return;
     closeIngameInventory();
     closeGameMenu();
+    closeBlacksmithModal();
     isMapOpen = true;
     expandedMapModal?.classList.remove('hidden');
     renderTacticalMap();
@@ -1165,6 +1407,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (gameState !== 'PLAYING') return;
     closeIngameInventory();
     closeTacticalMap();
+    closeBlacksmithModal();
     isMenuOpen = true;
     gameMenuModal?.classList.remove('hidden');
     switchGameMenuTab(tab);
@@ -1276,7 +1519,44 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (elWeaponIcon) elWeaponIcon.textContent = combat.weaponId === 'sword' ? '🗡️' : (combat.weaponId === 'bow' ? '🏹' : '🪄');
     if (elWeaponName) elWeaponName.textContent = combat.weaponName;
 
-    // 3. Popola i mostri nei rispettivi biomi della vasta mappa
+    // 3. Inizializza Forzieri, Boss e Mistero delle Cascate dai Punti d'Interesse
+    chests = [];
+    mysteryPillars = [];
+
+    POINTS_OF_INTEREST.forEach(poi => {
+      if (poi.type === 'boss') {
+        // Spawna il Boss leggendario nella sua arena
+        const bossEnemy = new Enemy(poi.tx * world.TS, poi.ty * world.TS, poi.bossKind);
+        combat.enemies.push(bossEnemy);
+
+        // Posiziona il Forziere Sacro bloccato a lato del Boss
+        const chest = new Chest((poi.tx + 1.8) * world.TS, poi.ty * world.TS, poi);
+        chests.push(chest);
+      } else if (poi.type === 'mystery') {
+        // Forziere Sommerso delle Cascate
+        const wfChest = new Chest(poi.tx * world.TS, poi.ty * world.TS, poi);
+        chests.push(wfChest);
+
+        // 3 Monoliti Runici da attivare nella grotta delle cascate
+        mysteryPillars = [
+          new MysteryPillar((poi.tx - 2.2) * world.TS, (poi.ty - 1.2) * world.TS, 1, 'Runa del Flusso'),
+          new MysteryPillar((poi.tx + 2.2) * world.TS, (poi.ty - 1.2) * world.TS, 2, 'Runa della Marea'),
+          new MysteryPillar(poi.tx * world.TS, (poi.ty + 2.2) * world.TS, 3, 'Runa degli Abissi')
+        ];
+      }
+    });
+
+    // Callback sconfitta Boss: sblocco glorioso del forziere leggendario!
+    combat.onBossKilled = (boss) => {
+      const matchChest = chests.find(c => c.poi && c.poi.bossKind === boss.kind);
+      if (matchChest && matchChest.isLocked) {
+        matchChest.unlock();
+        camera.kick(0.42);
+        showWeaponNotification(`👑 ${boss.name} Sconfitto! ${matchChest.name} SBLOCCATO!`);
+      }
+    };
+
+    // 4. Popola i mostri nei rispettivi biomi della vasta mappa
     combat.enemies.push(new Enemy(140, -170, 'slime_forest'));
     combat.enemies.push(new Enemy(180, -190, 'slime_forest'));
     combat.enemies.push(new Enemy(-160, -170, 'slime_ice'));
@@ -1314,17 +1594,58 @@ window.addEventListener('DOMContentLoaded', async () => {
       combat.enemies.push(new Enemy(pt.x, pt.y, 'skeleton'));
     }
 
-    // 4. Cambia schermata
+    // 5. Cambia schermata
     closeIngameInventory();
     closeTacticalMap();
     closeGameMenu();
+    closeBlacksmithModal();
     menuScreen?.classList.add('hidden');
     gameHud?.classList.remove('hidden');
     modalGameOver?.classList.add('hidden');
 
-    showWeaponNotification("Tasto [I]: Zaino/Talenti · [M]: Mappa · [ESC]: Menu · [1/2/3]: Armi");
+    showWeaponNotification("Tasto [E]: Interagisci · [I]: Zaino · [M]: Mappa · [ESC]: Menu · [1/2/3]: Armi");
   }
 
+  // Gestione dell'interazione con Fabbro, Forzieri e Rune con [E] o click sul prompt
+  function handleInteraction() {
+    if (!currentNearbyInteractable || gameState !== 'PLAYING') return;
+
+    if (currentNearbyInteractable.type === 'blacksmith') {
+      openBlacksmithModal(currentNearbyInteractable.data);
+    } else if (currentNearbyInteractable.type === 'chest') {
+      const ch = currentNearbyInteractable.data;
+      if (ch.isLocked) {
+        showWeaponNotification(`🔒 ${ch.name} è sigillato! Sconfiggi il Boss custode!`);
+      } else if (!ch.isOpen) {
+        const opened = ch.open(combat, player);
+        if (opened) {
+          camera.kick(0.3);
+          showWeaponNotification(`✨ Hai aperto ${ch.name}! Oro, XP e artefatti riscattati!`);
+          renderIngameLoot();
+          renderIngameForge();
+        }
+      }
+    } else if (currentNearbyInteractable.type === 'mystery_pillar') {
+      const p = currentNearbyInteractable.data;
+      if (!p.activated) {
+        p.activate();
+        camera.kick(0.2);
+        const activeCount = mysteryPillars.filter(pil => pil.activated).length;
+        if (activeCount === mysteryPillars.length) {
+          const wfChest = chests.find(c => c.id === 'chest_waterfall');
+          if (wfChest && wfChest.isLocked) {
+            wfChest.unlock();
+            camera.kick(0.48);
+            showWeaponNotification('🌊 Il Sigillo delle Tre Rune è infranto! Forziere Sommerso SBLOCCATO!');
+          }
+        } else {
+          showWeaponNotification(`🔮 Runa attivata (${activeCount}/${mysteryPillars.length})! Trova le altre rune della cascata!`);
+        }
+      }
+    }
+  }
+
+  hudInteractPrompt?.addEventListener('click', handleInteraction);
   btnStartRun?.addEventListener('click', startExpedition);
 
   // =========================================================================
@@ -1408,6 +1729,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (gameState === 'PLAYING') {
+      // Tasto [E] per interagire con Fabbro, Forzieri e Rune
+      if (e.code === 'KeyE' || e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        if (isBlacksmithOpen) {
+          closeBlacksmithModal();
+          return;
+        }
+        if (!isInventoryOpen && !isMapOpen && !isMenuOpen) {
+          handleInteraction();
+        }
+        return;
+      }
+
       // Tasti [I] e [B] per Zaino/Inventario
       if (e.code === 'KeyI' || e.code === 'KeyB' || e.key === 'i' || e.key === 'I' || e.key === 'b' || e.key === 'B') {
         e.preventDefault();
@@ -1424,6 +1758,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 
       // Tasto [ESC] per chiudere o aprire i menu
       if (e.key === 'Escape' || e.code === 'Escape') {
+        if (isBlacksmithOpen) {
+          closeBlacksmithModal();
+          return;
+        }
         if (isMapOpen) {
           closeTacticalMap();
           return;
@@ -1442,7 +1780,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Cambio arma rapido con 1, 2, 3 (se i menu non sono aperti)
-      if (!isInventoryOpen && !isMapOpen && !isMenuOpen) {
+      if (!isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
         if (e.key === '1') equipWeapon('staff');
         else if (e.key === '2') equipWeapon('sword');
         else if (e.key === '3') equipWeapon('bow');
@@ -1512,14 +1850,71 @@ window.addEventListener('DOMContentLoaded', async () => {
         updateAndDrawTitleBackground(dt, currentTime / 1000);
       }
 
-      // 1. UPDATE (Mondo in pausa se Zaino, Mappa, Menu o LevelUp sono aperti)
-      const isPaused = isInventoryOpen || isMapOpen || isMenuOpen || progression.isPausedForLevelUp;
+      // 1. UPDATE (Mondo in pausa se Zaino, Mappa, Menu, Fabbro o LevelUp sono aperti)
+      const isPaused = isInventoryOpen || isMapOpen || isMenuOpen || isBlacksmithOpen || progression.isPausedForLevelUp;
       if (gameState === 'PLAYING') {
         if (!isPaused) {
           runSurvivalSeconds += dt;
           player.update(dt, Input, world);
           combat.update(dt, player, world, camera);
           camera.follow(player.x, player.y, dt);
+
+          // Rilevamento interazioni vicine (Fabbro, Forzieri, Monoliti delle Cascate)
+          let foundInteractable = null;
+
+          // 1. Fabbro del villaggio più vicino
+          const nearbyBs = world.getNearbyBlacksmith(player.x, player.y, 75);
+          if (nearbyBs) {
+            foundInteractable = {
+              type: 'blacksmith',
+              data: nearbyBs,
+              label: `Parla con ${nearbyBs.name} (Fabbro)`
+            };
+          }
+
+          // 2. Forzieri del Tesoro Ancestrali
+          if (!foundInteractable) {
+            for (const ch of chests) {
+              const dist = Math.hypot(player.x - ch.x, player.y - ch.y);
+              if (dist <= 52 && !ch.isOpen) {
+                foundInteractable = {
+                  type: 'chest',
+                  data: ch,
+                  label: ch.isLocked ? `🔒 ${ch.name} (Sigillato)` : `Apri ${ch.name}`
+                };
+                break;
+              }
+            }
+          }
+
+          // 3. Monoliti Runici della Cascata
+          if (!foundInteractable) {
+            for (const p of mysteryPillars) {
+              const dist = Math.hypot(player.x - p.x, player.y - p.y);
+              if (dist <= 50 && !p.activated) {
+                foundInteractable = {
+                  type: 'mystery_pillar',
+                  data: p,
+                  label: `Attiva ${p.name}`
+                };
+                break;
+              }
+            }
+          }
+
+          currentNearbyInteractable = foundInteractable;
+          if (hudInteractPrompt && hudInteractLabel) {
+            if (foundInteractable && !isInventoryOpen && !isMapOpen && !isMenuOpen && !isBlacksmithOpen) {
+              hudInteractPrompt.classList.remove('hidden');
+              hudInteractLabel.textContent = foundInteractable.label;
+            } else {
+              hudInteractPrompt.classList.add('hidden');
+            }
+          }
+
+          // Aggiorna forzieri e rune
+          chests.forEach(ch => ch.update(dt, player));
+          mysteryPillars.forEach(p => p.update(dt));
 
           // Generazione periodica dinamica di mostri attorno all'eroe (MAI in Safe Zone)
           enemyRespawnTimer += dt;
@@ -1547,8 +1942,13 @@ window.addEventListener('DOMContentLoaded', async () => {
       // Gemme e artefatti a terra
       combat.drawPickups(ctx);
 
-      // Elementi verticali Y-Sort
-      world.drawEntitiesAndProps(ctx, camera, [player, ...combat.getAllTargets()]);
+      // Elementi verticali Y-Sort (Giocatore, Forzieri, Rune, Boss e Mostri)
+      world.drawEntitiesAndProps(ctx, camera, [
+        player,
+        ...chests,
+        ...mysteryPillars,
+        ...combat.getAllTargets()
+      ]);
 
       // Sfere orbitanti
       combat.drawOrbitOrbs(ctx, player);

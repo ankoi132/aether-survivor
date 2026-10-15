@@ -17,20 +17,30 @@ export const SETTLEMENTS = [
     type: 'capital',
     centerTx: 0,
     centerTy: 0,
-    radiusTiles: 12, // ~384px raggio di protezione
+    radiusTiles: 13, // ~416px raggio di protezione
     color: '#38bdf8',
+    blacksmith: {
+      id: 'bs_citadel',
+      name: 'Mastro Thorgar',
+      title: 'Gran Fabbro Reale',
+      quote: 'Salute, eroe dell\'Aether! La mia forgia arde col fuoco sacro. Portami acciaio e rune e plasmerò per te armi degne di un re!',
+      tx: 5,
+      ty: 4
+    },
     buildings: [
-      { type: 'house_red', tx: -7, ty: -6, wTiles: 4, hTiles: 3, name: 'Taverna del Viandante' },
-      { type: 'house_blue', tx: 3, ty: -6, wTiles: 4, hTiles: 3, name: 'Torre dell\'Arcimago' },
-      { type: 'house_blue', tx: -7, ty: 3, wTiles: 4, hTiles: 3, name: 'Bottega delle Pozioni' },
-      { type: 'house_red', tx: 3, ty: 3, wTiles: 4, hTiles: 3, name: 'Fucina & Armeria' }
+      { type: 'aether_obelisk', tx: 0, ty: -3, wTiles: 2, hTiles: 4, name: "Obelisco dell'Aether" },
+      { type: 'house_blue', tx: -8, ty: -7, wTiles: 4, hTiles: 3, name: 'Torre dell\'Arcimago' },
+      { type: 'house_red', tx: 4, ty: -7, wTiles: 4, hTiles: 3, name: 'Taverna della Corona' },
+      { type: 'fountain', tx: -4, ty: 3, wTiles: 3, hTiles: 2, name: 'Fontana delle Stelle' },
+      { type: 'house_blue', tx: -8, ty: 3, wTiles: 4, hTiles: 3, name: 'Bottega degli Elisir' }
     ],
     props: [
-      { type: 'well', tx: 0, ty: -1 },
-      { type: 'lamppost', tx: -3, ty: -3 },
-      { type: 'lamppost', tx: 3, ty: -3 },
-      { type: 'lamppost', tx: -3, ty: 2 },
-      { type: 'lamppost', tx: 3, ty: 2 }
+      { type: 'blacksmith_npc', tx: 5, ty: 4 },
+      { type: 'well', tx: 0, ty: 5 },
+      { type: 'lamppost', tx: -3, ty: -2 },
+      { type: 'lamppost', tx: 3, ty: -2 },
+      { type: 'lamppost', tx: -3, ty: 3 },
+      { type: 'lamppost', tx: 3, ty: 3 }
     ]
   },
   {
@@ -40,15 +50,24 @@ export const SETTLEMENTS = [
     type: 'river_town',
     centerTx: -40,
     centerTy: 22,
-    radiusTiles: 11,
+    radiusTiles: 12,
     color: '#06b6d4',
+    blacksmith: {
+      id: 'bs_waterfall',
+      name: 'Mastro Finn',
+      title: 'Fabbro delle Maree',
+      quote: 'L\'acqua gelida della cascata tempra l\'acciaio meglio di qualsiasi olio! Fammi vedere che rottami hai raccolto lungo il fiume!',
+      tx: -35,
+      ty: 24
+    },
     buildings: [
-      { type: 'house_blue', tx: -44, ty: 18, wTiles: 4, hTiles: 3, name: 'Locanda della Cascata' },
-      { type: 'house_blue', tx: -36, ty: 18, wTiles: 4, hTiles: 3, name: 'Bottega dei Pescatori' },
-      { type: 'house_red', tx: -42, ty: 25, wTiles: 4, hTiles: 3, name: 'Mulino ad Acqua' }
+      { type: 'water_mill', tx: -42, ty: 25, wTiles: 4, hTiles: 3, name: 'Mulino della Cascata' },
+      { type: 'house_blue', tx: -45, ty: 17, wTiles: 4, hTiles: 3, name: 'Locanda dei Pescatori' },
+      { type: 'house_red', tx: -36, ty: 17, wTiles: 4, hTiles: 3, name: 'Bottega delle Reti' }
     ],
     props: [
-      { type: 'well', tx: -40, ty: 22 },
+      { type: 'blacksmith_npc', tx: -35, ty: 24 },
+      { type: 'well', tx: -40, ty: 20 },
       { type: 'lamppost', tx: -43, ty: 21 },
       { type: 'lamppost', tx: -37, ty: 21 },
       { type: 'lamppost', tx: -40, ty: 26 }
@@ -61,16 +80,25 @@ export const SETTLEMENTS = [
     type: 'snow_outpost',
     centerTx: 20,
     centerTy: -75,
-    radiusTiles: 10,
+    radiusTiles: 11,
     color: '#7dd3fc',
+    blacksmith: {
+      id: 'bs_frostpeak',
+      name: 'Mastra Astrid',
+      title: 'Forgiatrice dei Ghiacci',
+      quote: 'Il permafrost spezza le lame fragili. Qui tempreremo le tue armi col crio-acciaio delle vette montane!',
+      tx: 23,
+      ty: -73
+    },
     buildings: [
-      { type: 'house_red', tx: 16, ty: -79, wTiles: 4, hTiles: 3, name: 'Rifugio dei Ghiacci' },
-      { type: 'house_blue', tx: 22, ty: -79, wTiles: 4, hTiles: 3, name: 'Osservatorio Astrale' }
+      { type: 'cabin_snow', tx: 15, ty: -80, wTiles: 4, hTiles: 3, name: 'Rifugio del Permafrost' },
+      { type: 'cabin_snow', tx: 23, ty: -80, wTiles: 4, hTiles: 3, name: 'Osservatorio del Nord' }
     ],
     props: [
-      { type: 'well', tx: 20, ty: -75 },
-      { type: 'lamppost', tx: 17, ty: -74 },
-      { type: 'lamppost', tx: 23, ty: -74 }
+      { type: 'blacksmith_npc', tx: 23, ty: -73 },
+      { type: 'brazier_fire', tx: 18, ty: -74 },
+      { type: 'brazier_fire', tx: 22, ty: -74 },
+      { type: 'well', tx: 20, ty: -76 }
     ]
   },
   {
@@ -80,16 +108,26 @@ export const SETTLEMENTS = [
     type: 'desert_oasis',
     centerTx: -70,
     centerTy: 65,
-    radiusTiles: 10,
+    radiusTiles: 11,
     color: '#f59e0b',
+    blacksmith: {
+      id: 'bs_oasis',
+      name: 'Mastro Rashid',
+      title: 'Armaiolo delle Sabbie',
+      quote: 'Pace su di te, viaggiatore delle dune! Il sole ardente forgia le armi più flessibili e micidiali. Cosa creiamo oggi?',
+      tx: -66,
+      ty: 66
+    },
     buildings: [
-      { type: 'house_red', tx: -74, ty: 61, wTiles: 4, hTiles: 3, name: 'Bazaar delle Spezie' },
-      { type: 'house_blue', tx: -66, ty: 61, wTiles: 4, hTiles: 3, name: 'Tenda del Califfo' }
+      { type: 'tent_desert', tx: -75, ty: 60, wTiles: 4, hTiles: 3, name: 'Padiglione del Sultano' },
+      { type: 'tent_desert', tx: -66, ty: 60, wTiles: 4, hTiles: 3, name: 'Bazaar delle Dune' }
     ],
     props: [
-      { type: 'well', tx: -70, ty: 65 },
-      { type: 'lamppost', tx: -72, ty: 64 },
-      { type: 'lamppost', tx: -68, ty: 64 }
+      { type: 'blacksmith_npc', tx: -66, ty: 66 },
+      { type: 'palm_tree', tx: -73, ty: 64 },
+      { type: 'palm_tree', tx: -67, ty: 64 },
+      { type: 'palm_tree', tx: -71, ty: 67 },
+      { type: 'well', tx: -70, ty: 65 }
     ]
   },
   {
@@ -99,16 +137,25 @@ export const SETTLEMENTS = [
     type: 'volcano_fort',
     centerTx: 70,
     centerTy: 45,
-    radiusTiles: 10,
+    radiusTiles: 11,
     color: '#ef4444',
+    blacksmith: {
+      id: 'bs_cineris',
+      name: 'Mastro Ignis',
+      title: 'Fabbro di Magma',
+      quote: 'Solo chi sopporta il calore dell\'inferno merita una lama di vero magma! Mostrami i tuoi nuclei ardenti!',
+      tx: 74,
+      ty: 46
+    },
     buildings: [
-      { type: 'house_red', tx: 66, ty: 41, wTiles: 4, hTiles: 3, name: 'Fucina di Magma' },
-      { type: 'house_blue', tx: 72, ty: 41, wTiles: 4, hTiles: 3, name: 'Torre di Guardia' }
+      { type: 'fort_volcano', tx: 66, ty: 40, wTiles: 4, hTiles: 4, name: 'Bastione di Basalto' },
+      { type: 'house_red', tx: 73, ty: 40, wTiles: 4, hTiles: 3, name: 'Caserma delle Ceneri' }
     ],
     props: [
-      { type: 'well', tx: 70, ty: 45 },
-      { type: 'lamppost', tx: 67, ty: 44 },
-      { type: 'lamppost', tx: 73, ty: 44 }
+      { type: 'blacksmith_npc', tx: 74, ty: 46 },
+      { type: 'brazier_fire', tx: 67, ty: 45 },
+      { type: 'brazier_fire', tx: 73, ty: 45 },
+      { type: 'well', tx: 70, ty: 46 }
     ]
   },
   {
@@ -118,29 +165,168 @@ export const SETTLEMENTS = [
     type: 'forest_haven',
     centerTx: -75,
     centerTy: -35,
-    radiusTiles: 10,
+    radiusTiles: 11,
     color: '#22c55e',
+    blacksmith: {
+      id: 'bs_sylva',
+      name: 'Mastra Elora',
+      title: 'Artigiana delle Fronde',
+      quote: 'Gli alberi sussurrano i segreti della terra. Posso fondere la resina d\'ambra e il metallo per darti archi e bastoni ineguagliabili.',
+      tx: -71,
+      ty: -34
+    },
     buildings: [
-      { type: 'house_blue', tx: -79, ty: -39, wTiles: 4, hTiles: 3, name: 'Bottega degli Antidoti' },
-      { type: 'house_red', tx: -71, ty: -39, wTiles: 4, hTiles: 3, name: 'Locanda della Quercia' }
+      { type: 'cabin_wood', tx: -80, ty: -40, wTiles: 4, hTiles: 3, name: 'Santuario della Quercia' },
+      { type: 'cabin_wood', tx: -72, ty: -40, wTiles: 4, hTiles: 3, name: 'Erboristeria di Sylva' }
     ],
     props: [
-      { type: 'well', tx: -75, ty: -35 },
-      { type: 'lamppost', tx: -77, ty: -34 },
-      { type: 'lamppost', tx: -73, ty: -34 }
+      { type: 'blacksmith_npc', tx: -71, ty: -34 },
+      { type: 'glowing_mushrooms', tx: -77, ty: -34 },
+      { type: 'glowing_mushrooms', tx: -73, ty: -36 },
+      { type: 'well', tx: -75, ty: -35 }
     ]
   }
 ];
 
-// Segmenti della Rete Stradale che collegano le città
-const ROAD_SEGMENTS = [
-  { x1: 0, y1: 0, x2: 20, y2: -75 },     // Cittadella -> Frostpeak (Nord)
-  { x1: 0, y1: 0, x2: -40, y2: 22 },     // Cittadella -> Borgo delle Cascate (Ovest/Sud-Ovest)
-  { x1: 0, y1: 0, x2: 70, y2: 45 },      // Cittadella -> Cineris (Est)
-  { x1: 0, y1: 0, x2: -70, y2: 65 },     // Cittadella -> Al-Zahir (Sud-Ovest)
-  { x1: 0, y1: 0, x2: -75, y2: -35 },    // Cittadella -> Sylva (Ovest)
-  { x1: -40, y1: 22, x2: -70, y2: 65 },  // Borgo delle Cascate -> Al-Zahir
-  { x1: -40, y1: 22, x2: -75, y2: -35 }  // Borgo delle Cascate -> Sylva
+// PUNTI D'INTERESSE SPECIALI: Boss con Forzieri e Misteri
+export const POINTS_OF_INTEREST = [
+  {
+    id: 'boss_forest',
+    type: 'boss',
+    name: 'Radura del Treant Ancestrale',
+    title: 'Custode delle Radici',
+    biome: 'forest',
+    tx: -95,
+    ty: -85,
+    bossKind: 'boss_treant',
+    chestId: 'chest_forest',
+    chestName: 'Forziere di Smeraldo Antico',
+    color: '#22c55e',
+    icon: '👑',
+    loot: { gold: 220, xp: 180, items: { slime_gel: 4, iron_scrap: 3, arcane_rune: 2 } }
+  },
+  {
+    id: 'boss_snow',
+    type: 'boss',
+    name: 'Trono del Golem Glaciale',
+    title: 'Signore del Permafrost',
+    biome: 'snow',
+    tx: 25,
+    ty: -110,
+    bossKind: 'boss_golem',
+    chestId: 'chest_snow',
+    chestName: 'Forziere di Cristallo Perenne',
+    color: '#7dd3fc',
+    icon: '👑',
+    loot: { gold: 300, xp: 220, items: { ice_crystal: 4, iron_scrap: 3, arcane_rune: 2 } }
+  },
+  {
+    id: 'boss_desert',
+    type: 'boss',
+    name: 'Tempio del Colosso delle Dune',
+    title: 'Flagello delle Sabbie',
+    biome: 'desert',
+    tx: -105,
+    ty: 98,
+    bossKind: 'boss_scorpion',
+    chestId: 'chest_desert',
+    chestName: 'Forziere d\'Oro della Sfinge',
+    color: '#f59e0b',
+    icon: '👑',
+    loot: { gold: 350, xp: 260, items: { sun_amber: 5, iron_scrap: 4, arcane_rune: 2 } }
+  },
+  {
+    id: 'boss_volcano',
+    type: 'boss',
+    name: 'Cratere del Titano di Magma',
+    title: 'Incarnazione del Fuoco',
+    biome: 'volcano',
+    tx: 102,
+    ty: 86,
+    bossKind: 'boss_magma',
+    chestId: 'chest_volcano',
+    chestName: 'Forziere di Ossidiana Vulcanica',
+    color: '#ef4444',
+    icon: '👑',
+    loot: { gold: 450, xp: 320, items: { magma_core: 5, iron_scrap: 4, arcane_rune: 3 } }
+  },
+  {
+    id: 'mystery_waterfall',
+    type: 'mystery',
+    name: 'Grotta Segreta delle Cascate',
+    title: 'Enigma delle Tre Rune',
+    biome: 'river',
+    tx: -52,
+    ty: 22,
+    chestId: 'chest_waterfall',
+    chestName: 'Forziere Sommerso delle Cascate',
+    color: '#06b6d4',
+    icon: '🔮',
+    loot: { gold: 400, xp: 300, items: { arcane_rune: 3, ice_crystal: 4, slime_gel: 4 } }
+  }
+];
+
+// Strade Maestre Lastricate che collegano le città con curve organiche
+export const ROAD_SEGMENTS = [
+  // 1. Strada Imperiale del Nord: Cittadella -> Valico dei Monti -> Frostpeak
+  { x1: 0, y1: 0, x2: 8, y2: -35 },
+  { x1: 8, y1: -35, x2: 20, y2: -75 },
+
+  // 2. Via Fluviale dell'Ovest: Cittadella -> Ponte dell'Aether -> Borgo delle Cascate
+  { x1: 0, y1: 0, x2: -20, y2: 10 },
+  { x1: -20, y1: 10, x2: -40, y2: 22 },
+
+  // 3. Via delle Ceneri (Est): Cittadella -> Gola di Zolfo -> Rocca di Cineris
+  { x1: 0, y1: 0, x2: 35, y2: 20 },
+  { x1: 35, y1: 20, x2: 70, y2: 45 },
+
+  // 4. Pista Carovaniera di Al-Zahir: Cittadella -> Dune Basse -> Oasi di Al-Zahir
+  { x1: 0, y1: 0, x2: -35, y2: 35 },
+  { x1: -35, y1: 35, x2: -70, y2: 65 },
+
+  // 5. Cammino Silvano: Cittadella -> Radura di Mezzo -> Borgo di Sylva
+  { x1: 0, y1: 0, x2: -35, y2: -18 },
+  { x1: -35, y1: -18, x2: -75, y2: -35 },
+
+  // 6. Raccordo Borgo delle Cascate <-> Oasi di Al-Zahir
+  { x1: -40, y1: 22, x2: -55, y2: 45 },
+  { x1: -55, y1: 45, x2: -70, y2: 65 },
+
+  // 7. Raccordo Borgo delle Cascate <-> Borgo di Sylva
+  { x1: -40, y1: 22, x2: -58, y2: -8 },
+  { x1: -58, y1: -8, x2: -75, y2: -35 }
+];
+
+// Sentieri Selvaggi dei Biomi e Vie dei Boss / Misteri (Terra battuta e ghiaia)
+export const TRAIL_SEGMENTS = [
+  // Sentiero 1: Sylva -> Radura del Treant Ancestrale (Boss Bosco)
+  { x1: -75, y1: -35, x2: -86, y2: -60 },
+  { x1: -86, y1: -60, x2: -95, y2: -85 },
+
+  // Sentiero 2: Frostpeak -> Trono del Golem dei Ghiacci (Boss Montagne)
+  { x1: 20, y1: -75, x2: 22, y2: -92 },
+  { x1: 22, y1: -92, x2: 25, y2: -110 },
+
+  // Sentiero 3: Al-Zahir -> Tempio della Sfinge (Boss Deserto)
+  { x1: -70, y1: 65, x2: -88, y2: 82 },
+  { x1: -88, y1: 82, x2: -105, y2: 98 },
+
+  // Sentiero 4: Cineris -> Cratere del Titano di Magma (Boss Vulcano)
+  { x1: 70, y1: 45, x2: 86, y2: 65 },
+  { x1: 86, y1: 65, x2: 102, y2: 86 },
+
+  // Sentiero 5: Borgo delle Cascate -> Grotta del Mistero sotto la Cascata
+  { x1: -40, y1: 22, x2: -46, y2: 22 },
+  { x1: -46, y1: 22, x2: -52, y2: 22 },
+
+  // Sentieri di raccordo trasversale tra biomi:
+  // Frostpeak -> Passaggio Orientale verso Cineris
+  { x1: 20, y1: -75, x2: 50, y2: -20 },
+  { x1: 50, y1: -20, x2: 70, y2: 45 },
+
+  // Sylva -> Alture di Frostpeak
+  { x1: -75, y1: -35, x2: -30, y2: -55 },
+  { x1: -30, y1: -55, x2: 20, y2: -75 }
 ];
 
 function distToSegment(px, py, x1, y1, x2, y2) {
@@ -176,6 +362,7 @@ export class World {
     this.TILE_BRIDGE = 9;           // Ponte in legno attraversabile
     this.TILE_SHALLOW_WATER = 10;   // Guado / acqua bassa attraversabile a piedi
     this.TILE_ROAD = 11;            // Strada battuta / lastricata
+    this.TILE_TRAIL = 12;           // Sentiero selvaggio di terra e ghiaia (connette i biomi e porta ai boss)
 
     // Limiti della Grande Mappa Finita (241x241 tile = 7712x7712 px)
     this.MAP_RADIUS = 120;
@@ -235,7 +422,7 @@ export class World {
   }
 
   /**
-   * Verifica se un tile fa parte di una strada principale
+   * Verifica se un tile fa parte di una strada maestra lastricata
    */
   isRoad(tx, ty) {
     for (const seg of ROAD_SEGMENTS) {
@@ -245,6 +432,41 @@ export class World {
       }
     }
     return false;
+  }
+
+  /**
+   * Verifica se un tile fa parte di un sentiero selvaggio di terra e ghiaia
+   */
+  isTrail(tx, ty) {
+    for (const seg of TRAIL_SEGMENTS) {
+      const d = distToSegment(tx, ty, seg.x1, seg.y1, seg.x2, seg.y2);
+      if (d <= 1.25) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Cerca l'NPC Fabbro più vicino entro un dato raggio dal giocatore
+   */
+  getNearbyBlacksmith(playerX, playerY, maxDist = 75) {
+    for (const s of SETTLEMENTS) {
+      if (!s.blacksmith) continue;
+      const bx = s.blacksmith.tx * this.TS + this.TS / 2;
+      const by = s.blacksmith.ty * this.TS + this.TS;
+      if (Math.hypot(playerX - bx, playerY - by) <= maxDist) {
+        return {
+          ...s.blacksmith,
+          settlementName: s.name,
+          settlementId: s.id,
+          settlementColor: s.color,
+          worldX: bx,
+          worldY: by
+        };
+      }
+    }
+    return null;
   }
 
   /**
@@ -320,21 +542,25 @@ export class World {
       return this.TILE_FLOOR;
     }
 
-    // 3. Se attraversa un fiume su una strada -> PONTE IN LEGNO (Walkable!)
+    // 3. Fiume, Cascate, Ponti e Guadi
     const onRoad = this.isRoad(tx, ty);
+    const onTrail = this.isTrail(tx, ty);
     const riverCx = this.getRiverCenterX(ty);
     const distRiver = Math.abs(tx - riverCx);
 
-    if (onRoad && distRiver <= 2.8) {
+    if ((onRoad || onTrail) && distRiver <= 2.8) {
       return this.TILE_BRIDGE;
     }
 
-    // 4. Se è una strada di collegamento tra città -> Strada lastricata (Walkable e sgombra!)
+    // 4. Strade maestre lastricate e Sentieri selvaggi di terra battuta
     if (onRoad) {
       return this.TILE_ROAD;
     }
+    if (onTrail) {
+      return this.TILE_TRAIL;
+    }
 
-    // 5. Fiume, Cascate e Guadi
+    // 5. Fiume e Guadi calpestabili
     if (distRiver <= 2.4) {
       // Zone di guado attraversabili (Shallow Water): vicino a Borgo Cascate o ogni intervallo regolare
       const isFord = (Math.abs(ty - 22) <= 3 && Math.abs(tx - (-40)) <= 14) ||
@@ -350,45 +576,47 @@ export class World {
     const lakeNoise = this.hash2D(Math.floor(tx / 3), Math.floor(ty / 3), 101);
     const propNoise = this.hash2D(tx, ty, 77);
 
+    // DENSITÀ OTTIMIZZATA PER ATTRAVERSABILITÀ FLUIDA FUORI STRADA:
+    // Muri e dirupi rari (solo top 6%), ampie aree aperte (88% calpestabile liberamente)
     // 6. Bioma Fiume (Sponde verdeggianti e canneti)
     if (biome === 'river') {
-      if (propNoise > 0.84) return this.TILE_TREE;
-      if (propNoise > 0.80) return this.TILE_ROCK;
+      if (propNoise > 0.90) return this.TILE_TREE;
+      if (propNoise > 0.87) return this.TILE_ROCK;
       return this.TILE_FLOOR;
     }
 
     // 7. Montagne Innevate (Nord)
     if (biome === 'snow') {
-      if (wallNoise > 0.82) return this.TILE_WALL;
-      if (lakeNoise > 0.84) return this.TILE_WATER;
-      if (propNoise > 0.78) return this.TILE_PINE;
-      if (propNoise > 0.74) return this.TILE_ROCK;
+      if (wallNoise > 0.94) return this.TILE_WALL;
+      if (lakeNoise > 0.94) return this.TILE_WATER;
+      if (propNoise > 0.88) return this.TILE_PINE;
+      if (propNoise > 0.85) return this.TILE_ROCK;
       return this.TILE_FLOOR;
     }
 
     // 8. Deserto delle Dune (Sud-Ovest)
     if (biome === 'desert') {
-      if (wallNoise > 0.84) return this.TILE_WALL;
-      if (lakeNoise > 0.91) return this.TILE_WATER;
-      if (propNoise > 0.82) return this.TILE_CACTUS;
-      if (propNoise > 0.78) return this.TILE_SAND_ROCK;
+      if (wallNoise > 0.94) return this.TILE_WALL;
+      if (lakeNoise > 0.96) return this.TILE_WATER;
+      if (propNoise > 0.90) return this.TILE_CACTUS;
+      if (propNoise > 0.87) return this.TILE_SAND_ROCK;
       return this.TILE_FLOOR;
     }
 
     // 9. Caldera Vulcanica (Est / Sud-Est)
     if (biome === 'volcano') {
-      if (wallNoise > 0.81) return this.TILE_WALL;
-      if (lakeNoise > 0.76) return this.TILE_WATER; // Lava
-      if (propNoise > 0.79) return this.TILE_VOLCANO_ROCK;
-      if (propNoise > 0.75) return this.TILE_ROCK;
+      if (wallNoise > 0.94) return this.TILE_WALL;
+      if (lakeNoise > 0.92) return this.TILE_WATER; // Lava
+      if (propNoise > 0.89) return this.TILE_VOLCANO_ROCK;
+      if (propNoise > 0.86) return this.TILE_ROCK;
       return this.TILE_FLOOR;
     }
 
     // 10. Bosco Silvano (Ovest / Centro-Ovest)
-    if (wallNoise > 0.86) return this.TILE_WALL;
-    if (lakeNoise > 0.82) return this.TILE_WATER;
-    if (propNoise > 0.77) return this.TILE_TREE;
-    if (propNoise > 0.73) return this.TILE_ROCK;
+    if (wallNoise > 0.95) return this.TILE_WALL;
+    if (lakeNoise > 0.93) return this.TILE_WATER;
+    if (propNoise > 0.88) return this.TILE_TREE;
+    if (propNoise > 0.85) return this.TILE_ROCK;
 
     return this.TILE_FLOOR;
   }
@@ -399,14 +627,15 @@ export class World {
     if (t === this.TILE_WATER) return 'liquid';
     if (t === this.TILE_BRIDGE) return 'bridge';
     if (t === this.TILE_ROAD) return 'road';
+    if (t === this.TILE_TRAIL) return 'trail';
     if (t === this.TILE_SHALLOW_WATER) return 'shallow';
     return 'floor';
   }
 
   isSolid(tx, ty) {
     const t = this.getTileType(tx, ty);
-    // Ponti, guadi e strade NON sono solidi: sono pienamente calpestabili!
-    if (t === this.TILE_BRIDGE || t === this.TILE_SHALLOW_WATER || t === this.TILE_ROAD) {
+    // Ponti, guadi, strade e sentieri NON sono solidi: sono pienamente calpestabili!
+    if (t === this.TILE_BRIDGE || t === this.TILE_SHALLOW_WATER || t === this.TILE_ROAD || t === this.TILE_TRAIL) {
       return false;
     }
 
@@ -669,10 +898,59 @@ export class World {
                 const sw = sprite.width * this.PX;
                 const sh = sprite.height * this.PX;
 
-                if (p.type === 'house_red' || p.type === 'house_blue') {
+                if (p.type === 'house_red' || p.type === 'house_blue' || p.type === 'water_mill' || p.type === 'tent_desert' || p.type === 'cabin_snow' || p.type === 'cabin_wood' || p.type === 'fort_volcano') {
                   ctx.fillStyle = 'rgba(6, 8, 14, 0.45)';
-                  ctx.fillRect(Math.round(p.x - sw / 2 + 10), Math.round(p.y - 8), sw - 20, 14);
+                  ctx.fillRect(Math.round(p.x - sw / 2 + 8), Math.round(p.y - 8), sw - 16, 14);
                   ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 8), sw, sh);
+                } else if (p.type === 'blacksmith_npc') {
+                  Sprites.drawShadow(ctx, p.x, p.y - 2, 16);
+                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
+                  // Indicatore fluttuante sopra la testa del fabbro
+                  ctx.save();
+                  ctx.font = 'bold 10px sans-serif';
+                  ctx.textAlign = 'center';
+                  // Bagliore
+                  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                  ctx.fillRect(Math.round(p.x - 38), Math.round(p.y - sh - 14), 76, 16);
+                  ctx.strokeStyle = '#f59e0b';
+                  ctx.lineWidth = 1;
+                  ctx.strokeRect(Math.round(p.x - 38), Math.round(p.y - sh - 14), 76, 16);
+                  ctx.fillStyle = '#fde047';
+                  ctx.fillText('🔨 Fabbro [E]', Math.round(p.x), Math.round(p.y - sh - 2));
+                  ctx.restore();
+                } else if (p.type === 'aether_obelisk') {
+                  Sprites.drawShadow(ctx, p.x, p.y - 2, 22);
+                  const glow = ctx.createRadialGradient(p.x, p.y - 36, 10, p.x, p.y - 36, 80);
+                  glow.addColorStop(0, 'rgba(56, 189, 248, 0.28)');
+                  glow.addColorStop(1, 'rgba(56, 189, 248, 0)');
+                  ctx.fillStyle = glow;
+                  ctx.beginPath();
+                  ctx.arc(p.x, p.y - 36, 80, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 8), sw, sh);
+                } else if (p.type === 'brazier_fire') {
+                  Sprites.drawShadow(ctx, p.x, p.y - 2, 10);
+                  const glow = ctx.createRadialGradient(p.x, p.y - 14, 4, p.x, p.y - 14, 42);
+                  glow.addColorStop(0, 'rgba(249, 115, 22, 0.28)');
+                  glow.addColorStop(1, 'rgba(249, 115, 22, 0)');
+                  ctx.fillStyle = glow;
+                  ctx.beginPath();
+                  ctx.arc(p.x, p.y - 14, 42, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
+                } else if (p.type === 'fountain') {
+                  Sprites.drawShadow(ctx, p.x, p.y - 2, 18);
+                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
+                } else if (p.type === 'glowing_mushrooms') {
+                  Sprites.drawShadow(ctx, p.x, p.y - 2, 12);
+                  const glow = ctx.createRadialGradient(p.x, p.y - 10, 4, p.x, p.y - 10, 36);
+                  glow.addColorStop(0, 'rgba(168, 85, 247, 0.25)');
+                  glow.addColorStop(1, 'rgba(168, 85, 247, 0)');
+                  ctx.fillStyle = glow;
+                  ctx.beginPath();
+                  ctx.arc(p.x, p.y - 10, 36, 0, Math.PI * 2);
+                  ctx.fill();
+                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
                 } else if (p.type === 'well') {
                   Sprites.drawShadow(ctx, p.x, p.y - 2, 14);
                   ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
@@ -687,9 +965,9 @@ export class World {
                   ctx.fill();
                   ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
                 } else {
-                  const rad = (p.type === 'tree' || p.type === 'pine') ? 14 : (p.type === 'cactus' ? 10 : 12);
+                  const rad = (p.type === 'tree' || p.type === 'pine' || p.type === 'palm_tree') ? 14 : (p.type === 'cactus' ? 10 : 12);
                   Sprites.drawShadow(ctx, p.x, p.y - 2, rad);
-                  const yOff = (p.type === 'tree' || p.type === 'pine') ? 8 : 4;
+                  const yOff = (p.type === 'tree' || p.type === 'pine' || p.type === 'palm_tree') ? 8 : 4;
                   ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + yOff), sw, sh);
                 }
               }

@@ -11,7 +11,11 @@ export const ENEMY_COLORS = {
   slime_sand: '#f59e0b',
   slime_magma: '#ef4444',
   slime_water: '#0284c7',
-  skeleton: '#cbd5e1'
+  skeleton: '#cbd5e1',
+  boss_treant: '#22c55e',
+  boss_golem: '#7dd3fc',
+  boss_scorpion: '#f59e0b',
+  boss_magma: '#ef4444'
 };
 
 export class Enemy {
@@ -22,9 +26,54 @@ export class Enemy {
     this.spawnX = x;
     this.spawnY = y;
     this.color = ENEMY_COLORS[kind] || '#22c55e';
+    this.isBoss = false;
 
     // Statistiche per tipo
-    if (kind === 'slime_forest') {
+    if (kind === 'boss_treant') {
+      this.name = 'Treant Ancestrale';
+      this.isBoss = true;
+      this.maxHp = 650;
+      this.baseSpd = 36;
+      this.r = 26;
+      this.aggroRadius = 320;
+      this.xpValue = 180;
+      this.gemType = 'emerald';
+      this.contactDamage = 16;
+      this.goldValue = 140;
+    } else if (kind === 'boss_golem') {
+      this.name = 'Golem dei Ghiacci';
+      this.isBoss = true;
+      this.maxHp = 780;
+      this.baseSpd = 40;
+      this.r = 28;
+      this.aggroRadius = 340;
+      this.xpValue = 220;
+      this.gemType = 'emerald';
+      this.contactDamage = 20;
+      this.goldValue = 180;
+    } else if (kind === 'boss_scorpion') {
+      this.name = 'Colosso delle Dune';
+      this.isBoss = true;
+      this.maxHp = 880;
+      this.baseSpd = 52;
+      this.r = 28;
+      this.aggroRadius = 350;
+      this.xpValue = 260;
+      this.gemType = 'emerald';
+      this.contactDamage = 24;
+      this.goldValue = 220;
+    } else if (kind === 'boss_magma') {
+      this.name = 'Titano di Magma';
+      this.isBoss = true;
+      this.maxHp = 1050;
+      this.baseSpd = 45;
+      this.r = 30;
+      this.aggroRadius = 360;
+      this.xpValue = 320;
+      this.gemType = 'emerald';
+      this.contactDamage = 28;
+      this.goldValue = 260;
+    } else if (kind === 'slime_forest') {
       this.name = 'Slime Silvano';
       this.maxHp = 35;
       this.baseSpd = 50;
@@ -309,7 +358,19 @@ export class Enemy {
     }
 
     // 2. Ombra a terra
-    Sprites.drawShadow(ctx, this.x, this.y + 4, this.kind.startsWith('slime') ? 9 : 10);
+    const shadowR = this.isBoss ? (this.r + 4) : (this.kind.startsWith('slime') ? 9 : 10);
+    Sprites.drawShadow(ctx, this.x, this.y + (this.isBoss ? 8 : 4), shadowR);
+
+    // Aura maestosa per i Boss
+    if (this.isBoss) {
+      const glow = ctx.createRadialGradient(this.x, this.y - 12, 10, this.x, this.y - 12, 54);
+      glow.addColorStop(0, (this.color || '#ef4444') + '55');
+      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y - 12, 54, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.save();
 
@@ -326,8 +387,16 @@ export class Enemy {
       ctx.filter = 'brightness(2.8)';
     }
 
-    // Render dello sprite pixel-art vivo
-    if (this.kind.startsWith('slime_')) {
+    // Render dello sprite pixel-art vivo (con scala imponente 2.2x per i Boss!)
+    if (this.isBoss) {
+      const isWalking = this.state === 'CHASE' || (this.state === 'WANDER' && this.isWanderMoving);
+      const sprite = (this.kind === 'boss_treant' || this.kind === 'boss_magma') ?
+        Sprites.getSkeletonSprite(this.dir, isWalking, this.frame) :
+        Sprites.getSlimeSprite(this.kind === 'boss_golem' ? 'ice' : 'sand', this.frame);
+      const sw = sprite.width * 2.2;
+      const sh = sprite.height * 2.2;
+      ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 12), sw, sh);
+    } else if (this.kind.startsWith('slime_')) {
       const slimeType = this.kind.replace('slime_', '');
       const sprite = Sprites.getSlimeSprite(slimeType, this.frame);
       const sw = sprite.width;
@@ -351,8 +420,30 @@ export class Enemy {
       ctx.fillText('!', Math.round(this.x), Math.round(this.y - 28));
     }
 
-    // 4. Barra della vita sopra il nemico se ha subito danno
-    if (this.hp < this.maxHp) {
+    // 4. Barra della vita sopra il nemico
+    if (this.isBoss) {
+      const barW = 74;
+      const barH = 5;
+      const bx = Math.round(this.x - barW / 2);
+      const by = Math.round(this.y - 56);
+
+      // Titolo del Boss
+      ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fde047';
+      ctx.fillText(`👑 ${this.name}`, Math.round(this.x), by - 4);
+
+      // Barra HP dorata
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.fillRect(bx - 2, by - 2, barW + 4, barH + 4);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx - 2, by - 2, barW + 4, barH + 4);
+
+      const pct = Math.max(0, this.hp / this.maxHp);
+      ctx.fillStyle = pct > 0.4 ? '#ef4444' : '#b91c1c';
+      ctx.fillRect(bx, by, Math.round(barW * pct), barH);
+    } else if (this.hp < this.maxHp) {
       const barW = 24;
       const barH = 3;
       const bx = Math.round(this.x - barW / 2);

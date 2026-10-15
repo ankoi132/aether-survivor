@@ -213,6 +213,12 @@
         <div id="hp-text">100 / 100 HP</div>
       </div>
     </div>
+
+    <!-- Prompt Interazione Dinamica (Fabbro, Forzieri o Misteri) -->
+    <div id="hud-interact-prompt" class="hidden">
+      <span class="interact-key-pill">[E]</span>
+      <span id="hud-interact-label">Parla con il Fabbro</span>
+    </div>
   </div>
 
   <!-- =========================================================================
@@ -286,8 +292,29 @@
             <div class="legend-item">
               <span class="legend-color-box" style="background: #64748b; border-color: #fde047;"></span>
               <div>
-                <b>🛣️ Strade Maestre & Ponti in Legno</b>
-                <p>Percorsi pavimentati e ponti che collegano tutti i villaggi in sicurezza.</p>
+                <b>🛣️ Strade Maestre & Sentieri Battuti</b>
+                <p>Arterie lastricate e sentieri sterrati che collegano borghi, boss e misteri.</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box" style="background: #ef4444; border-color: #fde047; text-align: center; line-height: 18px; font-size: 11px;">👑</span>
+              <div>
+                <b>👑 Santuari dei Boss & Bauli Ancestrali</b>
+                <p>Treant (Bosco), Golem (Neve), Scorpione (Deserto), Titano (Vulcano). Sconfiggili per sbloccare i forzieri leggendari!</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box" style="background: #0284c7; border-color: #38bdf8; text-align: center; line-height: 18px; font-size: 11px;">🔮</span>
+              <div>
+                <b>🔮 Mistero delle Cascate & Tre Rune</b>
+                <p>Attiva i tre monoliti runici segreti sotto la cascata per rivelare il Forziere Sommerso.</p>
+              </div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color-box" style="background: #b45309; border-color: #fde047; text-align: center; line-height: 18px; font-size: 11px;">🔨</span>
+              <div>
+                <b>🔨 Botteghe dei Fabbri NPC</b>
+                <p>Incontra i mastri fabbri in ogni villaggio per forgiare e potenziare spade, archi e bastoni.</p>
               </div>
             </div>
           </div>
@@ -346,11 +373,16 @@
       <!-- Scheda 3: Fucina del Fabbro -->
       <div id="ingame-tab-forge" class="tab-content">
         <div class="blacksmith-intro">
-          <div class="blacksmith-title">🔨 Forgia e Potenzia le Tue Armi</div>
-          <div class="blacksmith-desc">Spendi i materiali raccolti e l'oro conquistato per sbloccare e potenziare Spada, Arco e Bastone!</div>
+          <div class="blacksmith-title">🔨 Fucina & Botteghe dei Fabbri</div>
+          <div class="blacksmith-desc">Per forgiare o potenziare le tue armi (Spada, Arco, Bastone), <b>visita l'NPC Fabbro</b> in uno dei villaggi protetti (Cittadella, Borgo delle Cascate, Frostpeak, Al-Zahir, Cineris, Sylva). Qui puoi visionare i materiali in tuo possesso e i requisiti delle ricette!</div>
+        </div>
+        <div id="forge-near-blacksmith-btn-box" class="hidden" style="margin-bottom: 14px;">
+          <button id="btn-open-near-blacksmith" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);">
+            🔨 Parla con <span id="near-bs-name">il Fabbro del Villaggio</span> ed entra nella Fucina
+          </button>
         </div>
         <div class="weapons-grid" id="ingame-forge-container">
-          <!-- Popolato dinamicamente da JS -->
+          <!-- Popolato dinamicamente da JS per consultazione ricette -->
         </div>
       </div>
 
@@ -367,6 +399,40 @@
 
       <div class="modal-actions" style="margin-top: 12px;">
         <button id="btn-resume-game" class="btn-primary" style="width: 100%;">▶️ RIPRENDI LA SPEDIZIONE [I o ESC]</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       5B. MODALE FUCINA DEL FABBRO NPC (Interazione Fisica nei Villaggi)
+       ========================================================================= -->
+  <div id="blacksmith-modal" class="hidden overlay-screen">
+    <div class="menu-box blacksmith-modal-box">
+      <div class="ingame-modal-header blacksmith-header">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div class="blacksmith-npc-avatar">🔨</div>
+          <div>
+            <div id="bs-modal-name" class="menu-logo" style="font-size: 20px;">Mastro Thorgar</div>
+            <div id="bs-modal-title" class="menu-subtitle" style="color: #f59e0b; font-weight: 700;">Gran Fabbro Reale · Cittadella dell'Aether</div>
+          </div>
+        </div>
+        <button id="btn-close-blacksmith" class="btn-close-modal" title="Chiudi Fucina [E o ESC]">✕</button>
+      </div>
+
+      <!-- Fumetto di Dialogo personalizzato del Fabbro -->
+      <div class="blacksmith-speech-bubble">
+        <div id="bs-modal-quote">"Salute, eroe dell'Aether! La mia forgia arde col fuoco sacro. Portami acciaio e rune e plasmerò per te armi degne di un re!"</div>
+      </div>
+
+      <!-- Griglia Forgiatura Armi -->
+      <div class="weapons-grid" id="blacksmith-forge-container">
+        <!-- Popolato dinamicamente da JS con le ricette attive -->
+      </div>
+
+      <div class="modal-actions" style="margin-top: 14px;">
+        <button id="btn-resume-from-blacksmith" class="btn-primary" style="width: 100%;">
+          ✓ Chiudi Fucina e Torna al Villaggio [E o ESC]
+        </button>
       </div>
     </div>
   </div>

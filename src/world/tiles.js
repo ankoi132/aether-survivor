@@ -231,6 +231,24 @@ export const Tiles = (() => {
       return;
     }
 
+    // 2b. Sentieri selvaggi di terra battuta e ghiaia (collegano i biomi e portano ai boss)
+    if (kind === 'trail') {
+      const cDirtDark = pack('#78350f');
+      const cDirtMid = pack('#92400e');
+      const cDirtLight = pack('#b45309');
+      const cGravel = pack('#451a03');
+      for (let y = 0; y < T; y++) {
+        for (let x = 0; x < T; x++) {
+          const gx = tx * T + x, gy = ty * T + y;
+          const r = hash(gx, gy, 7);
+          let col = r > 0.65 ? cDirtLight : (r > 0.3 ? cDirtMid : cDirtDark);
+          if (hash(gx >> 1, gy >> 1, 10) < 0.16) col = cGravel;
+          P.set(ox + x, oy + y, col);
+        }
+      }
+      return;
+    }
+
     // 3. Guadi e acque basse attraversabili del fiume
     if (kind === 'shallow') {
       const cSand = pack('#0284c7');
@@ -681,6 +699,489 @@ export const Tiles = (() => {
     return P.canvas();
   }
 
+  // 9. NPC Fabbro con Incudine e Martello
+  function paintBlacksmith() {
+    const P = Pix(38, 36);
+    const cSkin = pack('#fcd34d');
+    const cBeard = pack('#92400e');
+    const cApron = pack('#78350f');
+    const cApronDark = pack('#451a03');
+    const cSteel = pack('#cbd5e1');
+    const cSteelDark = pack('#475569');
+    const cHotMetal = pack('#f97316');
+    const cGlow = pack('#fde047');
+    const cWood = pack('#5b4a34');
+    const cEdge = pack('#090d16');
+
+    // Incudine in ferro scuro (a sinistra)
+    for (let y = 18; y <= 32; y++) {
+      for (let x = 6; x <= 18; x++) {
+        const isAnvilTop = y <= 22;
+        const isAnvilHorn = y === 20 && (x < 8 || x > 16);
+        if (isAnvilTop || isAnvilHorn || (y > 22 && x >= 10 && x <= 14) || y >= 30) {
+          P.set(x, y, cSteelDark);
+        }
+      }
+    }
+    // Lama incandescente sopra l'incudine
+    for (let x = 8; x <= 15; x++) {
+      P.set(x, 19, cHotMetal);
+      P.set(x, 18, cGlow);
+    }
+
+    // Fabbro (a destra dell'incudine)
+    // Gambe e stivali
+    for (let y = 26; y <= 33; y++) {
+      P.set(22, y, cApronDark);
+      P.set(23, y, cApronDark);
+      P.set(26, y, cApronDark);
+      P.set(27, y, cApronDark);
+    }
+    // Corpo e grembiule in cuoio
+    for (let y = 14; y <= 26; y++) {
+      for (let x = 20; x <= 29; x++) {
+        P.set(x, y, (x === 20 || x === 29) ? cApronDark : cApron);
+      }
+    }
+    // Testa, elmo/fronte e barba
+    for (let y = 6; y <= 13; y++) {
+      for (let x = 21; x <= 28; x++) {
+        if (y <= 8) P.set(x, y, cSteel); // Elmetto d'acciaio
+        else if (y === 9 || y === 10) P.set(x, y, cSkin); // Viso
+        else P.set(x, y, cBeard); // Folta barba da fabbro
+      }
+    }
+    // Occhi
+    P.set(22, 9, pack('#0f172a'));
+    P.set(26, 9, pack('#0f172a'));
+
+    // Braccio con martello alzato
+    for (let x = 15; x <= 20; x++) P.set(x, 12, cSkin);
+    // Manico del martello
+    for (let y = 8; y <= 16; y++) P.set(15, y, cWood);
+    // Testa del martello in acciaio
+    for (let y = 6; y <= 10; y++) {
+      for (let x = 13; x <= 17; x++) P.set(x, y, cSteel);
+    }
+
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 10. Mulino ad Acqua (Borgo delle Cascate)
+  function paintWaterMill() {
+    const W = 64, H = 56;
+    const P = Pix(W, H);
+    const cStone = pack('#475569');
+    const cStoneDark = pack('#1e293b');
+    const cWood = pack('#78350f');
+    const cWoodDark = pack('#451a03');
+    const cRoof = pack('#0284c7');
+    const cRoofLight = pack('#38bdf8');
+    const cWater = pack('#7dd3fc');
+    const cEdge = pack('#090d16');
+
+    // Corpo del mulino in pietra e travi
+    for (let y = 22; y <= 50; y++) {
+      for (let x = 8; x <= 44; x++) {
+        P.set(x, y, (x % 5 === 0 || y % 5 === 0) ? cStoneDark : cStone);
+      }
+    }
+    // Porta e finestra
+    for (let y = 36; y <= 49; y++) {
+      for (let x = 22; x <= 29; x++) P.set(x, y, cWoodDark);
+    }
+    // Tetto azzurro ardesia
+    for (let y = 8; y <= 23; y++) {
+      const span = Math.round(((y - 8) / 15) * 22);
+      for (let x = 26 - span; x <= 26 + span; x++) {
+        P.set(x, y, (y % 2 === 0) ? cRoofLight : cRoof);
+      }
+    }
+
+    // Grande Ruota Idraulica ad Acqua (sul lato destro)
+    const rcx = 52, rcy = 36, rr = 15;
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+      for (let r = 3; r <= rr; r++) {
+        const px = Math.round(rcx + Math.cos(a) * r);
+        const py = Math.round(rcy + Math.sin(a) * r);
+        P.set(px, py, cWoodDark);
+      }
+    }
+    for (let a = 0; a < Math.PI * 2; a += 0.1) {
+      P.set(Math.round(rcx + Math.cos(a) * rr), Math.round(rcy + Math.sin(a) * rr), cWood);
+    }
+    // Schizzi d'acqua sotto la ruota
+    for (let x = 46; x <= 58; x++) {
+      P.set(x, 51, cWater);
+      if (x % 2 === 0) P.set(x, 52, pack('#ffffff'));
+    }
+
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 11. Tenda Beduina del Deserto (Oasi di Al-Zahir)
+  function paintDesertTent() {
+    const W = 58, H = 46;
+    const P = Pix(W, H);
+    const cCloth = pack('#d97706');
+    const cClothLight = pack('#fde047');
+    const cClothRed = pack('#dc2626');
+    const cPole = pack('#78350f');
+    const cInside = pack('#451a03');
+    const cEdge = pack('#090d16');
+
+    // Palo centrale e tendaggio a cupola
+    for (let y = 10; y <= 40; y++) {
+      const span = Math.round(Math.sin(((y - 10) / 30) * Math.PI) * 25);
+      for (let x = 29 - span; x <= 29 + span; x++) {
+        const stripe = Math.floor(Math.abs(x - 29) / 4) % 3;
+        P.set(x, y, stripe === 0 ? cClothLight : (stripe === 1 ? cCloth : cClothRed));
+      }
+    }
+    // Entrata aperta in ombra
+    for (let y = 26; y <= 40; y++) {
+      const span = Math.round(((40 - y) / 14) * 8);
+      for (let x = 29 - span; x <= 29 + span; x++) P.set(x, y, cInside);
+    }
+    // Puntale dorato
+    for (let y = 4; y <= 9; y++) P.set(29, y, cClothLight);
+
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 12. Chalet Innevato di Frostpeak
+  function paintSnowCabin() {
+    const W = 62, H = 54;
+    const P = Pix(W, H);
+    const cLog = pack('#5b4a34');
+    const cLogDark = pack('#382b1d');
+    const cSnow = pack('#f8fafc');
+    const cSnowShadow = pack('#cbd5e1');
+    const cGlow = pack('#fde047');
+    const cEdge = pack('#090d16');
+
+    // Pareti a tronchi di pino
+    for (let y = 24; y <= 48; y++) {
+      for (let x = 8; x <= 53; x++) {
+        P.set(x, y, (y % 4 === 0) ? cLogDark : cLog);
+      }
+    }
+    // Finestre calde dorate
+    for (let y = 30; y <= 38; y++) {
+      for (let x = 14; x <= 20; x++) P.set(x, y, cGlow);
+      for (let x = 41; x <= 47; x++) P.set(x, y, cGlow);
+    }
+    // Porta in legno pesante
+    for (let y = 34; y <= 48; y++) {
+      for (let x = 27; x <= 34; x++) P.set(x, y, cLogDark);
+    }
+    // Spesso strato di neve sul tetto spiovente
+    for (let y = 8; y <= 26; y++) {
+      const span = Math.round(((y - 8) / 18) * 28);
+      for (let x = 31 - span; x <= 31 + span; x++) {
+        P.set(x, y, y <= 14 ? cSnow : (y % 3 === 0 ? cSnowShadow : cSnow));
+      }
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 13. Capanna Silvana di Sylva
+  function paintWoodCabin() {
+    const W = 58, H = 50;
+    const P = Pix(W, H);
+    const cWood = pack('#5b4a34');
+    const cMoss = pack('#15803d');
+    const cMossLight = pack('#4ade80');
+    const cDoor = pack('#3b2d1f');
+    const cGlow = pack('#a7f3d0');
+    const cEdge = pack('#090d16');
+
+    for (let y = 22; y <= 44; y++) {
+      for (let x = 8; x <= 50; x++) {
+        P.set(x, y, (x % 5 === 0) ? cDoor : cWood);
+      }
+    }
+    // Finestrella verde bosco
+    for (let y = 28; y <= 34; y++) {
+      for (let x = 14; x <= 20; x++) P.set(x, y, cGlow);
+    }
+    // Porta
+    for (let y = 30; y <= 44; y++) {
+      for (let x = 26; x <= 33; x++) P.set(x, y, cDoor);
+    }
+    // Tetto di paglia e muschio silvano
+    for (let y = 8; y <= 23; y++) {
+      const span = Math.round(((y - 8) / 15) * 26);
+      for (let x = 29 - span; x <= 29 + span; x++) {
+        P.set(x, y, (x + y) % 3 === 0 ? cMossLight : cMoss);
+      }
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 14. Fortezza Vulcanica di Cineris
+  function paintVolcanoFort() {
+    const W = 58, H = 58;
+    const P = Pix(W, H);
+    const cBasalt = pack('#18181b');
+    const cBasaltMid = pack('#27272a');
+    const cLava = pack('#ef4444');
+    const cLavaGlow = pack('#facc15');
+    const cEdge = pack('#020617');
+
+    // Pareti possenti di basalto con merli
+    for (let y = 14; y <= 52; y++) {
+      for (let x = 8; x <= 50; x++) {
+        const isLavaVein = (x === 18 && y > 24) || (x === 40 && y > 24);
+        P.set(x, y, isLavaVein ? cLava : ((x % 6 === 0 || y % 6 === 0) ? cBasalt : cBasaltMid));
+      }
+    }
+    // Merli sulla sommità
+    for (let x = 8; x <= 50; x += 10) {
+      for (let y = 8; y <= 14; y++) {
+        for (let bx = 0; bx < 6; bx++) P.set(x + bx, y, cBasalt);
+      }
+    }
+    // Portone di ferro rinforzato con braci
+    for (let y = 36; y <= 52; y++) {
+      for (let x = 24; x <= 34; x++) P.set(x, y, pack('#451a03'));
+    }
+    // Finestrelle ardenti
+    for (let x of [16, 38]) {
+      for (let y = 20; y <= 26; y++) P.set(x, y, cLavaGlow);
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 15. Grande Obelisco Runico dell'Aether (Centro Capitale)
+  function paintAetherObelisk() {
+    const W = 32, H = 64;
+    const P = Pix(W, H);
+    const cMarble = pack('#f1f5f9');
+    const cMarbleShadow = pack('#94a3b8');
+    const cCrystal = pack('#38bdf8');
+    const cCrystalCore = pack('#e0f2fe');
+    const cRune = pack('#c084fc');
+    const cEdge = pack('#090d16');
+
+    // Basamento a gradini di marmo bianco
+    for (let y = 50; y <= 58; y++) {
+      for (let x = 4; x <= 27; x++) P.set(x, y, cMarble);
+    }
+    for (let y = 44; y <= 50; y++) {
+      for (let x = 8; x <= 23; x++) P.set(x, y, cMarbleShadow);
+    }
+
+    // Guglia di cristallo dell'Aether ottagonale
+    for (let y = 6; y <= 44; y++) {
+      const span = Math.round(((y - 6) / 38) * 8) + 1;
+      for (let x = 16 - span; x <= 16 + span; x++) {
+        const isCore = x === 16;
+        const isRune = (y === 16 || y === 24 || y === 32) && Math.abs(x - 16) <= 2;
+        P.set(x, y, isRune ? cRune : (isCore ? cCrystalCore : cCrystal));
+      }
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 16. Braciere Ardente
+  function paintBrazier() {
+    const P = Pix(22, 28);
+    const cIron = pack('#1e293b');
+    const cFlame1 = pack('#ef4444');
+    const cFlame2 = pack('#f97316');
+    const cFlame3 = pack('#fde047');
+    const cEdge = pack('#090d16');
+
+    // Tripode
+    for (let y = 14; y <= 25; y++) {
+      P.set(5, y, cIron);
+      P.set(11, y, cIron);
+      P.set(17, y, cIron);
+    }
+    // Coppa in ferro
+    for (let y = 12; y <= 16; y++) {
+      for (let x = 3; x <= 19; x++) P.set(x, y, cIron);
+    }
+    // Fiamme ardenti
+    for (let y = 2; y <= 12; y++) {
+      const span = Math.round(((12 - y) / 10) * 6);
+      for (let x = 11 - span; x <= 11 + span; x++) {
+        P.set(x, y, y <= 5 ? cFlame3 : (y <= 9 ? cFlame2 : cFlame1));
+      }
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 17. Palma da dattero del Deserto
+  function paintPalmTree() {
+    const P = Pix(38, 48);
+    const cTrunk = pack('#78350f');
+    const cTrunkDark = pack('#451a03');
+    const cFrond = pack('#16a34a');
+    const cFrondLight = pack('#4ade80');
+    const cEdge = pack('#090d16');
+
+    // Tronco curvo a segmenti
+    for (let y = 18; y <= 45; y++) {
+      const curve = Math.round(Math.sin(((y - 18) / 27) * Math.PI) * 5);
+      const cx = 19 + curve;
+      for (let x = cx - 2; x <= cx + 2; x++) {
+        P.set(x, y, (y % 3 === 0) ? cTrunkDark : cTrunk);
+      }
+    }
+    // Foglie a raggiera (fronde)
+    const fronds = [
+      [-14, -8], [14, -8], [-12, 6], [12, 6], [0, -12], [-8, -4], [8, -4]
+    ];
+    for (const [fx, fy] of fronds) {
+      for (let i = 0; i <= 12; i++) {
+        const px = Math.round(19 + (fx * i) / 12);
+        const py = Math.round(18 + (fy * i) / 12 + (i * i) / 24);
+        P.set(px, py, cFrond);
+        P.set(px, py - 1, cFrondLight);
+      }
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 18. Fontana Imperiale
+  function paintFountain() {
+    const P = Pix(36, 32);
+    const cStone = pack('#94a3b8');
+    const cStoneDark = pack('#475569');
+    const cWater = pack('#38bdf8');
+    const cWaterLight = pack('#e0f2fe');
+    const cEdge = pack('#090d16');
+
+    // Vasca circolare
+    for (let y = 12; y <= 28; y++) {
+      for (let x = 4; x <= 32; x++) {
+        const isWater = y >= 14 && y <= 26 && x >= 7 && x <= 29;
+        P.set(x, y, isWater ? cWater : ((x % 3 === 0) ? cStoneDark : cStone));
+      }
+    }
+    // Zampillo d'acqua centrale
+    for (let y = 4; y <= 14; y++) {
+      P.set(18, y, cWaterLight);
+      P.set(17, y + 1, cWaterLight);
+      P.set(19, y + 1, cWaterLight);
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 19. Funghi Giganti Fosforescenti (Sylva)
+  function paintMushrooms() {
+    const P = Pix(26, 28);
+    const cStem = pack('#cbd5e1');
+    const cCap = pack('#a855f7');
+    const cCapLight = pack('#c084fc');
+    const cDots = pack('#38bdf8');
+    const cEdge = pack('#090d16');
+
+    // Gambi
+    for (let y = 14; y <= 26; y++) {
+      P.set(10, y, cStem);
+      P.set(11, y, cStem);
+      P.set(17, y + 2, cStem);
+    }
+    // Cappella grande
+    for (let y = 6; y <= 14; y++) {
+      const span = Math.round(((y - 6) / 8) * 8);
+      for (let x = 11 - span; x <= 11 + span; x++) {
+        P.set(x, y, (x % 3 === 0 && y % 3 === 0) ? cDots : (y <= 8 ? cCapLight : cCap));
+      }
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 20. Forziere del Tesoro (Chiuso e Aperto)
+  function paintChest(isOpen = false) {
+    const P = Pix(26, 24);
+    const cWood = pack('#78350f');
+    const cWoodDark = pack('#451a03');
+    const cGold = pack('#facc15');
+    const cGoldLight = pack('#fde047');
+    const cGemRed = pack('#ef4444');
+    const cGemCyan = pack('#38bdf8');
+    const cInside = pack('#18181b');
+    const cEdge = pack('#090d16');
+
+    if (!isOpen) {
+      // Forziere Chiuso con serratura d'oro
+      for (let y = 8; y <= 21; y++) {
+        for (let x = 3; x <= 22; x++) {
+          const isGoldTrim = x === 3 || x === 22 || x === 9 || x === 16 || y === 8 || y === 14 || y === 21;
+          P.set(x, y, isGoldTrim ? cGold : ((y % 2 === 0) ? cWoodDark : cWood));
+        }
+      }
+      // Serratura con buco della chiave
+      for (let y = 13; y <= 16; y++) {
+        for (let x = 12; x <= 14; x++) P.set(x, y, cGoldLight);
+      }
+      P.set(13, 14, cEdge);
+    } else {
+      // Forziere Aperto straripante di tesori e gemme scintillanti
+      for (let y = 11; y <= 22; y++) {
+        for (let x = 3; x <= 22; x++) {
+          const isGoldTrim = x === 3 || x === 22 || y === 22;
+          P.set(x, y, isGoldTrim ? cGold : cWoodDark);
+        }
+      }
+      // Interno forziere traboccante di monete e gemme
+      for (let y = 8; y <= 13; y++) {
+        for (let x = 5; x <= 20; x++) {
+          const r = hash(x, y, 77);
+          P.set(x, y, r < 0.25 ? cGemRed : (r < 0.5 ? cGemCyan : (r < 0.8 ? cGold : cGoldLight)));
+        }
+      }
+      // Coperchio sollevato inclinato indietro
+      for (let y = 2; y <= 8; y++) {
+        for (let x = 4; x <= 21; x++) {
+          P.set(x, y, (x === 4 || x === 21 || y === 2) ? cGold : cWood);
+        }
+      }
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
+  // 21. Pilastro Runico Elementale (Mistero delle Cascate)
+  function paintRunicPillar(isLit = false) {
+    const P = Pix(20, 38);
+    const cStone = pack('#475569');
+    const cStoneLight = pack('#64748b');
+    const cRuneGlow = pack(isLit ? '#38bdf8' : '#334155');
+    const cRuneBright = pack(isLit ? '#ffffff' : '#475569');
+    const cEdge = pack('#090d16');
+
+    for (let y = 6; y <= 34; y++) {
+      for (let x = 4; x <= 15; x++) {
+        P.set(x, y, (x === 4 || x === 15) ? cStone : cStoneLight);
+      }
+    }
+    // Runa mistica incisa
+    for (let y of [12, 18, 24, 30]) {
+      P.set(9, y, cRuneBright);
+      P.set(10, y, cRuneBright);
+      P.set(8, y - 1, cRuneGlow);
+      P.set(11, y - 1, cRuneGlow);
+    }
+    outline(P, cEdge);
+    return P.canvas();
+  }
+
   const propCache = new Map();
 
   return {
@@ -725,6 +1226,21 @@ export const Tiles = (() => {
         else if (type === 'house_blue') propCache.set(type, paintHouse('blue'));
         else if (type === 'well') propCache.set(type, paintWell());
         else if (type === 'lamppost') propCache.set(type, paintLamppost());
+        else if (type === 'blacksmith_npc') propCache.set(type, paintBlacksmith());
+        else if (type === 'water_mill') propCache.set(type, paintWaterMill());
+        else if (type === 'tent_desert') propCache.set(type, paintDesertTent());
+        else if (type === 'cabin_snow') propCache.set(type, paintSnowCabin());
+        else if (type === 'cabin_wood') propCache.set(type, paintWoodCabin());
+        else if (type === 'fort_volcano') propCache.set(type, paintVolcanoFort());
+        else if (type === 'aether_obelisk') propCache.set(type, paintAetherObelisk());
+        else if (type === 'brazier_fire') propCache.set(type, paintBrazier());
+        else if (type === 'palm_tree') propCache.set(type, paintPalmTree());
+        else if (type === 'fountain') propCache.set(type, paintFountain());
+        else if (type === 'glowing_mushrooms') propCache.set(type, paintMushrooms());
+        else if (type === 'chest_closed') propCache.set(type, paintChest(false));
+        else if (type === 'chest_open') propCache.set(type, paintChest(true));
+        else if (type === 'runic_pillar') propCache.set(type, paintRunicPillar(false));
+        else if (type === 'runic_pillar_lit') propCache.set(type, paintRunicPillar(true));
       }
       return propCache.get(type);
     }
