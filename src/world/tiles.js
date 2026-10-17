@@ -139,7 +139,7 @@ export const Tiles = (() => {
     },
     river: {
       floor: ['#16a34a', '#22c55e', '#15803d'], // Sponde verdi e fresche del fiume
-      dirt: ['#0284c7', '#0369a1', '#38bdf8'],  // Rive sabbiose e fondale
+      dirt: ['#3f4d36', '#4d5c41', '#35432d'],  // Sponde terrose e limo fluviale naturale
       speck: '#14532d',
       light: '#4ade80',
       flowers: ['#38bdf8', '#67e8f9', '#f472b6', '#ffffff'], // Ninfee e cannette fiorite
@@ -213,36 +213,132 @@ export const Tiles = (() => {
       return;
     }
 
-    // 2. Strade principali e sentieri battuti di collegamento
+    // 2. Strade principali (Lastricato a ciottoli sfalsati stile Serene Village)
     if (kind === 'road') {
-      const cCobbleBase = pack('#64748b');
-      const cCobbleLight = pack('#94a3b8');
-      const cCobbleDark = pack('#334155');
-      const cEarth = pack('#475569');
+      let cCobbleBase, cCobbleLight, cCobbleDark, cMortar;
+      if (biome === 'snow') {
+        // Lastricato di pietra alpina con polvere di neve
+        cCobbleLight = pack('#e2e8f0');
+        cCobbleBase  = pack('#94a3b8');
+        cCobbleDark  = pack('#64748b');
+        cMortar      = pack('#475569');
+      } else if (biome === 'desert') {
+        // Lastricato di arenaria chiara delle carovane
+        cCobbleLight = pack('#fde047');
+        cCobbleBase  = pack('#d97706');
+        cCobbleDark  = pack('#b45309');
+        cMortar      = pack('#78350f');
+      } else if (biome === 'volcano') {
+        // Lastricato di basalto scuro
+        cCobbleLight = pack('#52525b');
+        cCobbleBase  = pack('#27272a');
+        cCobbleDark  = pack('#18181b');
+        cMortar      = pack('#09090b');
+      } else {
+        // Serene Village warm limestone cobbles (foresta, capitale, fiume)
+        cCobbleLight = pack('#d7c4a7');
+        cCobbleBase  = pack('#a5907b');
+        cCobbleDark  = pack('#7d6961');
+        cMortar      = pack('#3a3a50');
+      }
+
+      const nR = at(tx, ty - 1) === 'road' || at(tx, ty - 1) === 'bridge';
+      const sR = at(tx, ty + 1) === 'road' || at(tx, ty + 1) === 'bridge';
+      const wR = at(tx - 1, ty) === 'road' || at(tx - 1, ty) === 'bridge';
+      const eR = at(tx + 1, ty) === 'road' || at(tx + 1, ty) === 'bridge';
+
       for (let y = 0; y < T; y++) {
         for (let x = 0; x < T; x++) {
           const gx = tx * T + x, gy = ty * T + y;
-          const isPebbleEdge = (gx % 5 === 0 || gy % 5 === 0);
-          let col = isPebbleEdge ? cCobbleDark : (hash(gx, gy, 8) > 0.4 ? cCobbleLight : cCobbleBase);
-          if (hash(gx >> 1, gy >> 1, 9) < 0.2) col = cEarth;
+
+          // Bordi sfumati naturalmente verso il terreno circostante
+          if ((!wR && x === 0) || (!eR && x === T - 1) || (!nR && y === 0) || (!sR && y === T - 1)) {
+            if (hash(gx, gy, 8) > 0.45) {
+              P.set(ox + x, oy + y, C.floor[0]);
+              continue;
+            }
+          }
+
+          // Ciottoli sfalsati organici 4x3 con luce in alto a sinistra
+          const stoneRow = Math.floor(gy / 3);
+          const rowShift = (stoneRow % 2 === 0) ? 0 : 2;
+          const lx = (gx + rowShift) % 5;
+          const ly = gy % 3;
+
+          let col;
+          if (lx === 0 || ly === 0) {
+            col = cMortar; // Fuga tra le pietre
+          } else if (lx === 1 && ly === 1) {
+            col = cCobbleLight; // Riflesso superiore
+          } else if (lx === 4 || ly === 2) {
+            col = cCobbleDark; // Ombra inferiore
+          } else {
+            col = (hash(gx >> 1, gy >> 1, 14) > 0.6) ? cCobbleLight : cCobbleBase;
+          }
+
           P.set(ox + x, oy + y, col);
         }
       }
       return;
     }
 
-    // 2b. Sentieri selvaggi di terra battuta e ghiaia (collegano i biomi e portano ai boss)
+    // 2b. Sentieri selvaggi di terra battuta (stile Serene Village)
     if (kind === 'trail') {
-      const cDirtDark = pack('#78350f');
-      const cDirtMid = pack('#92400e');
-      const cDirtLight = pack('#b45309');
-      const cGravel = pack('#451a03');
+      let cTrailBase, cTrailLight, cTrailDark, cGravel;
+      if (biome === 'snow') {
+        // Sentiero battuto nella neve alpina (senza sgranature o strisce scure)
+        cTrailLight = pack('#ffffff');
+        cTrailBase  = pack('#cbd5e1');
+        cTrailDark  = pack('#94a3b8');
+        cGravel     = pack('#64748b');
+      } else if (biome === 'desert') {
+        // Pista sabbiosa battuta
+        cTrailLight = pack('#fef08a');
+        cTrailBase  = pack('#ca8a04');
+        cTrailDark  = pack('#a16207');
+        cGravel     = pack('#78350f');
+      } else if (biome === 'volcano') {
+        // Sentiero di cenere battuta
+        cTrailLight = pack('#52525b');
+        cTrailBase  = pack('#3f3f46');
+        cTrailDark  = pack('#27272a');
+        cGravel     = pack('#18181b');
+      } else {
+        // Serene Village terra battuta calda naturale
+        cTrailLight = pack('#d29f51');
+        cTrailBase  = pack('#cb9a4e');
+        cTrailDark  = pack('#cb8a46');
+        cGravel     = pack('#bb6d33');
+      }
+
+      const nT = at(tx, ty - 1) === 'trail' || at(tx, ty - 1) === 'bridge';
+      const sT = at(tx, ty + 1) === 'trail' || at(tx, ty + 1) === 'bridge';
+      const wT = at(tx - 1, ty) === 'trail' || at(tx - 1, ty) === 'bridge';
+      const eT = at(tx + 1, ty) === 'trail' || at(tx + 1, ty) === 'bridge';
+
       for (let y = 0; y < T; y++) {
         for (let x = 0; x < T; x++) {
           const gx = tx * T + x, gy = ty * T + y;
-          const r = hash(gx, gy, 7);
-          let col = r > 0.65 ? cDirtLight : (r > 0.3 ? cDirtMid : cDirtDark);
-          if (hash(gx >> 1, gy >> 1, 10) < 0.16) col = cGravel;
+
+          // Sfumatura organica delle frange del sentiero verso erba o neve
+          if ((!wT && x <= 1) || (!eT && x >= T - 2) || (!nT && y <= 1) || (!sT && y >= T - 2)) {
+            const fringeR = hash(gx, gy, 7);
+            const distBorder = Math.min(!wT ? x : 9, !eT ? T - 1 - x : 9, !nT ? y : 9, !sT ? T - 1 - y : 9);
+            if (fringeR > distBorder * 0.45) {
+              P.set(ox + x, oy + y, C.floor[Math.floor(hash(gx, gy, 9) * C.floor.length)]);
+              continue;
+            }
+          }
+
+          // Corpo del sentiero morbido e continuo
+          const wave = Math.sin((gx + gy) * 0.35) * 0.5 + hash(gx >> 1, gy >> 1, 10) * 0.5;
+          let col = (wave > 0.6) ? cTrailLight : (wave < -0.2 ? cTrailDark : cTrailBase);
+
+          // Rari granelli di ghiaia discreti (solo 4% di occorrenza)
+          const g = hash(gx, gy, 15);
+          if (g < 0.04) col = cGravel;
+          else if (g > 0.97) col = cTrailLight;
+
           P.set(ox + x, oy + y, col);
         }
       }
@@ -1511,6 +1607,7 @@ export const Tiles = (() => {
     tree_gold: 'assets/sprites/world/tree_oak_gold.png',
     tree_teal: 'assets/sprites/world/tree_oak_teal.png',
     pine: 'assets/sprites/world/tree_pine.png',
+    pine_large: 'assets/sprites/world/tree_pine_large.png',
     cactus: 'assets/sprites/world/tree_cactus.png',
     palm_tree: 'assets/sprites/world/tree_palm.png',
     house_red: 'assets/sprites/world/house_red.png',
@@ -1580,7 +1677,7 @@ export const Tiles = (() => {
       // 2. Fallback procedurale per retrocompatibilità e avvio istantaneo
       if (!propCache.has(type)) {
         if (type === 'tree' || type === 'tree_gold' || type === 'tree_teal') propCache.set(type, paintTree());
-        else if (type === 'pine') propCache.set(type, paintPine());
+        else if (type === 'pine' || type === 'pine_large') propCache.set(type, paintPine());
         else if (type === 'cactus') propCache.set(type, paintCactus());
         else if (type === 'volcano_rock') propCache.set(type, paintVolcanoRock());
         else if (type === 'sand_rock') propCache.set(type, paintRock('sand'));

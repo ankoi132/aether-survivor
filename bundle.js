@@ -272,8 +272,8 @@
       river: {
         floor: ["#16a34a", "#22c55e", "#15803d"],
         // Sponde verdi e fresche del fiume
-        dirt: ["#0284c7", "#0369a1", "#38bdf8"],
-        // Rive sabbiose e fondale
+        dirt: ["#3f4d36", "#4d5c41", "#35432d"],
+        // Sponde terrose e limo fluviale naturale
         speck: "#14532d",
         light: "#4ade80",
         flowers: ["#38bdf8", "#67e8f9", "#f472b6", "#ffffff"],
@@ -344,32 +344,103 @@
         return;
       }
       if (kind === "road") {
-        const cCobbleBase = pack("#64748b");
-        const cCobbleLight = pack("#94a3b8");
-        const cCobbleDark = pack("#334155");
-        const cEarth = pack("#475569");
+        let cCobbleBase, cCobbleLight, cCobbleDark, cMortar;
+        if (biome === "snow") {
+          cCobbleLight = pack("#e2e8f0");
+          cCobbleBase = pack("#94a3b8");
+          cCobbleDark = pack("#64748b");
+          cMortar = pack("#475569");
+        } else if (biome === "desert") {
+          cCobbleLight = pack("#fde047");
+          cCobbleBase = pack("#d97706");
+          cCobbleDark = pack("#b45309");
+          cMortar = pack("#78350f");
+        } else if (biome === "volcano") {
+          cCobbleLight = pack("#52525b");
+          cCobbleBase = pack("#27272a");
+          cCobbleDark = pack("#18181b");
+          cMortar = pack("#09090b");
+        } else {
+          cCobbleLight = pack("#d7c4a7");
+          cCobbleBase = pack("#a5907b");
+          cCobbleDark = pack("#7d6961");
+          cMortar = pack("#3a3a50");
+        }
+        const nR = at(tx, ty - 1) === "road" || at(tx, ty - 1) === "bridge";
+        const sR = at(tx, ty + 1) === "road" || at(tx, ty + 1) === "bridge";
+        const wR = at(tx - 1, ty) === "road" || at(tx - 1, ty) === "bridge";
+        const eR = at(tx + 1, ty) === "road" || at(tx + 1, ty) === "bridge";
         for (let y = 0; y < T; y++) {
           for (let x = 0; x < T; x++) {
             const gx = tx * T + x, gy = ty * T + y;
-            const isPebbleEdge = gx % 5 === 0 || gy % 5 === 0;
-            let col = isPebbleEdge ? cCobbleDark : hash(gx, gy, 8) > 0.4 ? cCobbleLight : cCobbleBase;
-            if (hash(gx >> 1, gy >> 1, 9) < 0.2) col = cEarth;
+            if (!wR && x === 0 || !eR && x === T - 1 || !nR && y === 0 || !sR && y === T - 1) {
+              if (hash(gx, gy, 8) > 0.45) {
+                P.set(ox + x, oy + y, C.floor[0]);
+                continue;
+              }
+            }
+            const stoneRow = Math.floor(gy / 3);
+            const rowShift = stoneRow % 2 === 0 ? 0 : 2;
+            const lx = (gx + rowShift) % 5;
+            const ly = gy % 3;
+            let col;
+            if (lx === 0 || ly === 0) {
+              col = cMortar;
+            } else if (lx === 1 && ly === 1) {
+              col = cCobbleLight;
+            } else if (lx === 4 || ly === 2) {
+              col = cCobbleDark;
+            } else {
+              col = hash(gx >> 1, gy >> 1, 14) > 0.6 ? cCobbleLight : cCobbleBase;
+            }
             P.set(ox + x, oy + y, col);
           }
         }
         return;
       }
       if (kind === "trail") {
-        const cDirtDark = pack("#78350f");
-        const cDirtMid = pack("#92400e");
-        const cDirtLight = pack("#b45309");
-        const cGravel = pack("#451a03");
+        let cTrailBase, cTrailLight, cTrailDark, cGravel;
+        if (biome === "snow") {
+          cTrailLight = pack("#ffffff");
+          cTrailBase = pack("#cbd5e1");
+          cTrailDark = pack("#94a3b8");
+          cGravel = pack("#64748b");
+        } else if (biome === "desert") {
+          cTrailLight = pack("#fef08a");
+          cTrailBase = pack("#ca8a04");
+          cTrailDark = pack("#a16207");
+          cGravel = pack("#78350f");
+        } else if (biome === "volcano") {
+          cTrailLight = pack("#52525b");
+          cTrailBase = pack("#3f3f46");
+          cTrailDark = pack("#27272a");
+          cGravel = pack("#18181b");
+        } else {
+          cTrailLight = pack("#d29f51");
+          cTrailBase = pack("#cb9a4e");
+          cTrailDark = pack("#cb8a46");
+          cGravel = pack("#bb6d33");
+        }
+        const nT = at(tx, ty - 1) === "trail" || at(tx, ty - 1) === "bridge";
+        const sT = at(tx, ty + 1) === "trail" || at(tx, ty + 1) === "bridge";
+        const wT = at(tx - 1, ty) === "trail" || at(tx - 1, ty) === "bridge";
+        const eT = at(tx + 1, ty) === "trail" || at(tx + 1, ty) === "bridge";
         for (let y = 0; y < T; y++) {
           for (let x = 0; x < T; x++) {
             const gx = tx * T + x, gy = ty * T + y;
-            const r = hash(gx, gy, 7);
-            let col = r > 0.65 ? cDirtLight : r > 0.3 ? cDirtMid : cDirtDark;
-            if (hash(gx >> 1, gy >> 1, 10) < 0.16) col = cGravel;
+            if (!wT && x <= 1 || !eT && x >= T - 2 || !nT && y <= 1 || !sT && y >= T - 2) {
+              const fringeR = hash(gx, gy, 7);
+              const distBorder = Math.min(!wT ? x : 9, !eT ? T - 1 - x : 9, !nT ? y : 9, !sT ? T - 1 - y : 9);
+              if (fringeR > distBorder * 0.45) {
+                P.set(ox + x, oy + y, C.floor[Math.floor(hash(gx, gy, 9) * C.floor.length)]);
+                continue;
+              }
+            }
+            const wave = Math.sin((gx + gy) * 0.35) * 0.5 + hash(gx >> 1, gy >> 1, 10) * 0.5;
+            let col = wave > 0.6 ? cTrailLight : wave < -0.2 ? cTrailDark : cTrailBase;
+            const g = hash(gx, gy, 15);
+            if (g < 0.04) col = cGravel;
+            else if (g > 0.97) col = cTrailLight;
             P.set(ox + x, oy + y, col);
           }
         }
@@ -1466,6 +1537,7 @@
       tree_gold: "assets/sprites/world/tree_oak_gold.png",
       tree_teal: "assets/sprites/world/tree_oak_teal.png",
       pine: "assets/sprites/world/tree_pine.png",
+      pine_large: "assets/sprites/world/tree_pine_large.png",
       cactus: "assets/sprites/world/tree_cactus.png",
       palm_tree: "assets/sprites/world/tree_palm.png",
       house_red: "assets/sprites/world/house_red.png",
@@ -1522,7 +1594,7 @@
         }
         if (!propCache.has(type)) {
           if (type === "tree" || type === "tree_gold" || type === "tree_teal") propCache.set(type, paintTree());
-          else if (type === "pine") propCache.set(type, paintPine());
+          else if (type === "pine" || type === "pine_large") propCache.set(type, paintPine());
           else if (type === "cactus") propCache.set(type, paintCactus());
           else if (type === "volcano_rock") propCache.set(type, paintVolcanoRock());
           else if (type === "sand_rock") propCache.set(type, paintRock("sand"));
@@ -4547,6 +4619,21 @@
       }
       return false;
     }
+    isNearWater(tx, ty, bufferTiles = 2.4) {
+      for (let dy = -Math.ceil(bufferTiles); dy <= Math.ceil(bufferTiles); dy++) {
+        const rcx = this.getRiverCenterX(ty + dy);
+        if (Math.abs(tx - rcx) <= 2.4 + bufferTiles) {
+          return true;
+        }
+      }
+      for (let dy = -Math.ceil(bufferTiles); dy <= Math.ceil(bufferTiles); dy++) {
+        for (let dx = -Math.ceil(bufferTiles); dx <= Math.ceil(bufferTiles); dx++) {
+          const lk = this.hash2D(Math.floor((tx + dx) / 3), Math.floor((ty + dy) / 3), 101);
+          if (lk > 0.93) return true;
+        }
+      }
+      return false;
+    }
     getTileType(tx, ty) {
       if (Math.abs(tx) >= this.MAP_RADIUS - 3 || Math.abs(ty) >= this.MAP_RADIUS - 3) {
         return this.TILE_WALL;
@@ -4602,36 +4689,31 @@
       const b02 = this.getBiome(bx0, by0 + 2);
       const b20 = this.getBiome(bx0 + 2, by0);
       const canSpawnLake = !nearSettlement && !nearRoad && (b00 === biome && b22 === biome && b02 === biome && b20 === biome);
+      const nearWater = this.isNearWater(tx, ty, 2.4);
       if (biome === "river") {
-        if (propNoise > 0.9) return this.TILE_TREE;
-        if (propNoise > 0.87) return this.TILE_ROCK;
+        if (!nearWater && propNoise > 0.92) return this.TILE_TREE;
         return this.TILE_FLOOR;
       }
       if (biome === "snow") {
-        if (wallNoise > 0.94) return this.TILE_WALL;
+        if (wallNoise > 0.96) return this.TILE_WALL;
         if (canSpawnLake && lakeNoise > 0.94) return this.TILE_WATER;
-        if (propNoise > 0.88) return this.TILE_PINE;
-        if (propNoise > 0.85) return this.TILE_ROCK;
+        if (!nearWater && propNoise > 0.88) return this.TILE_PINE;
         return this.TILE_FLOOR;
       }
       if (biome === "desert") {
-        if (wallNoise > 0.94) return this.TILE_WALL;
+        if (wallNoise > 0.96) return this.TILE_WALL;
         if (canSpawnLake && lakeNoise > 0.96) return this.TILE_WATER;
-        if (propNoise > 0.9) return this.TILE_CACTUS;
-        if (propNoise > 0.87) return this.TILE_SAND_ROCK;
+        if (!nearWater && propNoise > 0.9) return this.TILE_CACTUS;
         return this.TILE_FLOOR;
       }
       if (biome === "volcano") {
-        if (wallNoise > 0.94) return this.TILE_WALL;
+        if (wallNoise > 0.96) return this.TILE_WALL;
         if (canSpawnLake && lakeNoise > 0.93) return this.TILE_WATER;
-        if (propNoise > 0.89) return this.TILE_VOLCANO_ROCK;
-        if (propNoise > 0.86) return this.TILE_ROCK;
         return this.TILE_FLOOR;
       }
-      if (wallNoise > 0.95) return this.TILE_WALL;
+      if (wallNoise > 0.96) return this.TILE_WALL;
       if (canSpawnLake && lakeNoise > 0.94) return this.TILE_WATER;
-      if (propNoise > 0.88) return this.TILE_TREE;
-      if (propNoise > 0.85) return this.TILE_ROCK;
+      if (!nearWater && propNoise > 0.88) return this.TILE_TREE;
       return this.TILE_FLOOR;
     }
     getKind(tx, ty) {
@@ -4800,7 +4882,12 @@
             }
             props.push({ type: treeType, x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
           } else if (t === this.TILE_PINE) {
-            props.push({ type: "pine", x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
+            const isLarge = this.hash2D(tx, ty, 888) > 0.45;
+            props.push({
+              type: isLarge ? "pine_large" : "pine",
+              x: tx * this.TS + this.TS / 2,
+              y: ty * this.TS + this.TS
+            });
           } else if (t === this.TILE_CACTUS) {
             props.push({ type: "cactus", x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
           } else if (t === this.TILE_VOLCANO_ROCK) {
@@ -4963,10 +5050,10 @@
                     ctx.fill();
                     ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
                   } else {
-                    const isTree = p.type === "tree" || p.type === "tree_gold" || p.type === "tree_teal" || p.type === "pine" || p.type === "palm_tree";
-                    const rad = isTree ? 14 : p.type === "cactus" ? 10 : 12;
+                    const isTree = p.type === "tree" || p.type === "tree_gold" || p.type === "tree_teal" || p.type === "pine" || p.type === "pine_large" || p.type === "palm_tree";
+                    const rad = p.type === "pine_large" ? 16 : isTree ? 14 : p.type === "cactus" ? 10 : 12;
                     Sprites.drawShadow(ctx, p.x, p.y - 2, rad);
-                    const yOff = isTree ? 8 : 4;
+                    const yOff = p.type === "pine_large" ? 10 : isTree ? 8 : 4;
                     ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + yOff), sw, sh);
                   }
                 }

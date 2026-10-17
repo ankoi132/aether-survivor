@@ -700,6 +700,24 @@ export class World {
     return false;
   }
 
+  isNearWater(tx, ty, bufferTiles = 2.4) {
+    // 1. Buffer di sicurezza dal corso e meandri del fiume principale
+    for (let dy = -Math.ceil(bufferTiles); dy <= Math.ceil(bufferTiles); dy++) {
+      const rcx = this.getRiverCenterX(ty + dy);
+      if (Math.abs(tx - rcx) <= 2.4 + bufferTiles) {
+        return true;
+      }
+    }
+    // 2. Buffer di sicurezza dai laghetti procedurali
+    for (let dy = -Math.ceil(bufferTiles); dy <= Math.ceil(bufferTiles); dy++) {
+      for (let dx = -Math.ceil(bufferTiles); dx <= Math.ceil(bufferTiles); dx++) {
+        const lk = this.hash2D(Math.floor((tx + dx) / 3), Math.floor((ty + dy) / 3), 101);
+        if (lk > 0.93) return true;
+      }
+    }
+    return false;
+  }
+
   getTileType(tx, ty) {
     // 1. Confini naturali esterni invalicabili della grande mappa
     if (Math.abs(tx) >= this.MAP_RADIUS - 3 || Math.abs(ty) >= this.MAP_RADIUS - 3) {
@@ -777,46 +795,42 @@ export class World {
     const canSpawnLake = !nearSettlement && !nearRoad && (b00 === biome && b22 === biome && b02 === biome && b20 === biome);
 
     // DENSITÀ OTTIMIZZATA PER ATTRAVERSABILITÀ FLUIDA FUORI STRADA:
-    // Muri e dirupi rari (solo top 6%), ampie aree aperte (88% calpestabile liberamente)
+    // Nessun masso tagliato sparso a caso. Gli alberi mantengono un buffer rigoroso dall'acqua!
+    const nearWater = this.isNearWater(tx, ty, 2.4);
+
     // 6. Bioma Fiume (Sponde verdeggianti e canneti)
     if (biome === 'river') {
-      if (propNoise > 0.90) return this.TILE_TREE;
-      if (propNoise > 0.87) return this.TILE_ROCK;
+      if (!nearWater && propNoise > 0.92) return this.TILE_TREE;
       return this.TILE_FLOOR;
     }
 
     // 7. Montagne Innevate (Nord)
     if (biome === 'snow') {
-      if (wallNoise > 0.94) return this.TILE_WALL;
+      if (wallNoise > 0.96) return this.TILE_WALL;
       if (canSpawnLake && lakeNoise > 0.94) return this.TILE_WATER;
-      if (propNoise > 0.88) return this.TILE_PINE;
-      if (propNoise > 0.85) return this.TILE_ROCK;
+      if (!nearWater && propNoise > 0.88) return this.TILE_PINE;
       return this.TILE_FLOOR;
     }
 
     // 8. Deserto delle Dune (Sud-Ovest)
     if (biome === 'desert') {
-      if (wallNoise > 0.94) return this.TILE_WALL;
+      if (wallNoise > 0.96) return this.TILE_WALL;
       if (canSpawnLake && lakeNoise > 0.96) return this.TILE_WATER;
-      if (propNoise > 0.90) return this.TILE_CACTUS;
-      if (propNoise > 0.87) return this.TILE_SAND_ROCK;
+      if (!nearWater && propNoise > 0.90) return this.TILE_CACTUS;
       return this.TILE_FLOOR;
     }
 
     // 9. Caldera Vulcanica (Est / Sud-Est)
     if (biome === 'volcano') {
-      if (wallNoise > 0.94) return this.TILE_WALL;
+      if (wallNoise > 0.96) return this.TILE_WALL;
       if (canSpawnLake && lakeNoise > 0.93) return this.TILE_WATER; // Lava pura
-      if (propNoise > 0.89) return this.TILE_VOLCANO_ROCK;
-      if (propNoise > 0.86) return this.TILE_ROCK;
       return this.TILE_FLOOR;
     }
 
     // 10. Bosco Silvano (Ovest / Centro-Ovest)
-    if (wallNoise > 0.95) return this.TILE_WALL;
+    if (wallNoise > 0.96) return this.TILE_WALL;
     if (canSpawnLake && lakeNoise > 0.94) return this.TILE_WATER;
-    if (propNoise > 0.88) return this.TILE_TREE;
-    if (propNoise > 0.85) return this.TILE_ROCK;
+    if (!nearWater && propNoise > 0.88) return this.TILE_TREE;
 
     return this.TILE_FLOOR;
   }
@@ -1026,7 +1040,12 @@ export class World {
           }
           props.push({ type: treeType, x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
         } else if (t === this.TILE_PINE) {
-          props.push({ type: 'pine', x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
+          const isLarge = this.hash2D(tx, ty, 888) > 0.45;
+          props.push({
+            type: isLarge ? 'pine_large' : 'pine',
+            x: tx * this.TS + this.TS / 2,
+            y: ty * this.TS + this.TS
+          });
         } else if (t === this.TILE_CACTUS) {
           props.push({ type: 'cactus', x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
         } else if (t === this.TILE_VOLCANO_ROCK) {
@@ -1210,10 +1229,10 @@ export class World {
                   ctx.fill();
                   ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
                 } else {
-                  const isTree = (p.type === 'tree' || p.type === 'tree_gold' || p.type === 'tree_teal' || p.type === 'pine' || p.type === 'palm_tree');
-                  const rad = isTree ? 14 : (p.type === 'cactus' ? 10 : 12);
+                  const isTree = (p.type === 'tree' || p.type === 'tree_gold' || p.type === 'tree_teal' || p.type === 'pine' || p.type === 'pine_large' || p.type === 'palm_tree');
+                  const rad = (p.type === 'pine_large') ? 16 : (isTree ? 14 : (p.type === 'cactus' ? 10 : 12));
                   Sprites.drawShadow(ctx, p.x, p.y - 2, rad);
-                  const yOff = isTree ? 8 : 4;
+                  const yOff = (p.type === 'pine_large') ? 10 : (isTree ? 8 : 4);
                   ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + yOff), sw, sh);
                 }
               }
