@@ -220,6 +220,12 @@ class GameAPI {
     if (!p.equippedWeapon) {
       p.equippedWeapon = 'staff';
     }
+    if (!p.equippedSkin) {
+      p.equippedSkin = localStorage.getItem('aether_equipped_skin') || 'hero_hunter';
+    }
+    if (!p.unlockedSkins) {
+      p.unlockedSkins = ['hero_hunter', 'hero_spartan', 'hero_pirate', 'hero_adventurer', 'hero_knight', 'hero_mage'];
+    }
     if (!p.equipment) {
       p.equipment = { armor: null, helmet: null, boots: null, amulet: null, ring: null };
     }
@@ -537,6 +543,30 @@ class GameAPI {
       throw new Error('Devi prima forgiare quest\'arma dal Fabbro!');
     }
     p.equippedWeapon = weaponId;
+    this._saveLocalProfile(p);
+    return this._formatProfile(p);
+  }
+
+  async equipSkin(skinId) {
+    localStorage.setItem('aether_equipped_skin', skinId);
+
+    if (this.isOnline) {
+      try {
+        const res = await fetch(`${API_BASE}/api/skin/equip`, {
+          method: 'POST',
+          headers: this._authHeaders(),
+          body: JSON.stringify({ nickname: this.nickname, skinId })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success) return json.profile;
+        }
+      } catch {}
+    }
+
+    // Fallback Offline
+    const p = this._getLocalProfile(this.nickname);
+    p.equippedSkin = skinId;
     this._saveLocalProfile(p);
     return this._formatProfile(p);
   }

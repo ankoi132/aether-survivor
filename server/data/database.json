@@ -173,7 +173,7 @@
       "nickname": "yuta",
       "createdAt": "2026-10-15T16:24:18.920Z",
       "gold": 93,
-      "totalRuns": 4,
+      "totalRuns": 5,
       "totalKills": 21,
       "highestLevel": 5,
       "bestSurvivalSeconds": 75,
@@ -251,6 +251,57 @@
       },
       "craftedItems": [],
       "inAppPurchases": []
+    },
+    "testhero": {
+      "nickname": "TestHero",
+      "createdAt": "2026-10-17T11:52:17.250Z",
+      "gold": 150,
+      "totalRuns": 0,
+      "totalKills": 0,
+      "highestLevel": 1,
+      "bestSurvivalSeconds": 0,
+      "talents": {
+        "max_hp": 0,
+        "damage": 0,
+        "speed": 0,
+        "magnet": 0,
+        "gold_gain": 0
+      },
+      "inventory": {
+        "copper_ore": 6,
+        "ancient_wood": 4,
+        "slime_gel": 4,
+        "ice_crystal": 0,
+        "sun_amber": 0,
+        "magma_core": 0,
+        "ancient_bone": 3,
+        "iron_scrap": 4,
+        "arcane_rune": 1
+      },
+      "weapons": {
+        "staff": 1,
+        "sword": 0,
+        "bow": 0
+      },
+      "equippedWeapon": "staff",
+      "equippedSkin": "hero_adventurer",
+      "unlockedSkins": [
+        "hero_hunter",
+        "hero_spartan",
+        "hero_pirate",
+        "hero_adventurer",
+        "hero_knight",
+        "hero_mage"
+      ],
+      "equipment": {
+        "armor": null,
+        "helmet": null,
+        "boots": null,
+        "amulet": null,
+        "ring": null
+      },
+      "craftedItems": [],
+      "inAppPurchases": []
     }
   },
   "leaderboard": [
@@ -293,6 +344,14 @@
       "kills": 3,
       "survivalSeconds": 11,
       "date": "2026-10-15T16:26:04.614Z"
+    },
+    {
+      "nickname": "yuta",
+      "score": 530,
+      "level": 1,
+      "kills": 0,
+      "survivalSeconds": 33,
+      "date": "2026-10-17T11:21:52.932Z"
     }
   ]
 }

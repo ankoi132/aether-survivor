@@ -10,6 +10,9 @@ export const Sprites = (() => {
   // Mappa degli asset grafici 16x20 / 32x32
   const ASSETS = {
     // Eroi (3 frame x 4 direzioni)
+    hero_hunter: 'assets/sprites/hero/hero_hunter.png',
+    hero_spartan: 'assets/sprites/hero/hero_spartan.png',
+    hero_pirate: 'assets/sprites/hero/hero_pirate.png',
     hero_adventurer: 'assets/sprites/hero/hero_adventurer.png',
     hero_knight: 'assets/sprites/hero/hero_knight.png',
     hero_mage: 'assets/sprites/hero/hero_mage.png',
@@ -38,6 +41,57 @@ export const Sprites = (() => {
     bat_front_idle: 'assets/sprites/bat/bat_front_idle.png',
     bat_front_die: 'assets/sprites/bat/bat_front_die.png'
   };
+
+  const HERO_SKINS = [
+    {
+      id: 'hero_hunter',
+      name: 'Cacciatore Silvano',
+      role: 'Ranger & Tracciatore',
+      desc: 'Maestro delle foreste ancestrali con cappuccio silvano, corazza di cuoio rinforzato e stivali da boscaiolo. Letale e silenzioso.',
+      icon: '🏹',
+      themeColor: '#22c55e'
+    },
+    {
+      id: 'hero_spartan',
+      name: 'Guerriero Spartano',
+      role: 'Oplita di Sparta',
+      desc: 'Indomito guerriero con elmo corinzio a cresta cremisi, corazza anatomica di bronzo lucido, mantello scarlatto e schinieri dorati.',
+      icon: '🛡️',
+      themeColor: '#ef4444'
+    },
+    {
+      id: 'hero_pirate',
+      name: 'Corsaro dei Sette Mari',
+      role: 'Navigatore & Predone',
+      desc: 'Capitano temerario con tricorno da corsaro piumato, benda nera sull\'occhio, giubba navale blu con bottoni dorati e fascia cremisi.',
+      icon: '⚓',
+      themeColor: '#38bdf8'
+    },
+    {
+      id: 'hero_adventurer',
+      name: "Viandante dell'Aether",
+      role: 'Esploratore dei Portali',
+      desc: 'Il leggendario viandante con mantello cremisi e chioma fulva, pronto a svelare i segreti delle 5 terre elementali.',
+      icon: '🧭',
+      themeColor: '#f59e0b'
+    },
+    {
+      id: 'hero_knight',
+      name: "Cavaliere d'Argento",
+      role: 'Paladino Reale',
+      desc: 'Guardia d\'élite della Cittadella protetta da una pesante armatura d\'argento lucente e celata temprata.',
+      icon: '⚔️',
+      themeColor: '#e2e8f0'
+    },
+    {
+      id: 'hero_mage',
+      name: 'Arcanista di Cineris',
+      role: 'Mago Elementale',
+      desc: 'Studioso delle rune cosmiche avvolto in vesti ametista e cappuccio impregnato di polvere di mana puro.',
+      icon: '🔮',
+      themeColor: '#a855f7'
+    }
+  ];
 
   const images = {};
   let assetsLoaded = false;
@@ -94,9 +148,10 @@ export const Sprites = (() => {
   // =========================================================================
   // 1. PERSONAGGIO PRINCIPALE (Sprite 16x20 scalato a 32x40 con PX=2)
   // =========================================================================
-  function drawHero(ctx, x, y, dir, isWalking, frame, weapon = 'staff', animTimer = 0) {
-    if (isReady('hero_adventurer')) {
-      const img = images['hero_adventurer'];
+  function drawHero(ctx, x, y, dir, isWalking, frame, weapon = 'staff', animTimer = 0, skin = 'hero_hunter') {
+    const skinKey = (skin && isReady(skin)) ? skin : (isReady('hero_hunter') ? 'hero_hunter' : (isReady('hero_adventurer') ? 'hero_adventurer' : null));
+    if (skinKey) {
+      const img = images[skinKey];
       // Mapping direzioni (Row 0: Sud/Down, Row 1: Ovest/Left, Row 2: Est/Right, Row 3: Nord/Up)
       let row = 0;
       if (dir === 4 || dir === 3 || dir === 5) row = 3;
@@ -143,6 +198,30 @@ export const Sprites = (() => {
     // Fallback procedurale se l'immagine non è ancora pronta
     const fb = renderHeroFrame(dir, isWalking, frame, weapon);
     ctx.drawImage(fb, Math.round(x - fb.width / 2), Math.round(y - fb.height + 2));
+  }
+
+  function drawHeroPreview(ctx, x, y, skinId, frame = 1, dir = 0, scale = 2) {
+    const skinKey = (skinId && isReady(skinId)) ? skinId : (isReady('hero_hunter') ? 'hero_hunter' : 'hero_adventurer');
+    if (!isReady(skinKey)) return;
+    const img = images[skinKey];
+    let row = 0;
+    if (dir === 4 || dir === 3 || dir === 5) row = 3;
+    else if (dir === 2 || dir === 1) row = 2;
+    else if (dir === 6 || dir === 7) row = 1;
+    else row = 0;
+
+    const col = frame % 3;
+    const sw = 16;
+    const sh = 20;
+    const dw = 16 * scale;
+    const dh = 20 * scale;
+    const dx = Math.round(x - dw / 2);
+    const dy = Math.round(y - dh / 2);
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, col * sw, row * sh, sw, sh, dx, dy, dw, dh);
+    ctx.restore();
   }
 
   // =========================================================================
@@ -937,6 +1016,9 @@ export const Sprites = (() => {
     dirFromAngle,
     drawShadow,
     drawHero,
+    drawHeroPreview,
+    HERO_SKINS,
+    getSkins: () => HERO_SKINS,
     getHeroSprite,
     drawSkeleton,
     getSkeletonSprite,

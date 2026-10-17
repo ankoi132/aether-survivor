@@ -116,11 +116,20 @@
         <p class="hero-tagline">Esplora le 5 Terre Elementali · Forgia le Tue Leggende · Sopravvivi alle Creature dell'Abisso</p>
       </div>
 
-      <!-- Preview del Personaggio & Statistiche della Carriera -->
+      <!-- Preview del Personaggio & Statistiche della Carriera con Selettore Skin Interattivo -->
       <div class="hero-stage">
-        <div class="hero-pedestal">
-          <div class="hero-aura-ring"></div>
-          <div class="hero-preview-avatar">🧙‍♂️</div>
+        <div class="hero-skin-carousel">
+          <button id="btn-prev-skin" class="skin-nav-arrow" type="button" title="Aspetto precedente">◀</button>
+          <div class="hero-pedestal">
+            <div class="hero-aura-ring"></div>
+            <canvas id="hero-preview-canvas" width="64" height="80" class="hero-preview-canvas"></canvas>
+          </div>
+          <button id="btn-next-skin" class="skin-nav-arrow" type="button" title="Aspetto successivo">▶</button>
+        </div>
+        <div class="hero-skin-info-badge">
+          <span id="hero-skin-badge-icon">🏹</span>
+          <span id="hero-skin-badge-name">Cacciatore Silvano</span>
+          <span id="hero-skin-badge-status" class="skin-equipped-tag">In Uso</span>
         </div>
         <div class="hero-summary-stats">
           <div class="hero-stat-pill">⚔️ Mostri Sconfitti: <b id="stat-kills">0</b></div>
@@ -353,13 +362,14 @@
         <button id="btn-close-bag" class="btn-close-modal" title="Chiudi [I o ESC]">✕</button>
       </div>
 
-      <!-- Schede dell'Inventario In-Game: Risorse, Talenti, Forgia, Armeria -->
+      <!-- Schede dell'Inventario In-Game: Risorse, Talenti, Forgia, Armeria, Equipaggiamento, Skin -->
       <div class="menu-tabs">
         <button type="button" id="ingame-tab-btn-loot" class="tab-btn active">📦 Risorse Spedizione</button>
         <button type="button" id="ingame-tab-btn-talents" class="tab-btn">🔮 Grimorio Talenti</button>
         <button type="button" id="ingame-tab-btn-forge" class="tab-btn">🔨 Fucina Fabbro</button>
         <button type="button" id="ingame-tab-btn-weapons" class="tab-btn">⚔️ Armeria Rapida</button>
         <button type="button" id="ingame-tab-btn-equipment" class="tab-btn">🛡️ Equipaggiamento & Eroe</button>
+        <button type="button" id="ingame-tab-btn-skins" class="tab-btn">🎭 Aspetto & Skin</button>
       </div>
 
       <!-- Scheda 1: Risorse e Bottino Spedizione -->
@@ -418,6 +428,17 @@
           <div class="inventory-desc">6 slot equipaggiamento (Arma, Corazza, Elmo, Stivali, Amuleto, Anello). Gli attributi migliorano difesa, colpi critici, rigenerazione e schivata!</div>
         </div>
         <div class="hero-overview-container" id="ingame-hero-container">
+          <!-- Popolato dinamicamente da JS -->
+        </div>
+      </div>
+
+      <!-- Scheda 6: Armadio dell'Eroe & Aspetto (Skin Selection) -->
+      <div id="ingame-tab-skins" class="tab-content">
+        <div class="inventory-intro">
+          <div class="inventory-title">🎭 Armadio dell'Eroe & Aspetto Grafico</div>
+          <div class="inventory-desc">Scegli ed equipaggia in qualsiasi momento la tua skin preferita: fedele grafica 32x32 pixel art, animazioni a 4 direzioni e armi abbinate!</div>
+        </div>
+        <div class="skins-grid" id="ingame-skins-container">
           <!-- Popolato dinamicamente da JS -->
         </div>
       </div>

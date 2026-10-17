@@ -195,6 +195,19 @@ window.addEventListener('DOMContentLoaded', async () => {
   const ingameTabEquipment = document.getElementById('ingame-tab-equipment');
   const ingameHeroContainer = document.getElementById('ingame-hero-container');
 
+  // Elementi Selettore Skin & Armadio
+  const heroPreviewCanvas = document.getElementById('hero-preview-canvas');
+  const heroPreviewCtx = heroPreviewCanvas ? heroPreviewCanvas.getContext('2d') : null;
+  const btnPrevSkin = document.getElementById('btn-prev-skin');
+  const btnNextSkin = document.getElementById('btn-next-skin');
+  const heroSkinBadgeIcon = document.getElementById('hero-skin-badge-icon');
+  const heroSkinBadgeName = document.getElementById('hero-skin-badge-name');
+  const heroSkinBadgeStatus = document.getElementById('hero-skin-badge-status');
+
+  const ingameTabBtnSkins = document.getElementById('ingame-tab-btn-skins');
+  const ingameTabSkins = document.getElementById('ingame-tab-skins');
+  const ingameSkinsContainer = document.getElementById('ingame-skins-container');
+
   let currentCraftCategory = 'all';
   let currentBsTab = 'craft';
 
@@ -357,10 +370,143 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   // =========================================================================
+  // GESTIONE SKIN & ASPETTO DELL'EROE (PIXEL ART 32x32)
+  // =========================================================================
+  const allSkins = Sprites.getSkins();
+  let currentSkinIndex = 0;
+
+  function updateSkinBadge() {
+    const skin = allSkins[currentSkinIndex] || allSkins[0];
+    if (!skin) return;
+    if (heroSkinBadgeIcon) heroSkinBadgeIcon.textContent = skin.icon;
+    if (heroSkinBadgeName) heroSkinBadgeName.textContent = skin.name;
+    if (heroSkinBadgeStatus) {
+      const isEquipped = (player.skin === skin.id);
+      heroSkinBadgeStatus.textContent = isEquipped ? 'In Uso' : 'Clicca per equipaggiare';
+      heroSkinBadgeStatus.className = isEquipped ? 'skin-equipped-tag' : 'skin-select-tag';
+    }
+  }
+
+  async function selectSkinByIndex(idx) {
+    if (idx < 0) idx = allSkins.length - 1;
+    if (idx >= allSkins.length) idx = 0;
+    currentSkinIndex = idx;
+    const skin = allSkins[currentSkinIndex];
+    player.setSkin(skin.id);
+    updateSkinBadge();
+    try {
+      currentProfile = await API.equipSkin(skin.id);
+    } catch (err) {
+      console.warn('Errore salvataggio skin:', err);
+    }
+    renderIngameSkins();
+  }
+
+  function updateAndDrawHeroPreview(dt, time) {
+    if (!heroPreviewCtx || !heroPreviewCanvas || gameState !== 'MENU') return;
+    heroPreviewCtx.clearRect(0, 0, heroPreviewCanvas.width, heroPreviewCanvas.height);
+    const skin = allSkins[currentSkinIndex] || allSkins[0];
+    const animTimer = time * 2;
+    const bob = Math.round(Math.sin(animTimer * 2.5) * 1.5);
+
+    // Ombra del piedistallo
+    heroPreviewCtx.save();
+    heroPreviewCtx.fillStyle = 'rgba(10, 15, 26, 0.45)';
+    heroPreviewCtx.beginPath();
+    heroPreviewCtx.ellipse(32, 68, 18, 6, 0, 0, Math.PI * 2);
+    heroPreviewCtx.fill();
+    heroPreviewCtx.restore();
+
+    // Sprite dell'eroe (scalato, centrato, animato con respiro)
+    Sprites.drawHero(heroPreviewCtx, 32, 66 + bob, 0, false, 1, player.weapon, animTimer, skin.id);
+  }
+
+  function renderIngameSkins() {
+    if (!ingameSkinsContainer) return;
+    ingameSkinsContainer.innerHTML = '';
+
+    allSkins.forEach((skin, idx) => {
+      const isEquipped = (player.skin === skin.id);
+      const card = document.createElement('div');
+      card.className = `skin-card ${isEquipped ? 'active' : ''}`;
+
+      const pedestal = document.createElement('div');
+      pedestal.className = 'skin-card-pedestal';
+      const c = document.createElement('canvas');
+      c.className = 'skin-card-canvas';
+      c.width = 48;
+      c.height = 60;
+      const cCtx = c.getContext('2d');
+      Sprites.drawHero(cCtx, 24, 52, 0, false, 1, player.weapon, 0, skin.id);
+      pedestal.appendChild(c);
+      card.appendChild(pedestal);
+
+      const header = document.createElement('div');
+      header.className = 'skin-card-header';
+      header.innerHTML = `
+        <div class="skin-card-title">${skin.icon} ${skin.name}</div>
+        <div class="skin-card-role">${skin.role}</div>
+      `;
+      card.appendChild(header);
+
+      const desc = document.createElement('div');
+      desc.className = 'skin-card-desc';
+      desc.textContent = skin.desc;
+      card.appendChild(desc);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `btn-equip-skin ${isEquipped ? 'btn-equipped' : 'btn-to-equip'}`;
+      btn.textContent = isEquipped ? '✓ IN USO' : 'EQUIPAGGIA';
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (isEquipped) return;
+        selectSkinByIndex(idx);
+        showWeaponNotification(`🎭 Aspetto equipaggiato: ${skin.name}!`);
+      });
+      card.appendChild(btn);
+
+      card.addEventListener('click', () => {
+        if (!isEquipped) {
+          selectSkinByIndex(idx);
+          showWeaponNotification(`🎭 Aspetto equipaggiato: ${skin.name}!`);
+        }
+      });
+
+      ingameSkinsContainer.appendChild(card);
+    });
+  }
+
+  if (btnPrevSkin) {
+    btnPrevSkin.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectSkinByIndex(currentSkinIndex - 1);
+    });
+  }
+  if (btnNextSkin) {
+    btnNextSkin.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectSkinByIndex(currentSkinIndex + 1);
+    });
+  }
+  if (heroSkinBadgeStatus) {
+    heroSkinBadgeStatus.addEventListener('click', () => {
+      selectSkinByIndex(currentSkinIndex);
+    });
+  }
+
+  // =========================================================================
   // 2. GESTIONE PROFILO & STATISTICHE CARRIERA
   // =========================================================================
   async function refreshProfile(nickname = (API.currentUser ? API.currentUser.username : API.nickname)) {
     currentProfile = await API.getProfile(nickname || 'Mago-' + Math.floor(1000 + Math.random() * 9000));
+
+    if (currentProfile && currentProfile.equippedSkin) {
+      player.setSkin(currentProfile.equippedSkin);
+    }
+    const foundIdx = allSkins.findIndex(s => s.id === player.skin);
+    if (foundIdx >= 0) currentSkinIndex = foundIdx;
+    updateSkinBadge();
 
     if (elNicknameDisplay) {
       elNicknameDisplay.textContent = currentProfile.nickname;
@@ -400,6 +546,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     renderIngameWeapons();
     renderIngameForge();
     renderIngameLoot();
+    renderIngameSkins();
   }
 
   // =========================================================================
@@ -1596,8 +1743,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
 
   function switchIngameTab(tabName) {
-    [ingameTabBtnLoot, ingameTabBtnTalents, ingameTabBtnForge, ingameTabBtnWeapons, ingameTabBtnEquipment].forEach(b => b?.classList.remove('active'));
-    [ingameTabLoot, ingameTabTalents, ingameTabForge, ingameTabWeapons, ingameTabEquipment].forEach(p => p?.classList.remove('active'));
+    [ingameTabBtnLoot, ingameTabBtnTalents, ingameTabBtnForge, ingameTabBtnWeapons, ingameTabBtnEquipment, ingameTabBtnSkins].forEach(b => b?.classList.remove('active'));
+    [ingameTabLoot, ingameTabTalents, ingameTabForge, ingameTabWeapons, ingameTabEquipment, ingameTabSkins].forEach(p => p?.classList.remove('active'));
 
     if (tabName === 'loot') {
       ingameTabBtnLoot?.classList.add('active');
@@ -1615,6 +1762,10 @@ window.addEventListener('DOMContentLoaded', async () => {
       ingameTabBtnEquipment?.classList.add('active');
       ingameTabEquipment?.classList.add('active');
       renderHeroOverview(ingameHeroContainer);
+    } else if (tabName === 'skins') {
+      ingameTabBtnSkins?.classList.add('active');
+      ingameTabSkins?.classList.add('active');
+      renderIngameSkins();
     } else {
       ingameTabBtnForge?.classList.add('active');
       ingameTabForge?.classList.add('active');
@@ -1652,6 +1803,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (ingameTabBtnForge) ingameTabBtnForge.addEventListener('click', () => switchIngameTab('forge'));
   if (ingameTabBtnWeapons) ingameTabBtnWeapons.addEventListener('click', () => switchIngameTab('weapons'));
   if (ingameTabBtnEquipment) ingameTabBtnEquipment.addEventListener('click', () => switchIngameTab('equipment'));
+  if (ingameTabBtnSkins) ingameTabBtnSkins.addEventListener('click', () => switchIngameTab('skins'));
 
   // =========================================================================
   // 7. MINIMAPPA LIVE RADAR & MAPPA TATTICA ESPANSA
@@ -2786,9 +2938,10 @@ window.addEventListener('DOMContentLoaded', async () => {
         fpsTimer = 0;
       }
 
-      // Se siamo nella schermata iniziale, aggiorna lo sfondo animato
+      // Se siamo nella schermata iniziale, aggiorna lo sfondo animato e l'anteprima eroe
       if (gameState === 'MENU') {
         updateAndDrawTitleBackground(dt, currentTime / 1000);
+        updateAndDrawHeroPreview(dt, currentTime / 1000);
       }
 
       // 1. UPDATE (Mondo in pausa se Zaino, Mappa, Menu, Fabbro o LevelUp sono aperti)

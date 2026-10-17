@@ -1638,6 +1638,9 @@
     const cache = /* @__PURE__ */ new Map();
     const ASSETS = {
       // Eroi (3 frame x 4 direzioni)
+      hero_hunter: "assets/sprites/hero/hero_hunter.png",
+      hero_spartan: "assets/sprites/hero/hero_spartan.png",
+      hero_pirate: "assets/sprites/hero/hero_pirate.png",
       hero_adventurer: "assets/sprites/hero/hero_adventurer.png",
       hero_knight: "assets/sprites/hero/hero_knight.png",
       hero_mage: "assets/sprites/hero/hero_mage.png",
@@ -1662,6 +1665,56 @@
       bat_front_idle: "assets/sprites/bat/bat_front_idle.png",
       bat_front_die: "assets/sprites/bat/bat_front_die.png"
     };
+    const HERO_SKINS = [
+      {
+        id: "hero_hunter",
+        name: "Cacciatore Silvano",
+        role: "Ranger & Tracciatore",
+        desc: "Maestro delle foreste ancestrali con cappuccio silvano, corazza di cuoio rinforzato e stivali da boscaiolo. Letale e silenzioso.",
+        icon: "\u{1F3F9}",
+        themeColor: "#22c55e"
+      },
+      {
+        id: "hero_spartan",
+        name: "Guerriero Spartano",
+        role: "Oplita di Sparta",
+        desc: "Indomito guerriero con elmo corinzio a cresta cremisi, corazza anatomica di bronzo lucido, mantello scarlatto e schinieri dorati.",
+        icon: "\u{1F6E1}\uFE0F",
+        themeColor: "#ef4444"
+      },
+      {
+        id: "hero_pirate",
+        name: "Corsaro dei Sette Mari",
+        role: "Navigatore & Predone",
+        desc: "Capitano temerario con tricorno da corsaro piumato, benda nera sull'occhio, giubba navale blu con bottoni dorati e fascia cremisi.",
+        icon: "\u2693",
+        themeColor: "#38bdf8"
+      },
+      {
+        id: "hero_adventurer",
+        name: "Viandante dell'Aether",
+        role: "Esploratore dei Portali",
+        desc: "Il leggendario viandante con mantello cremisi e chioma fulva, pronto a svelare i segreti delle 5 terre elementali.",
+        icon: "\u{1F9ED}",
+        themeColor: "#f59e0b"
+      },
+      {
+        id: "hero_knight",
+        name: "Cavaliere d'Argento",
+        role: "Paladino Reale",
+        desc: "Guardia d'\xE9lite della Cittadella protetta da una pesante armatura d'argento lucente e celata temprata.",
+        icon: "\u2694\uFE0F",
+        themeColor: "#e2e8f0"
+      },
+      {
+        id: "hero_mage",
+        name: "Arcanista di Cineris",
+        role: "Mago Elementale",
+        desc: "Studioso delle rune cosmiche avvolto in vesti ametista e cappuccio impregnato di polvere di mana puro.",
+        icon: "\u{1F52E}",
+        themeColor: "#a855f7"
+      }
+    ];
     const images = {};
     let assetsLoaded = false;
     function loadAssets() {
@@ -1704,9 +1757,10 @@
       ctx.fill();
       ctx.restore();
     }
-    function drawHero(ctx, x, y, dir, isWalking, frame, weapon = "staff", animTimer = 0) {
-      if (isReady("hero_adventurer")) {
-        const img = images["hero_adventurer"];
+    function drawHero(ctx, x, y, dir, isWalking, frame, weapon = "staff", animTimer = 0, skin = "hero_hunter") {
+      const skinKey = skin && isReady(skin) ? skin : isReady("hero_hunter") ? "hero_hunter" : isReady("hero_adventurer") ? "hero_adventurer" : null;
+      if (skinKey) {
+        const img = images[skinKey];
         let row = 0;
         if (dir === 4 || dir === 3 || dir === 5) row = 3;
         else if (dir === 2 || dir === 1) row = 2;
@@ -1742,6 +1796,27 @@
       }
       const fb = renderHeroFrame(dir, isWalking, frame, weapon);
       ctx.drawImage(fb, Math.round(x - fb.width / 2), Math.round(y - fb.height + 2));
+    }
+    function drawHeroPreview(ctx, x, y, skinId, frame = 1, dir = 0, scale = 2) {
+      const skinKey = skinId && isReady(skinId) ? skinId : isReady("hero_hunter") ? "hero_hunter" : "hero_adventurer";
+      if (!isReady(skinKey)) return;
+      const img = images[skinKey];
+      let row = 0;
+      if (dir === 4 || dir === 3 || dir === 5) row = 3;
+      else if (dir === 2 || dir === 1) row = 2;
+      else if (dir === 6 || dir === 7) row = 1;
+      else row = 0;
+      const col = frame % 3;
+      const sw = 16;
+      const sh = 20;
+      const dw = 16 * scale;
+      const dh = 20 * scale;
+      const dx = Math.round(x - dw / 2);
+      const dy = Math.round(y - dh / 2);
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, col * sw, row * sh, sw, sh, dx, dy, dw, dh);
+      ctx.restore();
     }
     function drawEquippedWeapon(ctx, x, y, dir, row, weapon, bob = 0, isBehind = false) {
       ctx.save();
@@ -2341,6 +2416,9 @@
       dirFromAngle,
       drawShadow,
       drawHero,
+      drawHeroPreview,
+      HERO_SKINS,
+      getSkins: () => HERO_SKINS,
       getHeroSprite,
       drawSkeleton,
       getSkeletonSprite,
@@ -5129,6 +5207,12 @@
       this.animTimer = 0;
       this.frame = 0;
       this.weapon = "staff";
+      this.skin = "hero_hunter";
+    }
+    setSkin(skinId) {
+      if (skinId) {
+        this.skin = skinId;
+      }
     }
     applyPermanentStats(stats = {}) {
       this.maxHp = 100 + (stats.bonusHp || 0);
@@ -5204,7 +5288,7 @@
         return;
       }
       Sprites.drawShadow(ctx, this.x, this.y, 7);
-      Sprites.drawHero(ctx, this.x, this.y, this.dir, this.walking, this.frame, this.weapon, this.animTimer || 0);
+      Sprites.drawHero(ctx, this.x, this.y, this.dir, this.walking, this.frame, this.weapon, this.animTimer || 0, this.skin);
       if ((this.inLiquid || this.inShallowWater) && this.walking) {
         ctx.fillStyle = "rgba(56, 189, 248, 0.75)";
         const splashX = this.x + (Math.random() * 16 - 8);
@@ -6779,6 +6863,12 @@
       if (!p.equippedWeapon) {
         p.equippedWeapon = "staff";
       }
+      if (!p.equippedSkin) {
+        p.equippedSkin = localStorage.getItem("aether_equipped_skin") || "hero_hunter";
+      }
+      if (!p.unlockedSkins) {
+        p.unlockedSkins = ["hero_hunter", "hero_spartan", "hero_pirate", "hero_adventurer", "hero_knight", "hero_mage"];
+      }
       if (!p.equipment) {
         p.equipment = { armor: null, helmet: null, boots: null, amulet: null, ring: null };
       }
@@ -7062,6 +7152,27 @@
         throw new Error("Devi prima forgiare quest'arma dal Fabbro!");
       }
       p.equippedWeapon = weaponId;
+      this._saveLocalProfile(p);
+      return this._formatProfile(p);
+    }
+    async equipSkin(skinId) {
+      localStorage.setItem("aether_equipped_skin", skinId);
+      if (this.isOnline) {
+        try {
+          const res = await fetch(`${API_BASE}/api/skin/equip`, {
+            method: "POST",
+            headers: this._authHeaders(),
+            body: JSON.stringify({ nickname: this.nickname, skinId })
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success) return json.profile;
+          }
+        } catch {
+        }
+      }
+      const p = this._getLocalProfile(this.nickname);
+      p.equippedSkin = skinId;
       this._saveLocalProfile(p);
       return this._formatProfile(p);
     }
@@ -7435,6 +7546,16 @@
     const ingameTabBtnEquipment = document.getElementById("ingame-tab-btn-equipment");
     const ingameTabEquipment = document.getElementById("ingame-tab-equipment");
     const ingameHeroContainer = document.getElementById("ingame-hero-container");
+    const heroPreviewCanvas = document.getElementById("hero-preview-canvas");
+    const heroPreviewCtx = heroPreviewCanvas ? heroPreviewCanvas.getContext("2d") : null;
+    const btnPrevSkin = document.getElementById("btn-prev-skin");
+    const btnNextSkin = document.getElementById("btn-next-skin");
+    const heroSkinBadgeIcon = document.getElementById("hero-skin-badge-icon");
+    const heroSkinBadgeName = document.getElementById("hero-skin-badge-name");
+    const heroSkinBadgeStatus = document.getElementById("hero-skin-badge-status");
+    const ingameTabBtnSkins = document.getElementById("ingame-tab-btn-skins");
+    const ingameTabSkins = document.getElementById("ingame-tab-skins");
+    const ingameSkinsContainer = document.getElementById("ingame-skins-container");
     let currentCraftCategory = "all";
     let currentBsTab = "craft";
     let gameState = "MENU";
@@ -7573,8 +7694,120 @@
         titleCtx.restore();
       }
     }
+    const allSkins = Sprites.getSkins();
+    let currentSkinIndex = 0;
+    function updateSkinBadge() {
+      const skin = allSkins[currentSkinIndex] || allSkins[0];
+      if (!skin) return;
+      if (heroSkinBadgeIcon) heroSkinBadgeIcon.textContent = skin.icon;
+      if (heroSkinBadgeName) heroSkinBadgeName.textContent = skin.name;
+      if (heroSkinBadgeStatus) {
+        const isEquipped = player.skin === skin.id;
+        heroSkinBadgeStatus.textContent = isEquipped ? "In Uso" : "Clicca per equipaggiare";
+        heroSkinBadgeStatus.className = isEquipped ? "skin-equipped-tag" : "skin-select-tag";
+      }
+    }
+    async function selectSkinByIndex(idx) {
+      if (idx < 0) idx = allSkins.length - 1;
+      if (idx >= allSkins.length) idx = 0;
+      currentSkinIndex = idx;
+      const skin = allSkins[currentSkinIndex];
+      player.setSkin(skin.id);
+      updateSkinBadge();
+      try {
+        currentProfile = await API.equipSkin(skin.id);
+      } catch (err) {
+        console.warn("Errore salvataggio skin:", err);
+      }
+      renderIngameSkins();
+    }
+    function updateAndDrawHeroPreview(dt, time) {
+      if (!heroPreviewCtx || !heroPreviewCanvas || gameState !== "MENU") return;
+      heroPreviewCtx.clearRect(0, 0, heroPreviewCanvas.width, heroPreviewCanvas.height);
+      const skin = allSkins[currentSkinIndex] || allSkins[0];
+      const animTimer = time * 2;
+      const bob = Math.round(Math.sin(animTimer * 2.5) * 1.5);
+      heroPreviewCtx.save();
+      heroPreviewCtx.fillStyle = "rgba(10, 15, 26, 0.45)";
+      heroPreviewCtx.beginPath();
+      heroPreviewCtx.ellipse(32, 68, 18, 6, 0, 0, Math.PI * 2);
+      heroPreviewCtx.fill();
+      heroPreviewCtx.restore();
+      Sprites.drawHero(heroPreviewCtx, 32, 66 + bob, 0, false, 1, player.weapon, animTimer, skin.id);
+    }
+    function renderIngameSkins() {
+      if (!ingameSkinsContainer) return;
+      ingameSkinsContainer.innerHTML = "";
+      allSkins.forEach((skin, idx) => {
+        const isEquipped = player.skin === skin.id;
+        const card = document.createElement("div");
+        card.className = `skin-card ${isEquipped ? "active" : ""}`;
+        const pedestal = document.createElement("div");
+        pedestal.className = "skin-card-pedestal";
+        const c = document.createElement("canvas");
+        c.className = "skin-card-canvas";
+        c.width = 48;
+        c.height = 60;
+        const cCtx = c.getContext("2d");
+        Sprites.drawHero(cCtx, 24, 52, 0, false, 1, player.weapon, 0, skin.id);
+        pedestal.appendChild(c);
+        card.appendChild(pedestal);
+        const header = document.createElement("div");
+        header.className = "skin-card-header";
+        header.innerHTML = `
+        <div class="skin-card-title">${skin.icon} ${skin.name}</div>
+        <div class="skin-card-role">${skin.role}</div>
+      `;
+        card.appendChild(header);
+        const desc = document.createElement("div");
+        desc.className = "skin-card-desc";
+        desc.textContent = skin.desc;
+        card.appendChild(desc);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `btn-equip-skin ${isEquipped ? "btn-equipped" : "btn-to-equip"}`;
+        btn.textContent = isEquipped ? "\u2713 IN USO" : "EQUIPAGGIA";
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (isEquipped) return;
+          selectSkinByIndex(idx);
+          showWeaponNotification(`\u{1F3AD} Aspetto equipaggiato: ${skin.name}!`);
+        });
+        card.appendChild(btn);
+        card.addEventListener("click", () => {
+          if (!isEquipped) {
+            selectSkinByIndex(idx);
+            showWeaponNotification(`\u{1F3AD} Aspetto equipaggiato: ${skin.name}!`);
+          }
+        });
+        ingameSkinsContainer.appendChild(card);
+      });
+    }
+    if (btnPrevSkin) {
+      btnPrevSkin.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectSkinByIndex(currentSkinIndex - 1);
+      });
+    }
+    if (btnNextSkin) {
+      btnNextSkin.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectSkinByIndex(currentSkinIndex + 1);
+      });
+    }
+    if (heroSkinBadgeStatus) {
+      heroSkinBadgeStatus.addEventListener("click", () => {
+        selectSkinByIndex(currentSkinIndex);
+      });
+    }
     async function refreshProfile(nickname = API.currentUser ? API.currentUser.username : API.nickname) {
       currentProfile = await API.getProfile(nickname || "Mago-" + Math.floor(1e3 + Math.random() * 9e3));
+      if (currentProfile && currentProfile.equippedSkin) {
+        player.setSkin(currentProfile.equippedSkin);
+      }
+      const foundIdx = allSkins.findIndex((s) => s.id === player.skin);
+      if (foundIdx >= 0) currentSkinIndex = foundIdx;
+      updateSkinBadge();
       if (elNicknameDisplay) {
         elNicknameDisplay.textContent = currentProfile.nickname;
       }
@@ -7608,6 +7841,7 @@
       renderIngameWeapons();
       renderIngameForge();
       renderIngameLoot();
+      renderIngameSkins();
     }
     function renderTalentsGrid() {
       if (!currentProfile || !talentsContainer) return;
@@ -8626,8 +8860,8 @@
       });
     });
     function switchIngameTab(tabName) {
-      [ingameTabBtnLoot, ingameTabBtnTalents, ingameTabBtnForge, ingameTabBtnWeapons, ingameTabBtnEquipment].forEach((b) => b?.classList.remove("active"));
-      [ingameTabLoot, ingameTabTalents, ingameTabForge, ingameTabWeapons, ingameTabEquipment].forEach((p) => p?.classList.remove("active"));
+      [ingameTabBtnLoot, ingameTabBtnTalents, ingameTabBtnForge, ingameTabBtnWeapons, ingameTabBtnEquipment, ingameTabBtnSkins].forEach((b) => b?.classList.remove("active"));
+      [ingameTabLoot, ingameTabTalents, ingameTabForge, ingameTabWeapons, ingameTabEquipment, ingameTabSkins].forEach((p) => p?.classList.remove("active"));
       if (tabName === "loot") {
         ingameTabBtnLoot?.classList.add("active");
         ingameTabLoot?.classList.add("active");
@@ -8644,6 +8878,10 @@
         ingameTabBtnEquipment?.classList.add("active");
         ingameTabEquipment?.classList.add("active");
         renderHeroOverview(ingameHeroContainer);
+      } else if (tabName === "skins") {
+        ingameTabBtnSkins?.classList.add("active");
+        ingameTabSkins?.classList.add("active");
+        renderIngameSkins();
       } else {
         ingameTabBtnForge?.classList.add("active");
         ingameTabForge?.classList.add("active");
@@ -8676,6 +8914,7 @@
     if (ingameTabBtnForge) ingameTabBtnForge.addEventListener("click", () => switchIngameTab("forge"));
     if (ingameTabBtnWeapons) ingameTabBtnWeapons.addEventListener("click", () => switchIngameTab("weapons"));
     if (ingameTabBtnEquipment) ingameTabBtnEquipment.addEventListener("click", () => switchIngameTab("equipment"));
+    if (ingameTabBtnSkins) ingameTabBtnSkins.addEventListener("click", () => switchIngameTab("skins"));
     function renderMinimap() {
       if (!minimapCtx || !minimapCanvas || gameState !== "PLAYING") return;
       const w = minimapCanvas.width;
@@ -9577,6 +9816,7 @@
         }
         if (gameState === "MENU") {
           updateAndDrawTitleBackground(dt, currentTime / 1e3);
+          updateAndDrawHeroPreview(dt, currentTime / 1e3);
         }
         const isPaused = isInventoryOpen || isMapOpen || isMenuOpen || isBlacksmithOpen || isTeleportOpen || progression.isPausedForLevelUp;
         if (gameState === "PLAYING") {

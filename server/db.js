@@ -357,6 +357,8 @@ class Database {
           bow: 0    // Da forgiare dal fabbro
         },
         equippedWeapon: 'staff',
+        equippedSkin: 'hero_hunter',
+        unlockedSkins: ['hero_hunter', 'hero_spartan', 'hero_pirate', 'hero_adventurer', 'hero_knight', 'hero_mage'],
         equipment: {
           armor: null,
           helmet: null,
@@ -392,6 +394,12 @@ class Database {
     }
     if (!p.equippedWeapon) {
       p.equippedWeapon = 'staff';
+    }
+    if (!p.equippedSkin) {
+      p.equippedSkin = 'hero_hunter';
+    }
+    if (!p.unlockedSkins) {
+      p.unlockedSkins = ['hero_hunter', 'hero_spartan', 'hero_pirate', 'hero_adventurer', 'hero_knight', 'hero_mage'];
     }
     if (!p.equipment) {
       p.equipment = { armor: null, helmet: null, boots: null, amulet: null, ring: null };
@@ -621,6 +629,21 @@ class Database {
     }
 
     p.equippedWeapon = weaponId;
+    this.save();
+
+    return this.getOrCreateProfile(nick);
+  }
+
+  /**
+   * Equipaggia una skin per l'eroe
+   */
+  equipSkin(rawNickname, skinId) {
+    const nick = (rawNickname || '').trim();
+    const key = nick.toLowerCase();
+    this.getOrCreateProfile(nick);
+    const p = this.profiles.get(key);
+
+    p.equippedSkin = skinId || 'hero_hunter';
     this.save();
 
     return this.getOrCreateProfile(nick);

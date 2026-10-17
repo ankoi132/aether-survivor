@@ -204,6 +204,30 @@ app.post('/api/weapons/equip', (req, res) => {
   }
 });
 
+// Equipaggia Skin per l'Eroe
+app.post('/api/skin/equip', (req, res) => {
+  try {
+    const token = extractToken(req);
+    let nickname = req.body.nickname;
+
+    if (token) {
+      const auth = db.getAccountByToken(token);
+      if (auth && auth.user) {
+        nickname = auth.user.username;
+      }
+    }
+
+    const { skinId } = req.body;
+    if (!nickname || !skinId) {
+      return res.status(400).json({ success: false, error: 'Nickname e skinId sono obbligatori' });
+    }
+    const profile = db.equipSkin(nickname, skinId);
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 // Forgia Pezzo d'Equipaggiamento (Diablo Style)
 app.post('/api/blacksmith/craft-equipment', (req, res) => {
   try {

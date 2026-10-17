@@ -34,6 +34,13 @@ export class Player {
     this.animTimer = 0;
     this.frame = 0;
     this.weapon = 'staff'; // 'staff' | 'sword' | 'bow'
+    this.skin = 'hero_hunter';
+  }
+
+  setSkin(skinId) {
+    if (skinId) {
+      this.skin = skinId;
+    }
   }
 
   applyPermanentStats(stats = {}) {
@@ -138,8 +145,8 @@ export class Player {
     // 1. Ombra proiettata sotto i piedi
     Sprites.drawShadow(ctx, this.x, this.y, 7);
 
-    // 2. Sprite del personaggio 32x32 animato (con arma equipaggiata)
-    Sprites.drawHero(ctx, this.x, this.y, this.dir, this.walking, this.frame, this.weapon, this.animTimer || 0);
+    // 2. Sprite del personaggio 32x32 animato (con arma equipaggiata e skin)
+    Sprites.drawHero(ctx, this.x, this.y, this.dir, this.walking, this.frame, this.weapon, this.animTimer || 0, this.skin);
 
     // 3. Effetto particelle schizzo se è in acqua o guado
     if ((this.inLiquid || this.inShallowWater) && this.walking) {
