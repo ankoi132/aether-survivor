@@ -371,19 +371,10 @@ export class Enemy {
       return;
     }
 
-    // 2. Ombra a terra
-    const shadowR = this.isBoss ? (this.r + 6) : (this.kind.startsWith('slime') ? 9 : 11);
-    Sprites.drawShadow(ctx, this.x, this.y + (this.isBoss ? 8 : 4), shadowR);
-
-    // Aura maestosa per i Boss
-    if (this.isBoss) {
-      const glow = ctx.createRadialGradient(this.x, this.y - 12, 10, this.x, this.y - 12, 54);
-      glow.addColorStop(0, (this.color || '#ef4444') + '55');
-      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y - 12, 54, 0, Math.PI * 2);
-      ctx.fill();
+    // 2. Ombra a terra calibrata al suolo (i Boss disegnano la loro ombra in drawBoss)
+    if (!this.isBoss) {
+      const shadowR = this.kind.startsWith('slime') ? 6 : 7;
+      Sprites.drawShadow(ctx, this.x, this.y, shadowR);
     }
 
     ctx.save();

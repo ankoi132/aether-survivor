@@ -961,32 +961,82 @@ export const Tiles = (() => {
 
   // 15. Grande Obelisco Runico dell'Aether (Centro Capitale)
   function paintAetherObelisk() {
-    const W = 32, H = 64;
+    const W = 36, H = 68;
     const P = Pix(W, H);
-    const cMarble = pack('#f1f5f9');
-    const cMarbleShadow = pack('#94a3b8');
-    const cCrystal = pack('#38bdf8');
-    const cCrystalCore = pack('#e0f2fe');
-    const cRune = pack('#c084fc');
+
+    // Tavolozza per basamento marmoreo scolpito
+    const cStepBase = pack('#334155');
+    const cStepMid = pack('#475569');
+    const cStepTop = pack('#64748b');
+    const cMarbleLit = pack('#cbd5e1');
+    const cMarbleHighlight = pack('#f1f5f9');
     const cEdge = pack('#090d16');
 
-    // Basamento a gradini di marmo bianco
-    for (let y = 50; y <= 58; y++) {
-      for (let x = 4; x <= 27; x++) P.set(x, y, cMarble);
-    }
-    for (let y = 44; y <= 50; y++) {
-      for (let x = 8; x <= 23; x++) P.set(x, y, cMarbleShadow);
-    }
+    // Tavolozza per guglia di cristallo con sfaccettature 3D
+    const cCrysShadow = pack('#0369a1');
+    const cCrysMid = pack('#0284c7');
+    const cCrysLit = pack('#38bdf8');
+    const cCrysBright = pack('#7dd3fc');
+    const cCrysSpecular = pack('#ffffff');
+    const cRuneGlow = pack('#c084fc');
+    const cRuneCore = pack('#f472b6');
 
-    // Guglia di cristallo dell'Aether ottagonale
-    for (let y = 6; y <= 44; y++) {
-      const span = Math.round(((y - 6) / 38) * 8) + 1;
-      for (let x = 16 - span; x <= 16 + span; x++) {
-        const isCore = x === 16;
-        const isRune = (y === 16 || y === 24 || y === 32) && Math.abs(x - 16) <= 2;
-        P.set(x, y, isRune ? cRune : (isCore ? cCrystalCore : cCrystal));
+    // 1. Basamento a gradini di marmo scolpito con zoccolo modanato
+    for (let y = 58; y <= 64; y++) {
+      for (let x = 4; x <= 31; x++) {
+        P.set(x, y, y === 58 ? cMarbleHighlight : (x <= 6 ? cStepTop : (x >= 29 ? cStepBase : cStepMid)));
       }
     }
+    for (let y = 52; y <= 58; y++) {
+      for (let x = 7; x <= 28; x++) {
+        P.set(x, y, y === 52 ? cMarbleHighlight : (x <= 9 ? cMarbleLit : (x >= 26 ? cStepMid : cStepTop)));
+      }
+    }
+    for (let y = 46; y <= 52; y++) {
+      for (let x = 10; x <= 25; x++) {
+        P.set(x, y, y === 46 ? cMarbleHighlight : (x <= 12 ? cMarbleLit : (x >= 23 ? cStepMid : cMarbleLit)));
+      }
+    }
+
+    // 2. Monolite di Cristallo dell'Aether (Sfaccettato a 4 piani di luce con spigolo centrale)
+    for (let y = 8; y <= 46; y++) {
+      const p = (y - 8) / 38;
+      const halfW = Math.round(1 + p * 8);
+      const cx = 17;
+
+      for (let x = cx - halfW; x <= cx + halfW; x++) {
+        const isSpine = (x === cx);
+        const isLeft = (x < cx);
+        const distFromCenter = Math.abs(x - cx);
+
+        let col;
+        if (isSpine) {
+          col = (y % 4 === 0) ? cCrysSpecular : cCrysBright;
+        } else if (isLeft) {
+          // Faccia illuminata da Nord-Ovest
+          col = distFromCenter <= Math.round(halfW * 0.5) ? cCrysBright : cCrysLit;
+        } else {
+          // Faccia in ombra verso Est
+          col = distFromCenter <= Math.round(halfW * 0.5) ? cCrysMid : cCrysShadow;
+        }
+
+        // Intagli runici arcani che pulsano lungo il fusto
+        const isRuneY = (y === 18 || y === 26 || y === 34 || y === 40);
+        if (isRuneY && distFromCenter <= 2) {
+          col = (distFromCenter === 0) ? cRuneCore : cRuneGlow;
+        }
+
+        P.set(x, y, col);
+      }
+    }
+
+    // 3. Shard di cristallo fluttuante sopra l'apice
+    P.set(17, 3, cCrysSpecular);
+    P.set(16, 4, cCrysBright);
+    P.set(17, 4, cCrysSpecular);
+    P.set(18, 4, cCrysMid);
+    P.set(17, 5, cCrysLit);
+
     outline(P, cEdge);
     return P.canvas();
   }
@@ -1054,28 +1104,63 @@ export const Tiles = (() => {
     return P.canvas();
   }
 
-  // 18. Fontana Imperiale
+  // 18. Fontana Imperiale (Ottagonale con Zampillo e Onde d'Acqua)
   function paintFountain() {
-    const P = Pix(36, 32);
-    const cStone = pack('#94a3b8');
-    const cStoneDark = pack('#475569');
-    const cWater = pack('#38bdf8');
-    const cWaterLight = pack('#e0f2fe');
+    const W = 40, H = 34;
+    const P = Pix(W, H);
+    const cStoneRim = pack('#64748b');
+    const cStoneDark = pack('#334155');
+    const cStoneLight = pack('#cbd5e1');
+    const cWaterDeep = pack('#0284c7');
+    const cWaterMid = pack('#38bdf8');
+    const cWaterLit = pack('#7dd3fc');
+    const cWaterFoam = pack('#e0f2fe');
     const cEdge = pack('#090d16');
 
-    // Vasca circolare
-    for (let y = 12; y <= 28; y++) {
-      for (let x = 4; x <= 32; x++) {
-        const isWater = y >= 14 && y <= 26 && x >= 7 && x <= 29;
-        P.set(x, y, isWater ? cWater : ((x % 3 === 0) ? cStoneDark : cStone));
+    const cx = 20, cy = 20;
+
+    // Vasca ottagonale modellata
+    for (let y = 8; y <= 30; y++) {
+      for (let x = 4; x <= 36; x++) {
+        const dx = (x - cx) / 15;
+        const dy = (y - cy) / 10;
+        const d = dx * dx + dy * dy;
+        if (d > 1.0) continue;
+
+        if (d > 0.72) {
+          // Bordo in pietra modanata
+          P.set(x, y, y < cy ? cStoneLight : (x > cx ? cStoneDark : cStoneRim));
+        } else {
+          // Acqua limpida sfumata
+          const r = Math.sin(x * 0.8 + y * 0.8) * 0.5 + 0.5;
+          let col = d < 0.25 ? cWaterLit : (r > 0.6 ? cWaterMid : cWaterDeep);
+          P.set(x, y, col);
+        }
       }
     }
-    // Zampillo d'acqua centrale
-    for (let y = 4; y <= 14; y++) {
-      P.set(18, y, cWaterLight);
-      P.set(17, y + 1, cWaterLight);
-      P.set(19, y + 1, cWaterLight);
+
+    // Pilastro centrale della fontana
+    for (let y = 10; y <= 20; y++) {
+      P.set(cx - 2, y, cStoneLight);
+      P.set(cx - 1, y, cStoneRim);
+      P.set(cx, y, cStoneRim);
+      P.set(cx + 1, y, cStoneDark);
     }
+    // Coppa superiore
+    for (let x = cx - 4; x <= cx + 4; x++) {
+      P.set(x, 10, cStoneLight);
+    }
+
+    // Zampillo d'acqua che sgorga e gocce
+    P.set(cx, 4, cWaterFoam);
+    P.set(cx - 1, 5, cWaterLit);
+    P.set(cx, 5, cWaterFoam);
+    P.set(cx + 1, 5, cWaterLit);
+    P.set(cx - 2, 6, cWaterLit);
+    P.set(cx + 2, 6, cWaterLit);
+    P.set(cx - 3, 8, cWaterFoam);
+    P.set(cx + 3, 8, cWaterFoam);
+
     outline(P, cEdge);
     return P.canvas();
   }

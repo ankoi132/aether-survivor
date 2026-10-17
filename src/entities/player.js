@@ -136,7 +136,7 @@ export class Player {
     }
 
     // 1. Ombra proiettata sotto i piedi
-    Sprites.drawShadow(ctx, this.x, this.y + 4, 11);
+    Sprites.drawShadow(ctx, this.x, this.y, 7);
 
     // 2. Sprite del personaggio 32x32 animato (con arma equipaggiata)
     Sprites.drawHero(ctx, this.x, this.y, this.dir, this.walking, this.frame, this.weapon, this.animTimer || 0);

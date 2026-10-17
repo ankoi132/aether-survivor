@@ -756,6 +756,26 @@ export class World {
     const lakeNoise = this.hash2D(Math.floor(tx / 3), Math.floor(ty / 3), 101);
     const propNoise = this.hash2D(tx, ty, 77);
 
+    // Verifica distanza da insediamenti e strade
+    let nearSettlement = false;
+    for (const s of SETTLEMENTS) {
+      if (Math.hypot(tx - s.centerTx, ty - s.centerTy) < s.radiusTiles + 5) {
+        nearSettlement = true;
+        break;
+      }
+    }
+    const nearRoad = this.isRoad(tx, ty) || this.isTrail(tx, ty);
+
+    // Controllo di purezza del bioma: verifica che l'intero blocco 3x3 del laghetto appartenga
+    // al 100% allo stesso identico bioma, prevenendo in assoluto laghi metà acqua e metà lava!
+    const bx0 = Math.floor(tx / 3) * 3;
+    const by0 = Math.floor(ty / 3) * 3;
+    const b00 = this.getBiome(bx0, by0);
+    const b22 = this.getBiome(bx0 + 2, by0 + 2);
+    const b02 = this.getBiome(bx0, by0 + 2);
+    const b20 = this.getBiome(bx0 + 2, by0);
+    const canSpawnLake = !nearSettlement && !nearRoad && (b00 === biome && b22 === biome && b02 === biome && b20 === biome);
+
     // DENSITÀ OTTIMIZZATA PER ATTRAVERSABILITÀ FLUIDA FUORI STRADA:
     // Muri e dirupi rari (solo top 6%), ampie aree aperte (88% calpestabile liberamente)
     // 6. Bioma Fiume (Sponde verdeggianti e canneti)
@@ -768,7 +788,7 @@ export class World {
     // 7. Montagne Innevate (Nord)
     if (biome === 'snow') {
       if (wallNoise > 0.94) return this.TILE_WALL;
-      if (lakeNoise > 0.94) return this.TILE_WATER;
+      if (canSpawnLake && lakeNoise > 0.94) return this.TILE_WATER;
       if (propNoise > 0.88) return this.TILE_PINE;
       if (propNoise > 0.85) return this.TILE_ROCK;
       return this.TILE_FLOOR;
@@ -777,7 +797,7 @@ export class World {
     // 8. Deserto delle Dune (Sud-Ovest)
     if (biome === 'desert') {
       if (wallNoise > 0.94) return this.TILE_WALL;
-      if (lakeNoise > 0.96) return this.TILE_WATER;
+      if (canSpawnLake && lakeNoise > 0.96) return this.TILE_WATER;
       if (propNoise > 0.90) return this.TILE_CACTUS;
       if (propNoise > 0.87) return this.TILE_SAND_ROCK;
       return this.TILE_FLOOR;
@@ -786,7 +806,7 @@ export class World {
     // 9. Caldera Vulcanica (Est / Sud-Est)
     if (biome === 'volcano') {
       if (wallNoise > 0.94) return this.TILE_WALL;
-      if (lakeNoise > 0.92) return this.TILE_WATER; // Lava
+      if (canSpawnLake && lakeNoise > 0.93) return this.TILE_WATER; // Lava pura
       if (propNoise > 0.89) return this.TILE_VOLCANO_ROCK;
       if (propNoise > 0.86) return this.TILE_ROCK;
       return this.TILE_FLOOR;
@@ -794,7 +814,7 @@ export class World {
 
     // 10. Bosco Silvano (Ovest / Centro-Ovest)
     if (wallNoise > 0.95) return this.TILE_WALL;
-    if (lakeNoise > 0.93) return this.TILE_WATER;
+    if (canSpawnLake && lakeNoise > 0.94) return this.TILE_WATER;
     if (propNoise > 0.88) return this.TILE_TREE;
     if (propNoise > 0.85) return this.TILE_ROCK;
 
@@ -1091,42 +1111,42 @@ export class World {
                   const player = entities[0] || { x: 0, y: 0 };
                   Sprites.drawBlacksmithNPC(ctx, p.x, p.y, p.blacksmithId || 'bs_citadel', player.x, player.y, Date.now() / 1000);
                 } else if (p.type === 'waypoint_portal') {
-                  Sprites.drawShadow(ctx, p.x, p.y - 2, 20);
+                  Sprites.drawShadow(ctx, p.x, p.y - 1, 12);
                   const pulse = Math.sin(Date.now() / 280) * 0.12 + 0.38;
-                  const glow = ctx.createRadialGradient(p.x, p.y - 12, 6, p.x, p.y - 12, 65);
+                  const glow = ctx.createRadialGradient(p.x, p.y - 12, 6, p.x, p.y - 12, 45);
                   glow.addColorStop(0, `rgba(56, 189, 248, ${pulse})`);
-                  glow.addColorStop(0.6, `rgba(14, 165, 233, ${pulse * 0.4})`);
+                  glow.addColorStop(0.6, `rgba(14, 165, 233, ${pulse * 0.3})`);
                   glow.addColorStop(1, 'rgba(56, 189, 248, 0)');
                   ctx.fillStyle = glow;
                   ctx.beginPath();
-                  ctx.arc(p.x, p.y - 12, 65, 0, Math.PI * 2);
+                  ctx.arc(p.x, p.y - 12, 45, 0, Math.PI * 2);
                   ctx.fill();
 
                   // Anello runico al suolo
                   ctx.save();
                   ctx.strokeStyle = `rgba(56, 189, 248, ${pulse + 0.25})`;
-                  ctx.lineWidth = 1.6;
+                  ctx.lineWidth = 1.4;
                   ctx.beginPath();
-                  ctx.ellipse(p.x, p.y - 2, 22, 11, 0, 0, Math.PI * 2);
+                  ctx.ellipse(p.x, p.y - 1, 18, 9, 0, 0, Math.PI * 2);
                   ctx.stroke();
                   ctx.restore();
 
                   ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
 
-                  // Cartiglio fluttuante
+                  // Cartiglio compatto e traslucido
                   ctx.save();
-                  ctx.font = 'bold 10px sans-serif';
+                  ctx.font = '500 10px system-ui, -apple-system, sans-serif';
                   ctx.textAlign = 'center';
-                  ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-                  ctx.fillRect(Math.round(p.x - 56), Math.round(p.y - sh - 18), 112, 17);
-                  ctx.strokeStyle = '#38bdf8';
+                  ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+                  ctx.fillRect(Math.round(p.x - 42), Math.round(p.y - sh - 14), 84, 15);
+                  ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
                   ctx.lineWidth = 1;
-                  ctx.strokeRect(Math.round(p.x - 56), Math.round(p.y - sh - 18), 112, 17);
+                  ctx.strokeRect(Math.round(p.x - 42), Math.round(p.y - sh - 14), 84, 15);
                   ctx.fillStyle = '#7dd3fc';
-                  ctx.fillText('🌀 Portale Viaggio [E]', Math.round(p.x), Math.round(p.y - sh - 5));
+                  ctx.fillText('🌀 Portale [E]', Math.round(p.x), Math.round(p.y - sh - 3));
                   ctx.restore();
                 } else if (p.type === 'aether_obelisk') {
-                  Sprites.drawShadow(ctx, p.x, p.y - 2, 22);
+                  Sprites.drawShadow(ctx, p.x, p.y - 1, 14);
                   const glow = ctx.createRadialGradient(p.x, p.y - 36, 10, p.x, p.y - 36, 80);
                   glow.addColorStop(0, 'rgba(56, 189, 248, 0.28)');
                   glow.addColorStop(1, 'rgba(56, 189, 248, 0)');

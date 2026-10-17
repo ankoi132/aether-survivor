@@ -1,15 +1,15 @@
 /**
- * core/sprites.js - Sistema Grafico Avanzato per Eroi, NPC, Mobs e Boss (32x32 Pixel Art)
- * Ispirato agli asset di SuperRetroWorld, Skeleton01, Orc01 e Bat01.
+ * core/sprites.js - Sistema Grafico Pixel Art Conforme 32x32
+ * Supporta: Eroi, Fabbri NPC, Scheletri, Orchi, Pipistrelli, Boss maestosi dedicati e Slime classici.
  */
 
 export const Sprites = (() => {
-  const PX = 2; // Pixel art scaling factor
+  const PX = 2; // Pixel art scaling factor nativo (1 px di sprite = 2 px di canvas)
   const cache = new Map();
 
-  // Mappa degli asset grafici 32x32 e spritesheet
+  // Mappa degli asset grafici 16x20 / 32x32
   const ASSETS = {
-    // Eroi
+    // Eroi (3 frame x 4 direzioni)
     hero_adventurer: 'assets/sprites/hero/hero_adventurer.png',
     hero_knight: 'assets/sprites/hero/hero_knight.png',
     hero_mage: 'assets/sprites/hero/hero_mage.png',
@@ -22,25 +22,18 @@ export const Sprites = (() => {
     bs_cineris: 'assets/sprites/npcs/blacksmith_ignis.png',
     bs_sylva: 'assets/sprites/npcs/blacksmith_elora.png',
 
-    // Scheletro Guardiano (TopDown)
-    skel_front_walk: 'assets/sprites/skeleton/skel_front_walk.png',
-    skel_back_walk: 'assets/sprites/skeleton/skel_back_walk.png',
-    skel_right_walk: 'assets/sprites/skeleton/skel_right_walk.png',
-    skel_front_idle: 'assets/sprites/skeleton/skel_front_idle.png',
-    skel_back_idle: 'assets/sprites/skeleton/skel_back_idle.png',
-    skel_right_idle: 'assets/sprites/skeleton/skel_right_idle.png',
-    skel_front_die: 'assets/sprites/skeleton/skel_front_die.png',
-    skel_front_attack: 'assets/sprites/skeleton/skel_front_attack.png',
+    // Scheletro Guardiano (Skeleton01)
+    skel_walk: 'assets/sprites/skeleton/skel_walk.png',
+    skel_idle: 'assets/sprites/skeleton/skel_idle.png',
+    skel_die: 'assets/sprites/skeleton/skel_die.png',
+    skel_attack: 'assets/sprites/skeleton/skel_attack.png',
 
-    // Orco Guerriero / Warlord (TopDown)
+    // Orco Guerriero (Orc01)
     orc_front_walk: 'assets/sprites/orc/orc_front_walk.png',
-    orc_back_walk: 'assets/sprites/orc/orc_back_walk.png',
-    orc_right_walk: 'assets/sprites/orc/orc_right_walk.png',
     orc_front_idle: 'assets/sprites/orc/orc_front_idle.png',
-    orc_front_attack: 'assets/sprites/orc/orc_front_attack.png',
     orc_front_die: 'assets/sprites/orc/orc_front_die.png',
 
-    // Pipistrello dell'Ombra (32x32 TopDown)
+    // Pipistrello dell'Ombra (Bat01)
     bat_front_walk: 'assets/sprites/bat/bat_front_walk.png',
     bat_front_idle: 'assets/sprites/bat/bat_front_idle.png',
     bat_front_die: 'assets/sprites/bat/bat_front_die.png'
@@ -86,30 +79,33 @@ export const Sprites = (() => {
     return { canvas: c, ctx };
   }
 
-  function drawShadow(ctx, x, y, radius = 10) {
+  // =========================================================================
+  // OMBRA MORBIDA E CALIBRATA (Appoggia i personaggi perfettamente al suolo)
+  // =========================================================================
+  function drawShadow(ctx, x, y, radius = 7) {
     ctx.save();
-    ctx.fillStyle = 'rgba(8, 12, 20, 0.45)';
+    ctx.fillStyle = 'rgba(10, 15, 26, 0.22)';
     ctx.beginPath();
-    ctx.ellipse(Math.round(x), Math.round(y), radius * PX, (radius * 0.42) * PX, 0, 0, Math.PI * 2);
+    ctx.ellipse(Math.round(x), Math.round(y), Math.round(radius * 1.3), Math.round(radius * 0.52), 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
   // =========================================================================
-  // 1. PERSONAGGIO PRINCIPALE (32x32 SuperRetroWorld Style)
+  // 1. PERSONAGGIO PRINCIPALE (Sprite 16x20 scalato a 32x40 con PX=2)
   // =========================================================================
   function drawHero(ctx, x, y, dir, isWalking, frame, weapon = 'staff', animTimer = 0) {
     if (isReady('hero_adventurer')) {
       const img = images['hero_adventurer'];
-      // Determinazione riga direzione (0: Down, 1: Left, 2: Right, 3: Up)
+      // Mapping direzioni (Row 0: Sud/Down, Row 1: Ovest/Left, Row 2: Est/Right, Row 3: Nord/Up)
       let row = 0;
-      if (dir === 4 || dir === 3 || dir === 5) row = 3; // Nord / Up
-      else if (dir === 2 || dir === 1) row = 2;         // Est / Right
-      else if (dir === 6 || dir === 7) row = 1;         // Ovest / Left
-      else row = 0;                                     // Sud / Down
+      if (dir === 4 || dir === 3 || dir === 5) row = 3;
+      else if (dir === 2 || dir === 1) row = 2;
+      else if (dir === 6 || dir === 7) row = 1;
+      else row = 0;
 
-      // Colonna frame camminata (sequenza ciclica 0 -> 1 -> 2 -> 1)
-      let col = 1; // Centro / Idle
+      // Colonna camminata: [1, 0, 1, 2]
+      let col = 1;
       let bob = 0;
       if (isWalking) {
         const walkCycle = [1, 0, 1, 2];
@@ -117,17 +113,17 @@ export const Sprites = (() => {
         col = walkCycle[step];
         bob = (col === 1 ? -1 : 0) * PX;
       } else {
-        bob = Math.round(Math.sin(animTimer * 2.5) * 0.75 * PX);
+        bob = Math.round(Math.sin(animTimer * 2.5) * 0.5 * PX);
       }
 
-      const sw = 32;
-      const sh = 32;
-      const dw = 32 * PX;
-      const dh = 32 * PX;
+      const sw = 16;
+      const sh = 20;
+      const dw = 16 * PX; // 32px
+      const dh = 20 * PX; // 40px
       const dx = Math.round(x - dw / 2);
-      const dy = Math.round(y - dh + 10) + bob;
+      const dy = Math.round(y - dh + 2) + bob;
 
-      // Se guarda verso Nord, disegna prima l'arma (dietro al corpo)
+      // Se guarda a Nord, disegna prima l'arma (dietro al corpo)
       if (row === 3) {
         drawEquippedWeapon(ctx, x, y, dir, row, weapon, bob, true);
       }
@@ -137,134 +133,118 @@ export const Sprites = (() => {
       ctx.drawImage(img, col * sw, row * sh, sw, sh, dx, dy, dw, dh);
       ctx.restore();
 
-      // Se guarda verso Sud, Est o Ovest, disegna l'arma in primo piano
+      // Se guarda verso Sud, Est o Ovest, disegna l'arma tenuta in mano
       if (row !== 3) {
         drawEquippedWeapon(ctx, x, y, dir, row, weapon, bob, false);
       }
       return;
     }
 
-    // Fallback procedurale se l'immagine non è ancora caricata
+    // Fallback procedurale se l'immagine non è ancora pronta
     const fb = renderHeroFrame(dir, isWalking, frame, weapon);
-    ctx.drawImage(fb, Math.round(x - fb.width / 2), Math.round(y - fb.height + 8));
+    ctx.drawImage(fb, Math.round(x - fb.width / 2), Math.round(y - fb.height + 2));
   }
 
+  // =========================================================================
+  // ARMA IMPUGNATA IN MANO (Conforme al pixel art 32x32, proporzionata e tenuta salda)
+  // =========================================================================
   function drawEquippedWeapon(ctx, x, y, dir, row, weapon, bob = 0, isBehind = false) {
     ctx.save();
     ctx.imageSmoothingEnabled = false;
 
-    const isFacingLeft = row === 1;
-    const isFacingRight = row === 2;
-    const isFacingUp = row === 3;
-    const isFacingDown = row === 0;
-
-    const wepX = Math.round(x + (isFacingLeft ? -14 * PX : (isFacingRight ? 10 * PX : 9 * PX)));
-    const wepY = Math.round(y - 20 * PX + bob + (isBehind ? 2 * PX : 0));
+    // Posizionamento esatto della mano rispetto al corpo nei 4 orientamenti
+    let handX, handY;
+    if (row === 0) { // Sud / Frontale (mano destra a destra dell'eroe)
+      handX = Math.round(x + 5 * PX);
+      handY = Math.round(y - 8 * PX + bob);
+    } else if (row === 1) { // Ovest / Sinistra (mano protesa avanti a sinistra)
+      handX = Math.round(x - 5 * PX);
+      handY = Math.round(y - 7 * PX + bob);
+    } else if (row === 2) { // Est / Destra (mano protesa avanti a destra)
+      handX = Math.round(x + 5 * PX);
+      handY = Math.round(y - 7 * PX + bob);
+    } else { // Nord / Spalle (mano a destra, disegnata dietro al dorso)
+      handX = Math.round(x + 5 * PX);
+      handY = Math.round(y - 9 * PX + bob);
+    }
 
     if (weapon === 'sword') {
-      // 1. Spada da Battaglia in Acciaio Temprato
-      ctx.fillStyle = '#090d16';
-      ctx.fillRect(wepX - 1, wepY - 4 * PX, 2 * PX + 2, 14 * PX + 2);
-      ctx.fillStyle = '#cbd5e1';
-      ctx.fillRect(wepX, wepY - 4 * PX, 2 * PX, 14 * PX);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(wepX, wepY - 4 * PX, 1 * PX, 14 * PX);
-
-      // Guardia d'oro
-      ctx.fillStyle = '#f59e0b';
-      ctx.fillRect(wepX - 3 * PX, wepY + 6 * PX, 8 * PX, 2 * PX);
+      // 1. Spada d'Acciaio Temprata
+      // Impugnatura e pomo in cuoio/oro
       ctx.fillStyle = '#b45309';
-      ctx.fillRect(wepX, wepY + 8 * PX, 2 * PX, 3 * PX);
+      ctx.fillRect(handX - 1 * PX, handY + 1 * PX, 2 * PX, 2 * PX);
+      // Elsa trasversale dorata
       ctx.fillStyle = '#f59e0b';
-      ctx.fillRect(wepX, wepY + 11 * PX, 2 * PX, 1 * PX);
-    } else if (weapon === 'bow') {
-      // 2. Arco Lungo Curvo
-      ctx.fillStyle = '#090d16';
-      ctx.fillRect(wepX - 1, wepY - 3 * PX, 3 * PX + 2, 16 * PX + 2);
-      ctx.fillStyle = '#92400e';
-      ctx.fillRect(wepX, wepY - 3 * PX, 3 * PX, 16 * PX);
-      ctx.fillStyle = '#d97706';
-      ctx.fillRect(wepX + 1 * PX, wepY - 1 * PX, 1 * PX, 12 * PX);
-
-      // Corda tesa e freccia
+      ctx.fillRect(handX - 2 * PX, handY, 4 * PX, 1 * PX);
+      // Lama affilata in acciaio lucido (5 pixel di estensione verso l'alto/avanti)
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(handX - 1 * PX, handY - 5 * PX, 2 * PX, 5 * PX);
       ctx.fillStyle = '#f8fafc';
-      const cordX = isFacingLeft ? wepX + 3 * PX : wepX - 1 * PX;
-      ctx.fillRect(cordX, wepY - 2 * PX, 1 * PX, 14 * PX);
+      ctx.fillRect(handX, handY - 5 * PX, 1 * PX, 5 * PX);
+    } else if (weapon === 'bow') {
+      // 2. Arco in Legno d'Olmo
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(handX, handY - 4 * PX, 1 * PX, 8 * PX);
+      ctx.fillRect(handX + (row === 1 ? -1 * PX : 1 * PX), handY - 5 * PX, 1 * PX, 2 * PX);
+      ctx.fillRect(handX + (row === 1 ? -1 * PX : 1 * PX), handY + 3 * PX, 1 * PX, 2 * PX);
+      // Corda tesa sottile
+      ctx.fillStyle = 'rgba(241, 245, 249, 0.75)';
+      ctx.fillRect(handX + (row === 1 ? 1 * PX : -1 * PX), handY - 4 * PX, 1, 8 * PX);
     } else {
-      // 3. Bastone Arcano con Gemma di Mana Fluida
-      ctx.fillStyle = '#090d16';
-      ctx.fillRect(wepX - 1, wepY - 4 * PX, 2 * PX + 2, 18 * PX + 2);
-      ctx.fillStyle = '#5b21b6';
-      ctx.fillRect(wepX, wepY - 4 * PX, 2 * PX, 18 * PX);
-      ctx.fillStyle = '#7c3aed';
-      ctx.fillRect(wepX, wepY - 4 * PX, 1 * PX, 18 * PX);
-
-      // Cristallo fluttuante
-      const pulse = Math.sin(Date.now() / 220) * 0.2 + 0.8;
-      ctx.fillStyle = `rgba(56, 189, 248, ${0.4 * pulse})`;
-      ctx.fillRect(wepX - 3 * PX, wepY - 7 * PX, 8 * PX, 8 * PX);
+      // 3. Bastone Arcano con Gemma Elementale
+      // Asta sottile in legno sagomato (1 pixel di spessore, lunghezza proporzionata)
+      ctx.fillStyle = '#451a03';
+      ctx.fillRect(handX, handY - 6 * PX, 1 * PX, 9 * PX);
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(handX, handY - 5 * PX, 1 * PX, 7 * PX);
+      // Gemma azzurra pulsante sulla sommità (2x2 pixel)
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(handX - 1 * PX, handY - 8 * PX, 3 * PX, 2 * PX);
       ctx.fillStyle = '#38bdf8';
-      ctx.fillRect(wepX - 2 * PX, wepY - 6 * PX, 6 * PX, 6 * PX);
+      ctx.fillRect(handX, handY - 8 * PX, 1 * PX, 2 * PX);
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(wepX - 1 * PX, wepY - 5 * PX, 3 * PX, 3 * PX);
+      ctx.fillRect(handX, handY - 7 * PX, 1 * PX, 1 * PX);
     }
 
     ctx.restore();
   }
 
   // =========================================================================
-  // 2. SCHELETRI GUARDIANI (Skeleton01 TopDown Animation)
+  // 2. SCHELETRO GUARDIANO (Sidescroller Anim Sheet completo)
   // =========================================================================
   function drawSkeleton(ctx, x, y, dir, isWalking, frame, isDying = false, deathTimer = 0, deathMaxTimer = 0.36, animTimer = 0) {
     ctx.save();
     ctx.imageSmoothingEnabled = false;
 
-    // A. Animazione di Morte: disintegrazione e crollo osseo
-    if (isDying && isReady('skel_front_die')) {
-      const img = images['skel_front_die'];
+    // Ombra morbida sotto le ossa
+    drawShadow(ctx, x, y, 7);
+
+    // Morte: sgretolamento scheletrico al suolo
+    if (isDying && isReady('skel_die')) {
+      const img = images['skel_die'];
       const p = 1 - Math.max(0, deathTimer / deathMaxTimer);
       const frameIdx = Math.min(5, Math.floor(p * 6));
-      const sw = 48;
-      const sh = 48;
-      const dw = Math.round(48 * 1.35);
-      const dh = Math.round(48 * 1.35);
+      const sw = 48, sh = 48;
+      const dw = 48, dh = 48;
       ctx.globalAlpha = Math.max(0.1, 1 - p * 0.9);
-      ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(y - dh + 14), dw, dh);
+      ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(y - 37), dw, dh);
       ctx.restore();
       return;
     }
 
-    // B. Movimento e Direzione
-    let imgKey = 'skel_front_walk';
-    let flipX = false;
-    const isFacingNorth = dir === 3 || dir === 4 || dir === 5;
-    const isFacingEast = dir === 1 || dir === 2;
-    const isFacingWest = dir === 6 || dir === 7;
-
-    if (isWalking) {
-      if (isFacingNorth) imgKey = 'skel_back_walk';
-      else if (isFacingEast) imgKey = 'skel_right_walk';
-      else if (isFacingWest) { imgKey = 'skel_right_walk'; flipX = true; }
-      else imgKey = 'skel_front_walk';
-    } else {
-      if (isFacingNorth) imgKey = 'skel_back_idle';
-      else if (isFacingEast) imgKey = 'skel_right_idle';
-      else if (isFacingWest) { imgKey = 'skel_right_idle'; flipX = true; }
-      else imgKey = 'skel_front_idle';
-    }
+    const isFacingWest = dir === 5 || dir === 6 || dir === 7;
+    const imgKey = isWalking ? 'skel_walk' : 'skel_idle';
 
     if (isReady(imgKey)) {
       const img = images[imgKey];
       const maxFrames = isWalking ? 8 : 5;
       const frameIdx = Math.floor(animTimer * (isWalking ? 1.6 : 1.0)) % maxFrames;
-      const sw = 48;
-      const sh = 48;
-      const dw = Math.round(48 * 1.35);
-      const dh = Math.round(48 * 1.35);
+      const sw = 48, sh = 48;
+      const dw = 48, dh = 48;
       const dx = Math.round(x - dw / 2);
-      const dy = Math.round(y - dh + 14);
+      const dy = Math.round(y - 37);
 
-      if (flipX) {
+      if (isFacingWest) {
         ctx.translate(Math.round(x), 0);
         ctx.scale(-1, 1);
         ctx.drawImage(img, frameIdx * sw, 0, sw, sh, -Math.round(dw / 2), dy, dw, dh);
@@ -272,111 +252,79 @@ export const Sprites = (() => {
         ctx.drawImage(img, frameIdx * sw, 0, sw, sh, dx, dy, dw, dh);
       }
 
-      // Bagliore occhi rossi minaccioso
-      if (!isFacingNorth && Math.sin(animTimer * 4) > -0.2) {
-        ctx.fillStyle = '#ef4444';
-        const eyeOffsetX = flipX ? -4 : 3;
-        ctx.fillRect(Math.round(x + eyeOffsetX - 2), Math.round(y - 28), 2, 2);
-        ctx.fillRect(Math.round(x + eyeOffsetX + 3), Math.round(y - 28), 2, 2);
-      }
-
       ctx.restore();
       return;
     }
 
     ctx.restore();
-    // Fallback procedurale se non ancora caricato
     const fb = renderSkeletonFrame(dir, isWalking, frame);
-    ctx.drawImage(fb, Math.round(x - fb.width / 2), Math.round(y - fb.height + 8));
+    ctx.drawImage(fb, Math.round(x - fb.width / 2), Math.round(y - fb.height + 2));
   }
 
   // =========================================================================
-  // 3. ORCO GUERRIERO (Orc01 TopDown Animation)
+  // 3. ORCO GUERRIERO (Orc01)
   // =========================================================================
-  function drawOrc(ctx, x, y, dir, isWalking, frame, isDying = false, deathTimer = 0, deathMaxTimer = 0.45, animTimer = 0, scale = 1.0) {
+  function drawOrc(ctx, x, y, dir, isWalking, frame, isDying = false, deathTimer = 0, deathMaxTimer = 0.45, animTimer = 0) {
     ctx.save();
     ctx.imageSmoothingEnabled = false;
+
+    drawShadow(ctx, x, y, 9);
 
     if (isDying && isReady('orc_front_die')) {
       const img = images['orc_front_die'];
       const p = 1 - Math.max(0, deathTimer / deathMaxTimer);
       const frameIdx = Math.min(5, Math.floor(p * 6));
-      const sw = 48;
-      const sh = 48;
-      const dw = Math.round(48 * 1.45 * scale);
-      const dh = Math.round(48 * 1.45 * scale);
+      const sw = 48, sh = 48;
+      const dw = 48, dh = 48;
       ctx.globalAlpha = Math.max(0.1, 1 - p * 0.9);
-      ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(y - dh + 16 * scale), dw, dh);
+      ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(y - 37), dw, dh);
       ctx.restore();
       return;
     }
 
-    let imgKey = isWalking ? 'orc_front_walk' : 'orc_front_idle';
-    let flipX = false;
-    const isFacingNorth = dir === 3 || dir === 4 || dir === 5;
-    const isFacingEast = dir === 1 || dir === 2;
-    const isFacingWest = dir === 6 || dir === 7;
-
-    if (isWalking) {
-      if (isFacingNorth) imgKey = 'orc_back_walk';
-      else if (isFacingEast) imgKey = 'orc_right_walk';
-      else if (isFacingWest) { imgKey = 'orc_right_walk'; flipX = true; }
-      else imgKey = 'orc_front_walk';
-    } else {
-      imgKey = 'orc_front_idle';
-      if (isFacingWest) flipX = true;
-    }
-
+    const imgKey = isWalking ? 'orc_front_walk' : 'orc_front_idle';
     if (isReady(imgKey)) {
       const img = images[imgKey];
-      const maxFrames = isWalking ? 10 : 8;
-      const frameIdx = Math.floor(animTimer * (isWalking ? 1.4 : 1.0)) % maxFrames;
-      const sw = 48;
-      const sh = 48;
-      const dw = Math.round(48 * 1.45 * scale);
-      const dh = Math.round(48 * 1.45 * scale);
-      const dy = Math.round(y - dh + 16 * scale);
+      const maxFrames = isWalking ? 10 : 6;
+      const frameIdx = Math.floor(animTimer * (isWalking ? 1.8 : 1.0)) % maxFrames;
+      const sw = 48, sh = 48;
+      const dw = 48, dh = 48;
+      const isFacingWest = dir === 5 || dir === 6 || dir === 7;
 
-      if (flipX) {
+      if (isFacingWest) {
         ctx.translate(Math.round(x), 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(img, frameIdx * sw, 0, sw, sh, -Math.round(dw / 2), dy, dw, dh);
+        ctx.drawImage(img, frameIdx * sw, 0, sw, sh, -Math.round(dw / 2), Math.round(y - 37), dw, dh);
       } else {
-        ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), dy, dw, dh);
+        ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(y - 37), dw, dh);
       }
       ctx.restore();
       return;
     }
 
     ctx.restore();
-    // Fallback generico
-    const fb = renderSkeletonFrame(dir, isWalking, frame);
-    ctx.drawImage(fb, Math.round(x - fb.width / 2), Math.round(y - fb.height + 8));
   }
 
   // =========================================================================
-  // 4. PIPISTRELLO DELL'OMBRA (Bat01 32x32 TopDown)
+  // 4. PIPISTRELLO DELL'OMBRA (Bat01)
   // =========================================================================
   function drawBat(ctx, x, y, dir, isWalking, frame, isDying = false, deathTimer = 0, deathMaxTimer = 0.3, animTimer = 0) {
     ctx.save();
     ctx.imageSmoothingEnabled = false;
 
-    // Ombra al suolo (staccata dal pipistrello volante)
-    drawShadow(ctx, x, y + 6, 8);
+    // Ombra al suolo morbida
+    drawShadow(ctx, x, y, 5);
 
-    const bob = Math.round(Math.sin(animTimer * 7) * 4);
-    const flyY = y - 10 + bob;
+    const bob = Math.round(Math.sin(animTimer * 7) * 3);
+    const flyY = y - 14 + bob;
 
     if (isDying && isReady('bat_front_die')) {
       const img = images['bat_front_die'];
       const p = 1 - Math.max(0, deathTimer / deathMaxTimer);
       const frameIdx = Math.min(10, Math.floor(p * 11));
-      const sw = 32;
-      const sh = 32;
-      const dw = 32 * PX;
-      const dh = 32 * PX;
+      const sw = 32, sh = 32;
       ctx.globalAlpha = Math.max(0.1, 1 - p);
-      ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(flyY - dh / 2), dw, dh);
+      ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - 16), Math.round(flyY - 16), 32, 32);
       ctx.restore();
       return;
     }
@@ -386,11 +334,8 @@ export const Sprites = (() => {
       const img = images[imgKey];
       const maxFrames = isWalking ? 4 : 8;
       const frameIdx = Math.floor(animTimer * 6) % maxFrames;
-      const sw = 32;
-      const sh = 32;
-      const dw = 32 * PX;
-      const dh = 32 * PX;
-      ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(flyY - dh / 2), dw, dh);
+      const sw = 32, sh = 32;
+      ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - 16), Math.round(flyY - 16), 32, 32);
       ctx.restore();
       return;
     }
@@ -399,18 +344,21 @@ export const Sprites = (() => {
   }
 
   // =========================================================================
-  // 5. FABBRI DEI VILLAGGI NPC (32x32 con Incudine e Martello Attivo)
+  // 5. FABBRO DEI VILLAGGI (32x32 con Incudine e Tag Trasparente Non Invasivo)
   // =========================================================================
   function drawBlacksmithNPC(ctx, x, y, bsId = 'bs_citadel', playerX = 0, playerY = 0, animTimer = 0) {
     ctx.save();
     ctx.imageSmoothingEnabled = false;
 
-    // 1. Ombra sotto il fabbro e l'incudine
-    drawShadow(ctx, x, y + 2, 16);
-
-    // 2. Calcolo orientamento: guarda il giocatore se vicino (< 85px), altrimenti guarda l'incudine a sinistra
+    const imgKey = bsId || 'bs_citadel';
     const distToPlayer = Math.hypot(playerX - x, playerY - y);
-    let row = 0; // Down
+
+    // 1. Ombre al suolo perfettamente appoggiate
+    drawShadow(ctx, x + 3 * PX, y, 7);
+    drawShadow(ctx, x - 10 * PX, y, 6);
+
+    // 2. Orientamento: guarda il giocatore se vicino (< 85px), altrimenti guarda l'incudine a sinistra
+    let row = 0; // Sud / Down
     if (distToPlayer < 85) {
       const dx = playerX - x;
       const dy = playerY - y;
@@ -423,209 +371,373 @@ export const Sprites = (() => {
       row = 1; // Guarda verso l'incudine a sinistra
     }
 
-    // 3. Sprite 32x32 del Fabbro specifico
-    const imgKey = bsId || 'bs_citadel';
+    // 3. Rendering Fabbro (16x20 scalato a 32x40 con PX=2)
     if (isReady(imgKey)) {
       const img = images[imgKey];
       const isHammering = distToPlayer >= 85;
       const hammerCycle = [1, 0, 1, 2];
       const col = isHammering ? hammerCycle[Math.floor(animTimer * 2) % 4] : 1;
 
-      const sw = 32;
-      const sh = 32;
-      const dw = 32 * PX;
-      const dh = 32 * PX;
-      const fx = Math.round(x - dw / 2 + 6 * PX);
-      const fy = Math.round(y - dh + 6);
+      const sw = 16, sh = 20;
+      const dw = 16 * PX, dh = 20 * PX;
+      const fx = Math.round(x - dw / 2 + 3 * PX);
+      const fy = Math.round(y - dh + 2);
 
       ctx.drawImage(img, col * sw, row * sh, sw, sh, fx, fy, dw, dh);
 
-      // Scintille del martello sull'incudine periodiche
+      // Scintille periodiche del martello sull'incudine
       if (isHammering && col === 2 && Math.random() < 0.25) {
         ctx.fillStyle = '#fde047';
-        ctx.fillRect(Math.round(x - 14 * PX), Math.round(y - 8 * PX), 2 * PX, 2 * PX);
+        ctx.fillRect(Math.round(x - 9 * PX), Math.round(y - 7 * PX), 2 * PX, 2 * PX);
         ctx.fillStyle = '#f97316';
-        ctx.fillRect(Math.round(x - 12 * PX), Math.round(y - 10 * PX), 1.5 * PX, 1.5 * PX);
+        ctx.fillRect(Math.round(x - 8 * PX), Math.round(y - 9 * PX), 1.5 * PX, 1.5 * PX);
       }
     }
 
-    // 4. Incudine pesante in ferro massiccio (a sinistra del fabbro)
+    // 4. Incudine pesante in ferro massiccio poggiata al suolo
     const anvilX = Math.round(x - 14 * PX);
-    const anvilY = Math.round(y - 12 * PX);
+    const anvilY = Math.round(y - 8 * PX);
+    const anvilW = 10 * PX;
+    const anvilH = 8 * PX;
 
     ctx.fillStyle = '#0f172a';
-    ctx.fillRect(anvilX - 1, anvilY - 1, 14 * PX + 2, 10 * PX + 2);
+    ctx.fillRect(anvilX - 1, anvilY - 1, anvilW + 2, anvilH + 2);
     ctx.fillStyle = '#475569';
-    ctx.fillRect(anvilX, anvilY, 14 * PX, 10 * PX);
+    ctx.fillRect(anvilX, anvilY, anvilW, anvilH);
     ctx.fillStyle = '#94a3b8';
-    ctx.fillRect(anvilX + 1 * PX, anvilY + 1 * PX, 12 * PX, 2 * PX); // Piano superiore lucido
+    ctx.fillRect(anvilX + 1 * PX, anvilY + 1 * PX, anvilW - 2 * PX, 2 * PX); // Piano superiore lucido
     ctx.fillStyle = '#334155';
-    ctx.fillRect(anvilX + 4 * PX, anvilY + 3 * PX, 6 * PX, 4 * PX);  // Piede incudine
+    ctx.fillRect(anvilX + 3 * PX, anvilY + 3 * PX, 4 * PX, anvilH - 3 * PX); // Fusto centrale
 
     // Lama incandescente sopra l'incudine
     ctx.fillStyle = '#f97316';
-    ctx.fillRect(anvilX + 3 * PX, anvilY + 1 * PX, 8 * PX, 1.5 * PX);
+    ctx.fillRect(anvilX + 2 * PX, anvilY + 1 * PX, 6 * PX, 1.5 * PX);
     ctx.fillStyle = '#fde047';
-    ctx.fillRect(anvilX + 5 * PX, anvilY + 1 * PX, 4 * PX, 1 * PX);
+    ctx.fillRect(anvilX + 3 * PX, anvilY + 1 * PX, 3 * PX, 1 * PX);
 
-    // 5. Cartiglio interattivo fluttuante
-    ctx.font = 'bold 10px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-    ctx.fillRect(Math.round(x - 42), Math.round(y - 54), 84, 18);
-    ctx.strokeStyle = '#f59e0b';
+    // 5. Cartiglio interattivo: posizionato alto sopra la testa, compatto e traslucido
+    const tagW = 66;
+    const tagH = 15;
+    const tagY = Math.round(y - 48);
+
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+    ctx.fillRect(Math.round(x - tagW / 2), tagY, tagW, tagH);
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.65)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(Math.round(x - 42), Math.round(y - 54), 84, 18);
+    ctx.strokeRect(Math.round(x - tagW / 2), tagY, tagW, tagH);
+
+    ctx.font = '500 10px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
     ctx.fillStyle = '#fde047';
-    ctx.fillText('🔨 Fabbro [E]', Math.round(x), Math.round(y - 41));
+    ctx.fillText('🔨 Fabbro [E]', Math.round(x), tagY + 11);
 
     ctx.restore();
   }
 
   // =========================================================================
-  // 6. BOSS DEL MONDO APERTO (Visual Elevati e Maestosi)
+  // 6. BOSS DEL MONDO APERTO (Modelli Dedicati Nativi 32x32, Senza Zoom Sgranato)
   // =========================================================================
+
+  // A. Demone / Titano di Magma (Caldera Vulcanica)
+  function renderBossMagmaFrame(animTimer) {
+    const w = 32 * PX, h = 32 * PX;
+    const { canvas, ctx } = createOffscreen(w, h);
+    const cx = Math.floor(w / 2);
+    const cy = h - 2 * PX;
+    const bob = Math.round(Math.sin(animTimer * 3) * 1 * PX);
+
+    // Piedi vulcanici poggiati a terra
+    ctx.fillStyle = '#09090b';
+    ctx.fillRect(cx - 7 * PX, cy - 3 * PX, 5 * PX, 3 * PX);
+    ctx.fillRect(cx + 2 * PX, cy - 3 * PX, 5 * PX, 3 * PX);
+    ctx.fillStyle = '#ea580c';
+    ctx.fillRect(cx - 6 * PX, cy - 1 * PX, 3 * PX, 1 * PX);
+    ctx.fillRect(cx + 3 * PX, cy - 1 * PX, 3 * PX, 1 * PX);
+
+    // Gambe
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(cx - 6 * PX, cy - 8 * PX + bob, 4 * PX, 6 * PX);
+    ctx.fillRect(cx + 2 * PX, cy - 8 * PX + bob, 4 * PX, 6 * PX);
+
+    // Torso corazzato d'ossidiana
+    ctx.fillStyle = '#09090b';
+    ctx.fillRect(cx - 9 * PX, cy - 18 * PX + bob, 18 * PX, 11 * PX);
+    ctx.fillStyle = '#27272a';
+    ctx.fillRect(cx - 8 * PX, cy - 17 * PX + bob, 16 * PX, 9 * PX);
+
+    // Nucleo ardente nel petto
+    ctx.fillStyle = '#7f1d1d';
+    ctx.fillRect(cx - 4 * PX, cy - 15 * PX + bob, 8 * PX, 6 * PX);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(cx - 3 * PX, cy - 14 * PX + bob, 6 * PX, 4 * PX);
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(cx - 1 * PX, cy - 13 * PX + bob, 2 * PX, 2 * PX);
+
+    // Spallacci con colate di magma
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(cx - 11 * PX, cy - 18 * PX + bob, 4 * PX, 6 * PX);
+    ctx.fillRect(cx + 7 * PX, cy - 18 * PX + bob, 4 * PX, 6 * PX);
+    ctx.fillStyle = '#f97316';
+    ctx.fillRect(cx - 11 * PX, cy - 14 * PX + bob, 2 * PX, 3 * PX);
+    ctx.fillRect(cx + 9 * PX, cy - 14 * PX + bob, 2 * PX, 3 * PX);
+
+    // Braccia e pugni d'ardesia
+    ctx.fillStyle = '#27272a';
+    ctx.fillRect(cx - 12 * PX, cy - 13 * PX + bob, 3 * PX, 8 * PX);
+    ctx.fillRect(cx + 9 * PX, cy - 13 * PX + bob, 3 * PX, 8 * PX);
+    ctx.fillStyle = '#ea580c';
+    ctx.fillRect(cx - 12 * PX, cy - 7 * PX + bob, 3 * PX, 3 * PX);
+    ctx.fillRect(cx + 9 * PX, cy - 7 * PX + bob, 3 * PX, 3 * PX);
+
+    // Teschio demoniaco
+    ctx.fillStyle = '#09090b';
+    ctx.fillRect(cx - 5 * PX, cy - 25 * PX + bob, 10 * PX, 8 * PX);
+    ctx.fillStyle = '#18181b';
+    ctx.fillRect(cx - 4 * PX, cy - 24 * PX + bob, 8 * PX, 6 * PX);
+
+    // Occhi fiammeggianti
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(cx - 3 * PX, cy - 22 * PX + bob, 2 * PX, 2 * PX);
+    ctx.fillRect(cx + 1 * PX, cy - 22 * PX + bob, 2 * PX, 2 * PX);
+
+    // Corna ricurve ardenti
+    ctx.fillStyle = '#7f1d1d';
+    ctx.fillRect(cx - 7 * PX, cy - 28 * PX + bob, 3 * PX, 5 * PX);
+    ctx.fillRect(cx + 4 * PX, cy - 28 * PX + bob, 3 * PX, 5 * PX);
+    ctx.fillStyle = '#ea580c';
+    ctx.fillRect(cx - 8 * PX, cy - 30 * PX + bob, 3 * PX, 3 * PX);
+    ctx.fillRect(cx + 5 * PX, cy - 30 * PX + bob, 3 * PX, 3 * PX);
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(cx - 8 * PX, cy - 31 * PX + bob, 2 * PX, 2 * PX);
+    ctx.fillRect(cx + 6 * PX, cy - 31 * PX + bob, 2 * PX, 2 * PX);
+
+    return canvas;
+  }
+
+  // B. Golem dei Ghiacci (Vette Innevate)
+  function renderBossGolemFrame(animTimer) {
+    const w = 32 * PX, h = 32 * PX;
+    const { canvas, ctx } = createOffscreen(w, h);
+    const cx = Math.floor(w / 2);
+    const cy = h - 2 * PX;
+    const bob = Math.round(Math.sin(animTimer * 2.5) * 1 * PX);
+
+    // Piedi di roccia permafrost
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(cx - 7 * PX, cy - 3 * PX, 5 * PX, 3 * PX);
+    ctx.fillRect(cx + 2 * PX, cy - 3 * PX, 5 * PX, 3 * PX);
+
+    // Gambe granitiche
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(cx - 6 * PX, cy - 8 * PX + bob, 4 * PX, 6 * PX);
+    ctx.fillRect(cx + 2 * PX, cy - 8 * PX + bob, 4 * PX, 6 * PX);
+
+    // Torso massiccio crio-corazzato
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(cx - 9 * PX, cy - 18 * PX + bob, 18 * PX, 11 * PX);
+    ctx.fillStyle = '#64748b';
+    ctx.fillRect(cx - 8 * PX, cy - 17 * PX + bob, 16 * PX, 9 * PX);
+
+    // Glifi crio-azzurri nel petto
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(cx - 4 * PX, cy - 15 * PX + bob, 8 * PX, 5 * PX);
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(cx - 3 * PX, cy - 14 * PX + bob, 6 * PX, 3 * PX);
+    ctx.fillStyle = '#e0f2fe';
+    ctx.fillRect(cx - 1 * PX, cy - 13 * PX + bob, 2 * PX, 2 * PX);
+
+    // Spuntoni di ghiaccio cristallino sulle spalle
+    ctx.fillStyle = '#bae6fd';
+    ctx.fillRect(cx - 11 * PX, cy - 20 * PX + bob, 3 * PX, 8 * PX);
+    ctx.fillRect(cx + 8 * PX, cy - 20 * PX + bob, 3 * PX, 8 * PX);
+    ctx.fillStyle = '#e0f2fe';
+    ctx.fillRect(cx - 10 * PX, cy - 22 * PX + bob, 2 * PX, 3 * PX);
+    ctx.fillRect(cx + 8 * PX, cy - 22 * PX + bob, 2 * PX, 3 * PX);
+
+    // Braccia e pugni di pietra
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(cx - 12 * PX, cy - 13 * PX + bob, 3 * PX, 8 * PX);
+    ctx.fillRect(cx + 9 * PX, cy - 13 * PX + bob, 3 * PX, 8 * PX);
+
+    // Testa monolitica
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(cx - 5 * PX, cy - 25 * PX + bob, 10 * PX, 8 * PX);
+    ctx.fillStyle = '#64748b';
+    ctx.fillRect(cx - 4 * PX, cy - 24 * PX + bob, 8 * PX, 6 * PX);
+
+    // Fessura oculare azzurro ghiaccio
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(cx - 3 * PX, cy - 22 * PX + bob, 6 * PX, 2 * PX);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(cx - 1 * PX, cy - 22 * PX + bob, 2 * PX, 2 * PX);
+
+    // Corona di permafrost
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillRect(cx - 4 * PX, cy - 27 * PX + bob, 8 * PX, 3 * PX);
+    ctx.fillStyle = '#e0f2fe';
+    ctx.fillRect(cx - 3 * PX, cy - 28 * PX + bob, 6 * PX, 2 * PX);
+
+    return canvas;
+  }
+
+  // C. Colosso delle Dune (Deserto)
+  function renderBossDuneFrame(animTimer) {
+    const w = 32 * PX, h = 32 * PX;
+    const { canvas, ctx } = createOffscreen(w, h);
+    const cx = Math.floor(w / 2);
+    const cy = h - 2 * PX;
+    const bob = Math.round(Math.sin(animTimer * 2.5) * 1 * PX);
+
+    // Piedi corazzati in bronzo e arenaria
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(cx - 7 * PX, cy - 3 * PX, 5 * PX, 3 * PX);
+    ctx.fillRect(cx + 2 * PX, cy - 3 * PX, 5 * PX, 3 * PX);
+
+    // Gambe con fasce desertiche
+    ctx.fillStyle = '#b45309';
+    ctx.fillRect(cx - 6 * PX, cy - 8 * PX + bob, 4 * PX, 6 * PX);
+    ctx.fillRect(cx + 2 * PX, cy - 8 * PX + bob, 4 * PX, 6 * PX);
+
+    // Pettorale dorato del deserto
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(cx - 9 * PX, cy - 18 * PX + bob, 18 * PX, 11 * PX);
+    ctx.fillStyle = '#d97706';
+    ctx.fillRect(cx - 8 * PX, cy - 17 * PX + bob, 16 * PX, 9 * PX);
+
+    // Occhio di Ra dorato
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillRect(cx - 4 * PX, cy - 15 * PX + bob, 8 * PX, 5 * PX);
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(cx - 2 * PX, cy - 14 * PX + bob, 4 * PX, 3 * PX);
+
+    // Spallacci ornati
+    ctx.fillStyle = '#92400e';
+    ctx.fillRect(cx - 11 * PX, cy - 18 * PX + bob, 4 * PX, 6 * PX);
+    ctx.fillRect(cx + 7 * PX, cy - 18 * PX + bob, 4 * PX, 6 * PX);
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillRect(cx - 10 * PX, cy - 16 * PX + bob, 2 * PX, 3 * PX);
+    ctx.fillRect(cx + 8 * PX, cy - 16 * PX + bob, 2 * PX, 3 * PX);
+
+    // Braccia e scimitarre
+    ctx.fillStyle = '#b45309';
+    ctx.fillRect(cx - 12 * PX, cy - 13 * PX + bob, 3 * PX, 8 * PX);
+    ctx.fillRect(cx + 9 * PX, cy - 13 * PX + bob, 3 * PX, 8 * PX);
+    // Khopesh ricurve
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(cx - 14 * PX, cy - 11 * PX + bob, 3 * PX, 6 * PX);
+    ctx.fillRect(cx + 11 * PX, cy - 11 * PX + bob, 3 * PX, 6 * PX);
+
+    // Elmo a sciarpa / maschera faraonica
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(cx - 5 * PX, cy - 25 * PX + bob, 10 * PX, 8 * PX);
+    ctx.fillStyle = '#d97706';
+    ctx.fillRect(cx - 4 * PX, cy - 24 * PX + bob, 8 * PX, 6 * PX);
+
+    // Fessura ambra
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(cx - 3 * PX, cy - 22 * PX + bob, 6 * PX, 2 * PX);
+
+    // Copricapo scarabeo
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillRect(cx - 4 * PX, cy - 27 * PX + bob, 8 * PX, 3 * PX);
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillRect(cx - 2 * PX, cy - 29 * PX + bob, 4 * PX, 3 * PX);
+
+    return canvas;
+  }
+
+  // D. Treant Ancestrale (Foresta)
+  function renderBossTreantFrame(animTimer) {
+    const w = 32 * PX, h = 32 * PX;
+    const { canvas, ctx } = createOffscreen(w, h);
+    const cx = Math.floor(w / 2);
+    const cy = h - 2 * PX;
+    const bob = Math.round(Math.sin(animTimer * 2) * 1 * PX);
+
+    // Radici nodose piantate nel terreno
+    ctx.fillStyle = '#271202';
+    ctx.fillRect(cx - 7 * PX, cy - 3 * PX, 5 * PX, 3 * PX);
+    ctx.fillRect(cx + 2 * PX, cy - 3 * PX, 5 * PX, 3 * PX);
+
+    // Tronco d'albero antico
+    ctx.fillStyle = '#451a03';
+    ctx.fillRect(cx - 9 * PX, cy - 18 * PX + bob, 18 * PX, 16 * PX);
+    ctx.fillStyle = '#78350f';
+    ctx.fillRect(cx - 8 * PX, cy - 17 * PX + bob, 16 * PX, 14 * PX);
+
+    // Muschio e linfa vitale
+    ctx.fillStyle = '#166534';
+    ctx.fillRect(cx - 6 * PX, cy - 14 * PX + bob, 4 * PX, 6 * PX);
+    ctx.fillRect(cx + 2 * PX, cy - 15 * PX + bob, 5 * PX, 7 * PX);
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(cx - 1 * PX, cy - 12 * PX + bob, 2 * PX, 4 * PX);
+
+    // Rami/braccia
+    ctx.fillStyle = '#451a03';
+    ctx.fillRect(cx - 12 * PX, cy - 14 * PX + bob, 3 * PX, 8 * PX);
+    ctx.fillRect(cx + 9 * PX, cy - 14 * PX + bob, 3 * PX, 8 * PX);
+    ctx.fillStyle = '#16a34a';
+    ctx.fillRect(cx - 13 * PX, cy - 8 * PX + bob, 4 * PX, 4 * PX);
+    ctx.fillRect(cx + 9 * PX, cy - 8 * PX + bob, 4 * PX, 4 * PX);
+
+    // Occhi spirituali di linfa smeraldo
+    ctx.fillStyle = '#14532d';
+    ctx.fillRect(cx - 4 * PX, cy - 21 * PX + bob, 3 * PX, 3 * PX);
+    ctx.fillRect(cx + 1 * PX, cy - 21 * PX + bob, 3 * PX, 3 * PX);
+    ctx.fillStyle = '#4ade80';
+    ctx.fillRect(cx - 3 * PX, cy - 20 * PX + bob, 2 * PX, 2 * PX);
+    ctx.fillRect(cx + 2 * PX, cy - 20 * PX + bob, 2 * PX, 2 * PX);
+
+    // Chioma fogliare maestosa
+    ctx.fillStyle = '#15803d';
+    ctx.fillRect(cx - 10 * PX, cy - 29 * PX + bob, 20 * PX, 9 * PX);
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(cx - 8 * PX, cy - 31 * PX + bob, 16 * PX, 5 * PX);
+    ctx.fillStyle = '#86efac';
+    ctx.fillRect(cx - 4 * PX, cy - 31 * PX + bob, 8 * PX, 2 * PX);
+
+    return canvas;
+  }
+
   function drawBoss(ctx, enemy, dt = 0) {
-    const isWalking = enemy.state === 'CHASE' || (enemy.state === 'WANDER' && enemy.isWanderMoving);
-    const animTimer = enemy.animTimer || 0;
+    const animTimer = enemy.animTimer || (Date.now() / 1000);
 
     ctx.save();
+    ctx.imageSmoothingEnabled = false;
 
-    // 1. Colosso delle Dune / Warlord delle Sabbie
-    if (enemy.kind === 'boss_scorpion') {
-      // Aura vortice di sabbia
-      const pulse = Math.sin(Date.now() / 240) * 0.15 + 0.35;
-      const glow = ctx.createRadialGradient(enemy.x, enemy.y - 16, 12, enemy.x, enemy.y - 16, 72);
-      glow.addColorStop(0, `rgba(245, 158, 11, ${pulse})`);
-      glow.addColorStop(0.7, `rgba(217, 119, 6, ${pulse * 0.4})`);
-      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(enemy.x, enemy.y - 16, 72, 0, Math.PI * 2);
-      ctx.fill();
+    // 1. Ombra calibrata morbida appoggiata al terreno
+    drawShadow(ctx, enemy.x, enemy.y, 11);
 
-      // Rendering Orco Warlord a scala 2.2x
-      drawOrc(ctx, enemy.x, enemy.y, enemy.dir, isWalking, enemy.frame, enemy.isDying, enemy.deathTimer, enemy.deathMaxTimer, animTimer, 2.2);
-      ctx.restore();
-      return;
-    }
+    // 2. Rendering del Boss 32x32 dedicato nativo
+    let bossCanvas;
+    const kind = enemy.kind;
+    const cacheKey = `boss_${kind}_${Math.floor(animTimer * 2) % 2}`;
 
-    // 2. Titano di Magma (Volcanic Obsidian Colossus)
-    if (enemy.kind === 'boss_magma') {
-      const pulse = Math.sin(Date.now() / 200) * 0.18 + 0.45;
-      const glow = ctx.createRadialGradient(enemy.x, enemy.y - 20, 14, enemy.x, enemy.y - 20, 85);
-      glow.addColorStop(0, `rgba(239, 68, 68, ${pulse})`);
-      glow.addColorStop(0.5, `rgba(249, 115, 22, ${pulse * 0.5})`);
-      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(enemy.x, enemy.y - 20, 85, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Titano con armatura d'ossidiana cornuta
-      if (isReady('bs_cineris')) {
-        const img = images['bs_cineris'];
-        const row = (enemy.dir === 4 || enemy.dir === 3 || enemy.dir === 5) ? 3 : (enemy.dir === 2 ? 2 : (enemy.dir === 6 ? 1 : 0));
-        const col = isWalking ? ([1, 0, 1, 2][Math.floor(animTimer * 1.4) % 4]) : 1;
-        const sw = 32;
-        const sh = 32;
-        const dw = Math.round(32 * 2.5 * PX);
-        const dh = Math.round(32 * 2.5 * PX);
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(img, col * sw, row * sh, sw, sh, Math.round(enemy.x - dw / 2), Math.round(enemy.y - dh + 22), dw, dh);
-
-        // Corna ardenti in pixel art
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(Math.round(enemy.x - 14 * PX), Math.round(enemy.y - dh + 8), 3 * PX, 5 * PX);
-        ctx.fillRect(Math.round(enemy.x + 11 * PX), Math.round(enemy.y - dh + 8), 3 * PX, 5 * PX);
-        ctx.fillStyle = '#fde047';
-        ctx.fillRect(Math.round(enemy.x - 13 * PX), Math.round(enemy.y - dh + 5), 2 * PX, 3 * PX);
-        ctx.fillRect(Math.round(enemy.x + 12 * PX), Math.round(enemy.y - dh + 5), 2 * PX, 3 * PX);
-        ctx.restore();
-        return;
+    if (!cache.has(cacheKey)) {
+      if (kind === 'boss_magma') {
+        bossCanvas = renderBossMagmaFrame(animTimer);
+      } else if (kind === 'boss_golem') {
+        bossCanvas = renderBossGolemFrame(animTimer);
+      } else if (kind === 'boss_scorpion') {
+        bossCanvas = renderBossDuneFrame(animTimer);
+      } else {
+        bossCanvas = renderBossTreantFrame(animTimer);
       }
+      cache.set(cacheKey, bossCanvas);
+    } else {
+      bossCanvas = cache.get(cacheKey);
     }
 
-    // 3. Golem dei Ghiacci (Frost Peak Ice Titan)
-    if (enemy.kind === 'boss_golem') {
-      const pulse = Math.sin(Date.now() / 250) * 0.15 + 0.38;
-      const glow = ctx.createRadialGradient(enemy.x, enemy.y - 18, 12, enemy.x, enemy.y - 18, 78);
-      glow.addColorStop(0, `rgba(125, 211, 252, ${pulse})`);
-      glow.addColorStop(0.6, `rgba(2, 132, 199, ${pulse * 0.4})`);
-      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(enemy.x, enemy.y - 18, 78, 0, Math.PI * 2);
-      ctx.fill();
-
-      if (isReady('hero_knight')) {
-        const img = images['hero_knight'];
-        const row = (enemy.dir === 4 || enemy.dir === 3 || enemy.dir === 5) ? 3 : (enemy.dir === 2 ? 2 : (enemy.dir === 6 ? 1 : 0));
-        const col = isWalking ? ([1, 0, 1, 2][Math.floor(animTimer * 1.4) % 4]) : 1;
-        const sw = 32;
-        const sh = 32;
-        const dw = Math.round(32 * 2.3 * PX);
-        const dh = Math.round(32 * 2.3 * PX);
-        ctx.imageSmoothingEnabled = false;
-
-        // Tonalità crio-glaciale
-        ctx.filter = 'hue-rotate(180deg) brightness(1.2) saturate(1.4)';
-        ctx.drawImage(img, col * sw, row * sh, sw, sh, Math.round(enemy.x - dw / 2), Math.round(enemy.y - dh + 20), dw, dh);
-        ctx.filter = 'none';
-
-        // Punte di ghiaccio cristalline sulle spalle
-        ctx.fillStyle = '#e0f2fe';
-        ctx.fillRect(Math.round(enemy.x - 16 * PX), Math.round(enemy.y - dh + 18), 4 * PX, 6 * PX);
-        ctx.fillRect(Math.round(enemy.x + 12 * PX), Math.round(enemy.y - dh + 18), 4 * PX, 6 * PX);
-        ctx.restore();
-        return;
-      }
-    }
-
-    // 4. Treant Ancestrale (Ancient Forest Guardian)
-    if (enemy.kind === 'boss_treant') {
-      const pulse = Math.sin(Date.now() / 260) * 0.15 + 0.35;
-      const glow = ctx.createRadialGradient(enemy.x, enemy.y - 18, 12, enemy.x, enemy.y - 18, 78);
-      glow.addColorStop(0, `rgba(34, 197, 94, ${pulse})`);
-      glow.addColorStop(0.6, `rgba(22, 101, 52, ${pulse * 0.4})`);
-      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(enemy.x, enemy.y - 18, 78, 0, Math.PI * 2);
-      ctx.fill();
-
-      if (isReady('bs_elora')) {
-        const img = images['bs_elora'];
-        const row = (enemy.dir === 4 || enemy.dir === 3 || enemy.dir === 5) ? 3 : (enemy.dir === 2 ? 2 : (enemy.dir === 6 ? 1 : 0));
-        const col = isWalking ? ([1, 0, 1, 2][Math.floor(animTimer * 1.3) % 4]) : 1;
-        const sw = 32;
-        const sh = 32;
-        const dw = Math.round(32 * 2.3 * PX);
-        const dh = Math.round(32 * 2.3 * PX);
-        ctx.imageSmoothingEnabled = false;
-
-        // Tonalità boscosa antica
-        ctx.filter = 'hue-rotate(90deg) contrast(1.2)';
-        ctx.drawImage(img, col * sw, row * sh, sw, sh, Math.round(enemy.x - dw / 2), Math.round(enemy.y - dh + 20), dw, dh);
-        ctx.filter = 'none';
-
-        // Rami e fronde superiori
-        ctx.fillStyle = '#15803d';
-        ctx.fillRect(Math.round(enemy.x - 14 * PX), Math.round(enemy.y - dh + 6), 6 * PX, 6 * PX);
-        ctx.fillRect(Math.round(enemy.x + 8 * PX), Math.round(enemy.y - dh + 6), 6 * PX, 6 * PX);
-        ctx.fillStyle = '#4ade80';
-        ctx.fillRect(Math.round(enemy.x - 10 * PX), Math.round(enemy.y - dh + 4), 3 * PX, 3 * PX);
-        ctx.fillRect(Math.round(enemy.x + 7 * PX), Math.round(enemy.y - dh + 4), 3 * PX, 3 * PX);
-        ctx.restore();
-        return;
-      }
-    }
+    const bw = bossCanvas.width;
+    const bh = bossCanvas.height;
+    // Il punto di appoggio dei piedi è a fondo frame: poggiano esattamente su enemy.y
+    ctx.drawImage(bossCanvas, Math.round(enemy.x - bw / 2), Math.round(enemy.y - bh + 4));
 
     ctx.restore();
   }
 
   // =========================================================================
-  // 7. SLIME (Mantenuti 100% Intatti secondo richiesta utente)
+  // 7. SLIME (Fedelmente Ripristinato al Design Morbido, Lucido e Occhi Vivaci)
   // =========================================================================
   function renderSlimeFrame(type = 'forest', frameIndex = 0) {
     const w = 22 * PX;
@@ -633,33 +745,32 @@ export const Sprites = (() => {
     const { canvas, ctx } = createOffscreen(w, h);
 
     let cOutline = '#052e16', cBase = '#16a34a', cLight = '#4ade80', cHighlight = '#bbf7d0';
-    if (type === 'ice') {
-      cOutline = '#0c4a6e'; cBase = '#0284c7'; cLight = '#38bdf8'; cHighlight = '#bae6fd';
+    if (type === 'water') {
+      cOutline = '#082f49'; cBase = '#0284c7'; cLight = '#38bdf8'; cHighlight = '#bae6fd';
+    } else if (type === 'ice') {
+      cOutline = '#1e293b'; cBase = '#93c5fd'; cLight = '#dbeafe'; cHighlight = '#ffffff';
     } else if (type === 'sand') {
-      cOutline = '#451a03'; cBase = '#b45309'; cLight = '#f59e0b'; cHighlight = '#fde68a';
+      cOutline = '#78350f'; cBase = '#d97706'; cLight = '#fbbf24'; cHighlight = '#fef08a';
     } else if (type === 'magma') {
-      cOutline = '#450a0a'; cBase = '#dc2626'; cLight = '#f87171'; cHighlight = '#fecaca';
-    } else if (type === 'water') {
-      cOutline = '#082f49'; cBase = '#0369a1'; cLight = '#0ea5e9'; cHighlight = '#7dd3fc';
+      cOutline = '#451a03'; cBase = '#dc2626'; cLight = '#f97316'; cHighlight = '#fde047';
     }
 
     const cx = Math.floor(w / 2);
-    const cy = Math.floor(h / 2);
-
+    // Animazione di squish/bounce elastica (0: normale, 1: schiacciato a terra, 2: allungato in aria)
     let sx = 0, sy = 0, yOff = 0;
-    if (frameIndex === 0) {
-      sx = 0; sy = 0; yOff = 0;
-    } else if (frameIndex === 1) {
-      sx = 1 * PX; sy = -1 * PX; yOff = 1 * PX;
+    if (frameIndex === 1) {
+      sx = 2 * PX;
+      sy = -2 * PX;
+      yOff = 2 * PX;
     } else if (frameIndex === 2) {
-      sx = -1 * PX; sy = 1 * PX; yOff = -1 * PX;
-    } else {
-      sx = 0; sy = 0; yOff = 0;
+      sx = -1 * PX;
+      sy = 3 * PX;
+      yOff = -3 * PX;
     }
 
-    const bx = cx - 8 * PX - sx;
-    const by = cy - 5 * PX - sy + yOff;
-    const bw = 16 * PX + sx * 2;
+    const bx = cx - 7 * PX - sx / 2;
+    const by = h - 14 * PX - sy + yOff;
+    const bw = 14 * PX + sx;
     const bh = 10 * PX + sy;
 
     const rx = Math.round(bx);
@@ -667,24 +778,31 @@ export const Sprites = (() => {
     const rw = Math.round(bw);
     const rh = Math.round(bh);
 
+    // 1. Contorno sagomato pixel art (con angoli arrotondati)
     ctx.fillStyle = cOutline;
-    ctx.fillRect(rx - 1, ry - 1, rw + 2, rh + 2);
+    ctx.fillRect(rx + 2 * PX, ry, rw - 4 * PX, rh);
+    ctx.fillRect(rx, ry + 2 * PX, rw, rh - 2 * PX);
+    ctx.fillRect(rx + 1 * PX, ry + 1 * PX, rw - 2 * PX, rh - 1 * PX);
 
+    // 2. Corpo gelatinoso bombato
     ctx.fillStyle = cBase;
-    ctx.fillRect(rx, ry, rw, rh);
+    ctx.fillRect(rx + 2 * PX, ry + 1 * PX, rw - 4 * PX, rh - 2 * PX);
+    ctx.fillRect(rx + 1 * PX, ry + 2 * PX, rw - 2 * PX, rh - 3 * PX);
 
+    // 3. Riflesso superiore lucido
     ctx.fillStyle = cLight;
-    ctx.fillRect(rx + 1 * PX, ry + 1 * PX, rw - 2 * PX, Math.round(rh * 0.45));
-
+    ctx.fillRect(rx + 3 * PX, ry + 2 * PX, rw - 6 * PX, 2 * PX);
     ctx.fillStyle = cHighlight;
-    ctx.fillRect(rx + 2 * PX, ry + 2 * PX, 3 * PX, 2 * PX);
+    ctx.fillRect(rx + 4 * PX, ry + 2 * PX, 3 * PX, 1 * PX);
 
-    const eyeY = ry + Math.round(rh * 0.35);
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(cx - 3 * PX, eyeY, 2 * PX, 2 * PX);
-    ctx.fillRect(cx + 1 * PX, eyeY, 2 * PX, 2 * PX);
+    // 4. Occhietti carini e riflesso luminoso
+    const eyeY = ry + Math.floor(rh * 0.42);
+    ctx.fillStyle = cOutline;
+    ctx.fillRect(cx - 4 * PX, eyeY, 2 * PX, 3 * PX);
+    ctx.fillRect(cx + 2 * PX, eyeY, 2 * PX, 3 * PX);
+
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(cx - 2 * PX, eyeY, 1 * PX, 1 * PX);
+    ctx.fillRect(cx - 4 * PX, eyeY, 1 * PX, 1 * PX);
     ctx.fillRect(cx + 2 * PX, eyeY, 1 * PX, 1 * PX);
 
     return canvas;
@@ -735,9 +853,9 @@ export const Sprites = (() => {
     ctx.fillStyle = cMain;
     ctx.beginPath();
     ctx.moveTo(cx, cy - 5 * PX);
-    ctx.lineTo(cx + 4 * PX, cy);
-    ctx.lineTo(cx, cy);
-    ctx.lineTo(cx - 4 * PX, cy);
+    ctx.lineTo(cx + 3 * PX, cy);
+    ctx.lineTo(cx, cy - 1 * PX);
+    ctx.lineTo(cx - 3 * PX, cy);
     ctx.closePath();
     ctx.fill();
 
@@ -755,33 +873,26 @@ export const Sprites = (() => {
     return cache.get(key);
   }
 
-  // Procedural fallback per Hero
+  // Fallback procedurale per Hero se asset in caricamento
   const PALETTE = {
     outline: '#090d16',
-    cloakDark: '#1e1b4b',
     cloakMain: '#312e81',
-    cloakLight: '#4f46e5',
-    boots: '#0f172a',
-    skin: '#fde047',
-    skinShadow: '#d97706',
-    hair: '#e2e8f0',
-    hairShadow: '#94a3b8'
+    skin: '#fde047'
   };
 
   function renderHeroFrame(dir, isWalking, frameIndex, weapon = 'staff') {
-    const w = 26 * PX;
-    const h = 28 * PX;
+    const w = 16 * PX;
+    const h = 20 * PX;
     const { canvas, ctx } = createOffscreen(w, h);
-    const bob = isWalking ? Math.sin(frameIndex * Math.PI) * 1.5 * PX : 0;
     const cx = Math.floor(w / 2);
-    const cy = Math.floor(h / 2) + bob;
+    const cy = Math.floor(h / 2);
 
     ctx.fillStyle = PALETTE.outline;
-    ctx.fillRect(cx - 5 * PX, cy - 10 * PX, 10 * PX, 18 * PX);
+    ctx.fillRect(cx - 4 * PX, cy - 8 * PX, 8 * PX, 16 * PX);
     ctx.fillStyle = PALETTE.cloakMain;
-    ctx.fillRect(cx - 4 * PX, cy - 9 * PX, 8 * PX, 16 * PX);
+    ctx.fillRect(cx - 3 * PX, cy - 7 * PX, 6 * PX, 14 * PX);
     ctx.fillStyle = PALETTE.skin;
-    ctx.fillRect(cx - 3 * PX, cy - 8 * PX, 6 * PX, 5 * PX);
+    ctx.fillRect(cx - 2 * PX, cy - 6 * PX, 4 * PX, 4 * PX);
     return canvas;
   }
 
@@ -804,8 +915,8 @@ export const Sprites = (() => {
   function getHeroSprite(dir, isWalking, frame, weapon = 'staff') {
     const key = `hero_${weapon}_${dir}_${isWalking ? 1 : 0}_${frame}`;
     if (!cache.has(key)) {
-      const { canvas, ctx } = createOffscreen(64, 64);
-      drawHero(ctx, 32, 54, dir, isWalking, frame, weapon, 0);
+      const { canvas, ctx } = createOffscreen(32, 40);
+      drawHero(ctx, 16, 38, dir, isWalking, frame, weapon, 0);
       cache.set(key, canvas);
     }
     return cache.get(key);
@@ -814,8 +925,8 @@ export const Sprites = (() => {
   function getSkeletonSprite(dir, isWalking, frame) {
     const key = `skel_${dir}_${isWalking ? 1 : 0}_${frame}`;
     if (!cache.has(key)) {
-      const { canvas, ctx } = createOffscreen(64, 64);
-      drawSkeleton(ctx, 32, 50, dir, isWalking, frame, false, 0, 0.36, 0);
+      const { canvas, ctx } = createOffscreen(48, 48);
+      drawSkeleton(ctx, 24, 37, dir, isWalking, frame, false, 0, 0.36, 0);
       cache.set(key, canvas);
     }
     return cache.get(key);
