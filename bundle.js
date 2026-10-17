@@ -1465,9 +1465,65 @@
   })();
 
   // src/core/sprites.js
-  var Sprites = /* @__PURE__ */ (() => {
+  var Sprites = (() => {
     const PX = 2;
     const cache = /* @__PURE__ */ new Map();
+    const ASSETS = {
+      // Eroi
+      hero_adventurer: "assets/sprites/hero/hero_adventurer.png",
+      hero_knight: "assets/sprites/hero/hero_knight.png",
+      hero_mage: "assets/sprites/hero/hero_mage.png",
+      // Fabbri NPC dei 6 Villaggi
+      bs_citadel: "assets/sprites/npcs/blacksmith_thorgar.png",
+      bs_waterfall: "assets/sprites/npcs/blacksmith_ronald.png",
+      bs_frostpeak: "assets/sprites/npcs/blacksmith_vorn.png",
+      bs_oasis: "assets/sprites/npcs/blacksmith_rashid.png",
+      bs_cineris: "assets/sprites/npcs/blacksmith_ignis.png",
+      bs_sylva: "assets/sprites/npcs/blacksmith_elora.png",
+      // Scheletro Guardiano (TopDown)
+      skel_front_walk: "assets/sprites/skeleton/skel_front_walk.png",
+      skel_back_walk: "assets/sprites/skeleton/skel_back_walk.png",
+      skel_right_walk: "assets/sprites/skeleton/skel_right_walk.png",
+      skel_front_idle: "assets/sprites/skeleton/skel_front_idle.png",
+      skel_back_idle: "assets/sprites/skeleton/skel_back_idle.png",
+      skel_right_idle: "assets/sprites/skeleton/skel_right_idle.png",
+      skel_front_die: "assets/sprites/skeleton/skel_front_die.png",
+      skel_front_attack: "assets/sprites/skeleton/skel_front_attack.png",
+      // Orco Guerriero / Warlord (TopDown)
+      orc_front_walk: "assets/sprites/orc/orc_front_walk.png",
+      orc_back_walk: "assets/sprites/orc/orc_back_walk.png",
+      orc_right_walk: "assets/sprites/orc/orc_right_walk.png",
+      orc_front_idle: "assets/sprites/orc/orc_front_idle.png",
+      orc_front_attack: "assets/sprites/orc/orc_front_attack.png",
+      orc_front_die: "assets/sprites/orc/orc_front_die.png",
+      // Pipistrello dell'Ombra (32x32 TopDown)
+      bat_front_walk: "assets/sprites/bat/bat_front_walk.png",
+      bat_front_idle: "assets/sprites/bat/bat_front_idle.png",
+      bat_front_die: "assets/sprites/bat/bat_front_die.png"
+    };
+    const images = {};
+    let assetsLoaded = false;
+    function loadAssets() {
+      if (typeof Image === "undefined") return;
+      let pending = Object.keys(ASSETS).length;
+      for (const [key, src] of Object.entries(ASSETS)) {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+          pending--;
+          if (pending <= 0) assetsLoaded = true;
+        };
+        img.onerror = () => {
+          pending--;
+        };
+        images[key] = img;
+      }
+    }
+    loadAssets();
+    function isReady(key) {
+      const img = images[key];
+      return img && img.complete && img.naturalWidth > 0;
+    }
     function dirFromAngle(angle) {
       return (Math.round((Math.PI / 2 - angle) / (Math.PI / 4)) % 8 + 8) % 8;
     }
@@ -1479,122 +1535,6 @@
       ctx.imageSmoothingEnabled = false;
       return { canvas: c, ctx };
     }
-    const PALETTE = {
-      outline: "#090d16",
-      cloakDark: "#1e1b4b",
-      cloakMain: "#312e81",
-      cloakLight: "#4f46e5",
-      tunic: "#0284c7",
-      tunicLight: "#38bdf8",
-      belt: "#b45309",
-      buckle: "#fde047",
-      skin: "#fde047",
-      skinShadow: "#d97706",
-      hair: "#e2e8f0",
-      hairShadow: "#94a3b8",
-      boots: "#0f172a",
-      staffWood: "#451a03",
-      staffLight: "#78350f",
-      gemGlow: "#38bdf8",
-      gemCore: "#ffffff"
-    };
-    function renderHeroFrame(dir, isWalking, frameIndex, weapon = "staff") {
-      const w = 26 * PX;
-      const h = 28 * PX;
-      const { canvas, ctx } = createOffscreen(w, h);
-      const bob = isWalking ? Math.sin(frameIndex * Math.PI) * 1.5 * PX : frameIndex % 2 === 1 ? -1 * PX : 0;
-      const leg = isWalking ? (frameIndex % 2 === 0 ? 1 : -1) * 2 * PX : 0;
-      const cx = Math.floor(w / 2);
-      const cy = Math.floor(h / 2) + bob;
-      const isFacingUp = dir === 3 || dir === 4 || dir === 5;
-      const isFacingRight = dir === 1 || dir === 2 || dir === 3;
-      const isFacingLeft = dir === 5 || dir === 6 || dir === 7;
-      ctx.fillStyle = PALETTE.outline;
-      ctx.fillRect(cx - 6 * PX, cy - 4 * PX, 12 * PX, 13 * PX);
-      ctx.fillStyle = PALETTE.cloakDark;
-      ctx.fillRect(cx - 5 * PX, cy - 3 * PX, 10 * PX, 11 * PX);
-      ctx.fillStyle = PALETTE.outline;
-      ctx.fillRect(cx - 4 * PX - 1, cy + 6 * PX + leg - 1, 3 * PX + 2, 4 * PX + 2);
-      ctx.fillRect(cx + 1 * PX - 1, cy + 6 * PX - leg - 1, 3 * PX + 2, 4 * PX + 2);
-      ctx.fillStyle = PALETTE.boots;
-      ctx.fillRect(cx - 4 * PX, cy + 6 * PX + leg, 3 * PX, 4 * PX);
-      ctx.fillRect(cx + 1 * PX, cy + 6 * PX - leg, 3 * PX, 4 * PX);
-      ctx.fillStyle = PALETTE.cloakMain;
-      ctx.fillRect(cx - 4 * PX, cy - 4 * PX, 8 * PX, 10 * PX);
-      ctx.fillStyle = PALETTE.cloakLight;
-      ctx.fillRect(isFacingLeft ? cx - 4 * PX : cx + 2 * PX, cy - 4 * PX, 2 * PX, 10 * PX);
-      ctx.fillStyle = PALETTE.belt;
-      ctx.fillRect(cx - 4 * PX, cy + 2 * PX, 8 * PX, 2 * PX);
-      ctx.fillStyle = PALETTE.buckle;
-      ctx.fillRect(cx - 1 * PX, cy + 2 * PX, 2 * PX, 2 * PX);
-      ctx.fillStyle = PALETTE.outline;
-      ctx.fillRect(cx - 5 * PX, cy - 12 * PX, 10 * PX, 8 * PX);
-      ctx.fillStyle = PALETTE.hair;
-      ctx.fillRect(cx - 4 * PX, cy - 11 * PX, 8 * PX, 7 * PX);
-      ctx.fillStyle = PALETTE.hairShadow;
-      ctx.fillRect(cx - 4 * PX, cy - 6 * PX, 8 * PX, 2 * PX);
-      if (!isFacingUp) {
-        ctx.fillStyle = PALETTE.skin;
-        ctx.fillRect(cx - 3 * PX, cy - 9 * PX, 6 * PX, 5 * PX);
-        ctx.fillStyle = PALETTE.skinShadow;
-        ctx.fillRect(cx - 3 * PX, cy - 5 * PX, 6 * PX, 1 * PX);
-        ctx.fillStyle = "#0f172a";
-        if (isFacingRight) {
-          ctx.fillRect(cx + 1 * PX, cy - 8 * PX, 2 * PX, 2 * PX);
-        } else if (isFacingLeft) {
-          ctx.fillRect(cx - 3 * PX, cy - 8 * PX, 2 * PX, 2 * PX);
-        } else {
-          ctx.fillRect(cx - 2 * PX, cy - 8 * PX, 1.5 * PX, 2 * PX);
-          ctx.fillRect(cx + 1 * PX, cy - 8 * PX, 1.5 * PX, 2 * PX);
-        }
-      }
-      ctx.fillStyle = PALETTE.cloakMain;
-      ctx.fillRect(cx - 5 * PX, cy - 13 * PX, 10 * PX, 3 * PX);
-      ctx.fillStyle = PALETTE.cloakLight;
-      ctx.fillRect(cx - 4 * PX, cy - 14 * PX, 8 * PX, 2 * PX);
-      const wepX = isFacingLeft ? cx - 8 * PX : cx + 6 * PX;
-      const wepY = cy - 9 * PX;
-      if (weapon === "sword") {
-        ctx.fillStyle = PALETTE.outline;
-        ctx.fillRect(wepX - 1, wepY - 2 * PX, 2 * PX + 2, 13 * PX + 2);
-        ctx.fillStyle = "#e2e8f0";
-        ctx.fillRect(wepX, wepY - 2 * PX, 2 * PX, 13 * PX);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(wepX, wepY - 2 * PX, 1 * PX, 13 * PX);
-        ctx.fillStyle = PALETTE.outline;
-        ctx.fillRect(wepX - 2 * PX - 1, wepY + 8 * PX - 1, 6 * PX + 2, 2 * PX + 2);
-        ctx.fillStyle = "#f59e0b";
-        ctx.fillRect(wepX - 2 * PX, wepY + 8 * PX, 6 * PX, 2 * PX);
-        ctx.fillStyle = "#78350f";
-        ctx.fillRect(wepX, wepY + 10 * PX, 2 * PX, 3 * PX);
-        ctx.fillStyle = "#f59e0b";
-        ctx.fillRect(wepX, wepY + 13 * PX, 2 * PX, 1 * PX);
-      } else if (weapon === "bow") {
-        ctx.fillStyle = PALETTE.outline;
-        ctx.fillRect(wepX - 1, wepY - 1 * PX, 3 * PX + 2, 16 * PX + 2);
-        ctx.fillStyle = "#92400e";
-        ctx.fillRect(wepX, wepY - 1 * PX, 3 * PX, 16 * PX);
-        ctx.fillStyle = "#d97706";
-        ctx.fillRect(wepX + 1 * PX, wepY + 1 * PX, 1 * PX, 12 * PX);
-        ctx.fillStyle = "#f8fafc";
-        const cordX = isFacingLeft ? wepX + 3 * PX : wepX - 1 * PX;
-        ctx.fillRect(cordX, wepY, 1 * PX, 14 * PX);
-      } else {
-        ctx.fillStyle = PALETTE.outline;
-        ctx.fillRect(wepX - 1, wepY - 1, 2 * PX + 2, 16 * PX + 2);
-        ctx.fillStyle = PALETTE.staffWood;
-        ctx.fillRect(wepX, wepY, 2 * PX, 16 * PX);
-        ctx.fillStyle = PALETTE.staffLight;
-        ctx.fillRect(wepX, wepY, 1 * PX, 16 * PX);
-        ctx.fillStyle = "rgba(56, 189, 248, 0.4)";
-        ctx.fillRect(wepX - 2 * PX, wepY - 3 * PX, 6 * PX, 6 * PX);
-        ctx.fillStyle = PALETTE.gemGlow;
-        ctx.fillRect(wepX - 1 * PX, wepY - 2 * PX, 4 * PX, 4 * PX);
-        ctx.fillStyle = PALETTE.gemCore;
-        ctx.fillRect(wepX, wepY - 1 * PX, 2 * PX, 2 * PX);
-      }
-      return canvas;
-    }
     function drawShadow(ctx, x, y, radius = 10) {
       ctx.save();
       ctx.fillStyle = "rgba(8, 12, 20, 0.45)";
@@ -1603,125 +1543,499 @@
       ctx.fill();
       ctx.restore();
     }
+    function drawHero(ctx, x, y, dir, isWalking, frame, weapon = "staff", animTimer = 0) {
+      if (isReady("hero_adventurer")) {
+        const img = images["hero_adventurer"];
+        let row = 0;
+        if (dir === 4 || dir === 3 || dir === 5) row = 3;
+        else if (dir === 2 || dir === 1) row = 2;
+        else if (dir === 6 || dir === 7) row = 1;
+        else row = 0;
+        let col = 1;
+        let bob = 0;
+        if (isWalking) {
+          const walkCycle = [1, 0, 1, 2];
+          const step = Math.floor(animTimer * 1.5) % 4;
+          col = walkCycle[step];
+          bob = (col === 1 ? -1 : 0) * PX;
+        } else {
+          bob = Math.round(Math.sin(animTimer * 2.5) * 0.75 * PX);
+        }
+        const sw = 32;
+        const sh = 32;
+        const dw = 32 * PX;
+        const dh = 32 * PX;
+        const dx = Math.round(x - dw / 2);
+        const dy = Math.round(y - dh + 10) + bob;
+        if (row === 3) {
+          drawEquippedWeapon(ctx, x, y, dir, row, weapon, bob, true);
+        }
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, col * sw, row * sh, sw, sh, dx, dy, dw, dh);
+        ctx.restore();
+        if (row !== 3) {
+          drawEquippedWeapon(ctx, x, y, dir, row, weapon, bob, false);
+        }
+        return;
+      }
+      const fb = renderHeroFrame(dir, isWalking, frame, weapon);
+      ctx.drawImage(fb, Math.round(x - fb.width / 2), Math.round(y - fb.height + 8));
+    }
+    function drawEquippedWeapon(ctx, x, y, dir, row, weapon, bob = 0, isBehind = false) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      const isFacingLeft = row === 1;
+      const isFacingRight = row === 2;
+      const isFacingUp = row === 3;
+      const isFacingDown = row === 0;
+      const wepX = Math.round(x + (isFacingLeft ? -14 * PX : isFacingRight ? 10 * PX : 9 * PX));
+      const wepY = Math.round(y - 20 * PX + bob + (isBehind ? 2 * PX : 0));
+      if (weapon === "sword") {
+        ctx.fillStyle = "#090d16";
+        ctx.fillRect(wepX - 1, wepY - 4 * PX, 2 * PX + 2, 14 * PX + 2);
+        ctx.fillStyle = "#cbd5e1";
+        ctx.fillRect(wepX, wepY - 4 * PX, 2 * PX, 14 * PX);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(wepX, wepY - 4 * PX, 1 * PX, 14 * PX);
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillRect(wepX - 3 * PX, wepY + 6 * PX, 8 * PX, 2 * PX);
+        ctx.fillStyle = "#b45309";
+        ctx.fillRect(wepX, wepY + 8 * PX, 2 * PX, 3 * PX);
+        ctx.fillStyle = "#f59e0b";
+        ctx.fillRect(wepX, wepY + 11 * PX, 2 * PX, 1 * PX);
+      } else if (weapon === "bow") {
+        ctx.fillStyle = "#090d16";
+        ctx.fillRect(wepX - 1, wepY - 3 * PX, 3 * PX + 2, 16 * PX + 2);
+        ctx.fillStyle = "#92400e";
+        ctx.fillRect(wepX, wepY - 3 * PX, 3 * PX, 16 * PX);
+        ctx.fillStyle = "#d97706";
+        ctx.fillRect(wepX + 1 * PX, wepY - 1 * PX, 1 * PX, 12 * PX);
+        ctx.fillStyle = "#f8fafc";
+        const cordX = isFacingLeft ? wepX + 3 * PX : wepX - 1 * PX;
+        ctx.fillRect(cordX, wepY - 2 * PX, 1 * PX, 14 * PX);
+      } else {
+        ctx.fillStyle = "#090d16";
+        ctx.fillRect(wepX - 1, wepY - 4 * PX, 2 * PX + 2, 18 * PX + 2);
+        ctx.fillStyle = "#5b21b6";
+        ctx.fillRect(wepX, wepY - 4 * PX, 2 * PX, 18 * PX);
+        ctx.fillStyle = "#7c3aed";
+        ctx.fillRect(wepX, wepY - 4 * PX, 1 * PX, 18 * PX);
+        const pulse = Math.sin(Date.now() / 220) * 0.2 + 0.8;
+        ctx.fillStyle = `rgba(56, 189, 248, ${0.4 * pulse})`;
+        ctx.fillRect(wepX - 3 * PX, wepY - 7 * PX, 8 * PX, 8 * PX);
+        ctx.fillStyle = "#38bdf8";
+        ctx.fillRect(wepX - 2 * PX, wepY - 6 * PX, 6 * PX, 6 * PX);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(wepX - 1 * PX, wepY - 5 * PX, 3 * PX, 3 * PX);
+      }
+      ctx.restore();
+    }
+    function drawSkeleton(ctx, x, y, dir, isWalking, frame, isDying = false, deathTimer = 0, deathMaxTimer = 0.36, animTimer = 0) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      if (isDying && isReady("skel_front_die")) {
+        const img = images["skel_front_die"];
+        const p = 1 - Math.max(0, deathTimer / deathMaxTimer);
+        const frameIdx = Math.min(5, Math.floor(p * 6));
+        const sw = 48;
+        const sh = 48;
+        const dw = Math.round(48 * 1.35);
+        const dh = Math.round(48 * 1.35);
+        ctx.globalAlpha = Math.max(0.1, 1 - p * 0.9);
+        ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(y - dh + 14), dw, dh);
+        ctx.restore();
+        return;
+      }
+      let imgKey = "skel_front_walk";
+      let flipX = false;
+      const isFacingNorth = dir === 3 || dir === 4 || dir === 5;
+      const isFacingEast = dir === 1 || dir === 2;
+      const isFacingWest = dir === 6 || dir === 7;
+      if (isWalking) {
+        if (isFacingNorth) imgKey = "skel_back_walk";
+        else if (isFacingEast) imgKey = "skel_right_walk";
+        else if (isFacingWest) {
+          imgKey = "skel_right_walk";
+          flipX = true;
+        } else imgKey = "skel_front_walk";
+      } else {
+        if (isFacingNorth) imgKey = "skel_back_idle";
+        else if (isFacingEast) imgKey = "skel_right_idle";
+        else if (isFacingWest) {
+          imgKey = "skel_right_idle";
+          flipX = true;
+        } else imgKey = "skel_front_idle";
+      }
+      if (isReady(imgKey)) {
+        const img = images[imgKey];
+        const maxFrames = isWalking ? 8 : 5;
+        const frameIdx = Math.floor(animTimer * (isWalking ? 1.6 : 1)) % maxFrames;
+        const sw = 48;
+        const sh = 48;
+        const dw = Math.round(48 * 1.35);
+        const dh = Math.round(48 * 1.35);
+        const dx = Math.round(x - dw / 2);
+        const dy = Math.round(y - dh + 14);
+        if (flipX) {
+          ctx.translate(Math.round(x), 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(img, frameIdx * sw, 0, sw, sh, -Math.round(dw / 2), dy, dw, dh);
+        } else {
+          ctx.drawImage(img, frameIdx * sw, 0, sw, sh, dx, dy, dw, dh);
+        }
+        if (!isFacingNorth && Math.sin(animTimer * 4) > -0.2) {
+          ctx.fillStyle = "#ef4444";
+          const eyeOffsetX = flipX ? -4 : 3;
+          ctx.fillRect(Math.round(x + eyeOffsetX - 2), Math.round(y - 28), 2, 2);
+          ctx.fillRect(Math.round(x + eyeOffsetX + 3), Math.round(y - 28), 2, 2);
+        }
+        ctx.restore();
+        return;
+      }
+      ctx.restore();
+      const fb = renderSkeletonFrame(dir, isWalking, frame);
+      ctx.drawImage(fb, Math.round(x - fb.width / 2), Math.round(y - fb.height + 8));
+    }
+    function drawOrc(ctx, x, y, dir, isWalking, frame, isDying = false, deathTimer = 0, deathMaxTimer = 0.45, animTimer = 0, scale = 1) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      if (isDying && isReady("orc_front_die")) {
+        const img = images["orc_front_die"];
+        const p = 1 - Math.max(0, deathTimer / deathMaxTimer);
+        const frameIdx = Math.min(5, Math.floor(p * 6));
+        const sw = 48;
+        const sh = 48;
+        const dw = Math.round(48 * 1.45 * scale);
+        const dh = Math.round(48 * 1.45 * scale);
+        ctx.globalAlpha = Math.max(0.1, 1 - p * 0.9);
+        ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(y - dh + 16 * scale), dw, dh);
+        ctx.restore();
+        return;
+      }
+      let imgKey = isWalking ? "orc_front_walk" : "orc_front_idle";
+      let flipX = false;
+      const isFacingNorth = dir === 3 || dir === 4 || dir === 5;
+      const isFacingEast = dir === 1 || dir === 2;
+      const isFacingWest = dir === 6 || dir === 7;
+      if (isWalking) {
+        if (isFacingNorth) imgKey = "orc_back_walk";
+        else if (isFacingEast) imgKey = "orc_right_walk";
+        else if (isFacingWest) {
+          imgKey = "orc_right_walk";
+          flipX = true;
+        } else imgKey = "orc_front_walk";
+      } else {
+        imgKey = "orc_front_idle";
+        if (isFacingWest) flipX = true;
+      }
+      if (isReady(imgKey)) {
+        const img = images[imgKey];
+        const maxFrames = isWalking ? 10 : 8;
+        const frameIdx = Math.floor(animTimer * (isWalking ? 1.4 : 1)) % maxFrames;
+        const sw = 48;
+        const sh = 48;
+        const dw = Math.round(48 * 1.45 * scale);
+        const dh = Math.round(48 * 1.45 * scale);
+        const dy = Math.round(y - dh + 16 * scale);
+        if (flipX) {
+          ctx.translate(Math.round(x), 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(img, frameIdx * sw, 0, sw, sh, -Math.round(dw / 2), dy, dw, dh);
+        } else {
+          ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), dy, dw, dh);
+        }
+        ctx.restore();
+        return;
+      }
+      ctx.restore();
+      const fb = renderSkeletonFrame(dir, isWalking, frame);
+      ctx.drawImage(fb, Math.round(x - fb.width / 2), Math.round(y - fb.height + 8));
+    }
+    function drawBat(ctx, x, y, dir, isWalking, frame, isDying = false, deathTimer = 0, deathMaxTimer = 0.3, animTimer = 0) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      drawShadow(ctx, x, y + 6, 8);
+      const bob = Math.round(Math.sin(animTimer * 7) * 4);
+      const flyY = y - 10 + bob;
+      if (isDying && isReady("bat_front_die")) {
+        const img = images["bat_front_die"];
+        const p = 1 - Math.max(0, deathTimer / deathMaxTimer);
+        const frameIdx = Math.min(10, Math.floor(p * 11));
+        const sw = 32;
+        const sh = 32;
+        const dw = 32 * PX;
+        const dh = 32 * PX;
+        ctx.globalAlpha = Math.max(0.1, 1 - p);
+        ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(flyY - dh / 2), dw, dh);
+        ctx.restore();
+        return;
+      }
+      const imgKey = isWalking ? "bat_front_walk" : "bat_front_idle";
+      if (isReady(imgKey)) {
+        const img = images[imgKey];
+        const maxFrames = isWalking ? 4 : 8;
+        const frameIdx = Math.floor(animTimer * 6) % maxFrames;
+        const sw = 32;
+        const sh = 32;
+        const dw = 32 * PX;
+        const dh = 32 * PX;
+        ctx.drawImage(img, frameIdx * sw, 0, sw, sh, Math.round(x - dw / 2), Math.round(flyY - dh / 2), dw, dh);
+        ctx.restore();
+        return;
+      }
+      ctx.restore();
+    }
+    function drawBlacksmithNPC(ctx, x, y, bsId = "bs_citadel", playerX = 0, playerY = 0, animTimer = 0) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      drawShadow(ctx, x, y + 2, 16);
+      const distToPlayer = Math.hypot(playerX - x, playerY - y);
+      let row = 0;
+      if (distToPlayer < 85) {
+        const dx = playerX - x;
+        const dy = playerY - y;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          row = dx > 0 ? 2 : 1;
+        } else {
+          row = dy > 0 ? 0 : 3;
+        }
+      } else {
+        row = 1;
+      }
+      const imgKey = bsId || "bs_citadel";
+      if (isReady(imgKey)) {
+        const img = images[imgKey];
+        const isHammering = distToPlayer >= 85;
+        const hammerCycle = [1, 0, 1, 2];
+        const col = isHammering ? hammerCycle[Math.floor(animTimer * 2) % 4] : 1;
+        const sw = 32;
+        const sh = 32;
+        const dw = 32 * PX;
+        const dh = 32 * PX;
+        const fx = Math.round(x - dw / 2 + 6 * PX);
+        const fy = Math.round(y - dh + 6);
+        ctx.drawImage(img, col * sw, row * sh, sw, sh, fx, fy, dw, dh);
+        if (isHammering && col === 2 && Math.random() < 0.25) {
+          ctx.fillStyle = "#fde047";
+          ctx.fillRect(Math.round(x - 14 * PX), Math.round(y - 8 * PX), 2 * PX, 2 * PX);
+          ctx.fillStyle = "#f97316";
+          ctx.fillRect(Math.round(x - 12 * PX), Math.round(y - 10 * PX), 1.5 * PX, 1.5 * PX);
+        }
+      }
+      const anvilX = Math.round(x - 14 * PX);
+      const anvilY = Math.round(y - 12 * PX);
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(anvilX - 1, anvilY - 1, 14 * PX + 2, 10 * PX + 2);
+      ctx.fillStyle = "#475569";
+      ctx.fillRect(anvilX, anvilY, 14 * PX, 10 * PX);
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillRect(anvilX + 1 * PX, anvilY + 1 * PX, 12 * PX, 2 * PX);
+      ctx.fillStyle = "#334155";
+      ctx.fillRect(anvilX + 4 * PX, anvilY + 3 * PX, 6 * PX, 4 * PX);
+      ctx.fillStyle = "#f97316";
+      ctx.fillRect(anvilX + 3 * PX, anvilY + 1 * PX, 8 * PX, 1.5 * PX);
+      ctx.fillStyle = "#fde047";
+      ctx.fillRect(anvilX + 5 * PX, anvilY + 1 * PX, 4 * PX, 1 * PX);
+      ctx.font = "bold 10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+      ctx.fillRect(Math.round(x - 42), Math.round(y - 54), 84, 18);
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(Math.round(x - 42), Math.round(y - 54), 84, 18);
+      ctx.fillStyle = "#fde047";
+      ctx.fillText("\u{1F528} Fabbro [E]", Math.round(x), Math.round(y - 41));
+      ctx.restore();
+    }
+    function drawBoss(ctx, enemy, dt = 0) {
+      const isWalking = enemy.state === "CHASE" || enemy.state === "WANDER" && enemy.isWanderMoving;
+      const animTimer = enemy.animTimer || 0;
+      ctx.save();
+      if (enemy.kind === "boss_scorpion") {
+        const pulse = Math.sin(Date.now() / 240) * 0.15 + 0.35;
+        const glow = ctx.createRadialGradient(enemy.x, enemy.y - 16, 12, enemy.x, enemy.y - 16, 72);
+        glow.addColorStop(0, `rgba(245, 158, 11, ${pulse})`);
+        glow.addColorStop(0.7, `rgba(217, 119, 6, ${pulse * 0.4})`);
+        glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y - 16, 72, 0, Math.PI * 2);
+        ctx.fill();
+        drawOrc(ctx, enemy.x, enemy.y, enemy.dir, isWalking, enemy.frame, enemy.isDying, enemy.deathTimer, enemy.deathMaxTimer, animTimer, 2.2);
+        ctx.restore();
+        return;
+      }
+      if (enemy.kind === "boss_magma") {
+        const pulse = Math.sin(Date.now() / 200) * 0.18 + 0.45;
+        const glow = ctx.createRadialGradient(enemy.x, enemy.y - 20, 14, enemy.x, enemy.y - 20, 85);
+        glow.addColorStop(0, `rgba(239, 68, 68, ${pulse})`);
+        glow.addColorStop(0.5, `rgba(249, 115, 22, ${pulse * 0.5})`);
+        glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y - 20, 85, 0, Math.PI * 2);
+        ctx.fill();
+        if (isReady("bs_cineris")) {
+          const img = images["bs_cineris"];
+          const row = enemy.dir === 4 || enemy.dir === 3 || enemy.dir === 5 ? 3 : enemy.dir === 2 ? 2 : enemy.dir === 6 ? 1 : 0;
+          const col = isWalking ? [1, 0, 1, 2][Math.floor(animTimer * 1.4) % 4] : 1;
+          const sw = 32;
+          const sh = 32;
+          const dw = Math.round(32 * 2.5 * PX);
+          const dh = Math.round(32 * 2.5 * PX);
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(img, col * sw, row * sh, sw, sh, Math.round(enemy.x - dw / 2), Math.round(enemy.y - dh + 22), dw, dh);
+          ctx.fillStyle = "#ef4444";
+          ctx.fillRect(Math.round(enemy.x - 14 * PX), Math.round(enemy.y - dh + 8), 3 * PX, 5 * PX);
+          ctx.fillRect(Math.round(enemy.x + 11 * PX), Math.round(enemy.y - dh + 8), 3 * PX, 5 * PX);
+          ctx.fillStyle = "#fde047";
+          ctx.fillRect(Math.round(enemy.x - 13 * PX), Math.round(enemy.y - dh + 5), 2 * PX, 3 * PX);
+          ctx.fillRect(Math.round(enemy.x + 12 * PX), Math.round(enemy.y - dh + 5), 2 * PX, 3 * PX);
+          ctx.restore();
+          return;
+        }
+      }
+      if (enemy.kind === "boss_golem") {
+        const pulse = Math.sin(Date.now() / 250) * 0.15 + 0.38;
+        const glow = ctx.createRadialGradient(enemy.x, enemy.y - 18, 12, enemy.x, enemy.y - 18, 78);
+        glow.addColorStop(0, `rgba(125, 211, 252, ${pulse})`);
+        glow.addColorStop(0.6, `rgba(2, 132, 199, ${pulse * 0.4})`);
+        glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y - 18, 78, 0, Math.PI * 2);
+        ctx.fill();
+        if (isReady("hero_knight")) {
+          const img = images["hero_knight"];
+          const row = enemy.dir === 4 || enemy.dir === 3 || enemy.dir === 5 ? 3 : enemy.dir === 2 ? 2 : enemy.dir === 6 ? 1 : 0;
+          const col = isWalking ? [1, 0, 1, 2][Math.floor(animTimer * 1.4) % 4] : 1;
+          const sw = 32;
+          const sh = 32;
+          const dw = Math.round(32 * 2.3 * PX);
+          const dh = Math.round(32 * 2.3 * PX);
+          ctx.imageSmoothingEnabled = false;
+          ctx.filter = "hue-rotate(180deg) brightness(1.2) saturate(1.4)";
+          ctx.drawImage(img, col * sw, row * sh, sw, sh, Math.round(enemy.x - dw / 2), Math.round(enemy.y - dh + 20), dw, dh);
+          ctx.filter = "none";
+          ctx.fillStyle = "#e0f2fe";
+          ctx.fillRect(Math.round(enemy.x - 16 * PX), Math.round(enemy.y - dh + 18), 4 * PX, 6 * PX);
+          ctx.fillRect(Math.round(enemy.x + 12 * PX), Math.round(enemy.y - dh + 18), 4 * PX, 6 * PX);
+          ctx.restore();
+          return;
+        }
+      }
+      if (enemy.kind === "boss_treant") {
+        const pulse = Math.sin(Date.now() / 260) * 0.15 + 0.35;
+        const glow = ctx.createRadialGradient(enemy.x, enemy.y - 18, 12, enemy.x, enemy.y - 18, 78);
+        glow.addColorStop(0, `rgba(34, 197, 94, ${pulse})`);
+        glow.addColorStop(0.6, `rgba(22, 101, 52, ${pulse * 0.4})`);
+        glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y - 18, 78, 0, Math.PI * 2);
+        ctx.fill();
+        if (isReady("bs_elora")) {
+          const img = images["bs_elora"];
+          const row = enemy.dir === 4 || enemy.dir === 3 || enemy.dir === 5 ? 3 : enemy.dir === 2 ? 2 : enemy.dir === 6 ? 1 : 0;
+          const col = isWalking ? [1, 0, 1, 2][Math.floor(animTimer * 1.3) % 4] : 1;
+          const sw = 32;
+          const sh = 32;
+          const dw = Math.round(32 * 2.3 * PX);
+          const dh = Math.round(32 * 2.3 * PX);
+          ctx.imageSmoothingEnabled = false;
+          ctx.filter = "hue-rotate(90deg) contrast(1.2)";
+          ctx.drawImage(img, col * sw, row * sh, sw, sh, Math.round(enemy.x - dw / 2), Math.round(enemy.y - dh + 20), dw, dh);
+          ctx.filter = "none";
+          ctx.fillStyle = "#15803d";
+          ctx.fillRect(Math.round(enemy.x - 14 * PX), Math.round(enemy.y - dh + 6), 6 * PX, 6 * PX);
+          ctx.fillRect(Math.round(enemy.x + 8 * PX), Math.round(enemy.y - dh + 6), 6 * PX, 6 * PX);
+          ctx.fillStyle = "#4ade80";
+          ctx.fillRect(Math.round(enemy.x - 10 * PX), Math.round(enemy.y - dh + 4), 3 * PX, 3 * PX);
+          ctx.fillRect(Math.round(enemy.x + 7 * PX), Math.round(enemy.y - dh + 4), 3 * PX, 3 * PX);
+          ctx.restore();
+          return;
+        }
+      }
+      ctx.restore();
+    }
     function renderSlimeFrame(type = "forest", frameIndex = 0) {
       const w = 22 * PX;
       const h = 20 * PX;
       const { canvas, ctx } = createOffscreen(w, h);
       let cOutline = "#052e16", cBase = "#16a34a", cLight = "#4ade80", cHighlight = "#bbf7d0";
-      if (type === "water") {
-        cOutline = "#082f49";
+      if (type === "ice") {
+        cOutline = "#0c4a6e";
         cBase = "#0284c7";
         cLight = "#38bdf8";
         cHighlight = "#bae6fd";
-      } else if (type === "ice") {
-        cOutline = "#1e293b";
-        cBase = "#93c5fd";
-        cLight = "#dbeafe";
-        cHighlight = "#ffffff";
       } else if (type === "sand") {
-        cOutline = "#78350f";
-        cBase = "#d97706";
-        cLight = "#fbbf24";
-        cHighlight = "#fef08a";
-      } else if (type === "magma") {
         cOutline = "#451a03";
+        cBase = "#b45309";
+        cLight = "#f59e0b";
+        cHighlight = "#fde68a";
+      } else if (type === "magma") {
+        cOutline = "#450a0a";
         cBase = "#dc2626";
-        cLight = "#f97316";
-        cHighlight = "#fde047";
+        cLight = "#f87171";
+        cHighlight = "#fecaca";
+      } else if (type === "water") {
+        cOutline = "#082f49";
+        cBase = "#0369a1";
+        cLight = "#0ea5e9";
+        cHighlight = "#7dd3fc";
       }
       const cx = Math.floor(w / 2);
-      let sx = 0;
-      let sy = 0;
-      let yOff = 0;
-      if (frameIndex === 1) {
-        sx = 2 * PX;
-        sy = -2 * PX;
-        yOff = 2 * PX;
+      const cy = Math.floor(h / 2);
+      let sx = 0, sy = 0, yOff = 0;
+      if (frameIndex === 0) {
+        sx = 0;
+        sy = 0;
+        yOff = 0;
+      } else if (frameIndex === 1) {
+        sx = 1 * PX;
+        sy = -1 * PX;
+        yOff = 1 * PX;
       } else if (frameIndex === 2) {
         sx = -1 * PX;
-        sy = 3 * PX;
-        yOff = -3 * PX;
+        sy = 1 * PX;
+        yOff = -1 * PX;
+      } else {
+        sx = 0;
+        sy = 0;
+        yOff = 0;
       }
-      const bx = cx - 7 * PX - sx / 2;
-      const by = h - 14 * PX - sy + yOff;
-      const bw = 14 * PX + sx;
+      const bx = cx - 8 * PX - sx;
+      const by = cy - 5 * PX - sy + yOff;
+      const bw = 16 * PX + sx * 2;
       const bh = 10 * PX + sy;
       const rx = Math.round(bx);
       const ry = Math.round(by);
       const rw = Math.round(bw);
       const rh = Math.round(bh);
       ctx.fillStyle = cOutline;
-      ctx.fillRect(rx + 2 * PX, ry, rw - 4 * PX, rh);
-      ctx.fillRect(rx, ry + 2 * PX, rw, rh - 2 * PX);
-      ctx.fillRect(rx + 1 * PX, ry + 1 * PX, rw - 2 * PX, rh - 1 * PX);
+      ctx.fillRect(rx - 1, ry - 1, rw + 2, rh + 2);
       ctx.fillStyle = cBase;
-      ctx.fillRect(rx + 2 * PX, ry + 1 * PX, rw - 4 * PX, rh - 2 * PX);
-      ctx.fillRect(rx + 1 * PX, ry + 2 * PX, rw - 2 * PX, rh - 3 * PX);
+      ctx.fillRect(rx, ry, rw, rh);
       ctx.fillStyle = cLight;
-      ctx.fillRect(rx + 3 * PX, ry + 2 * PX, rw - 6 * PX, 2 * PX);
+      ctx.fillRect(rx + 1 * PX, ry + 1 * PX, rw - 2 * PX, Math.round(rh * 0.45));
       ctx.fillStyle = cHighlight;
-      ctx.fillRect(rx + 4 * PX, ry + 2 * PX, 3 * PX, 1 * PX);
-      const eyeY = ry + Math.floor(rh * 0.42);
-      ctx.fillStyle = cOutline;
-      ctx.fillRect(cx - 4 * PX, eyeY, 2 * PX, 3 * PX);
-      ctx.fillRect(cx + 2 * PX, eyeY, 2 * PX, 3 * PX);
+      ctx.fillRect(rx + 2 * PX, ry + 2 * PX, 3 * PX, 2 * PX);
+      const eyeY = ry + Math.round(rh * 0.35);
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(cx - 3 * PX, eyeY, 2 * PX, 2 * PX);
+      ctx.fillRect(cx + 1 * PX, eyeY, 2 * PX, 2 * PX);
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(cx - 4 * PX, eyeY, 1 * PX, 1 * PX);
+      ctx.fillRect(cx - 2 * PX, eyeY, 1 * PX, 1 * PX);
       ctx.fillRect(cx + 2 * PX, eyeY, 1 * PX, 1 * PX);
       return canvas;
     }
-    function renderSkeletonFrame(dir, isWalking, frameIndex) {
-      const w = 24 * PX;
-      const h = 28 * PX;
-      const { canvas, ctx } = createOffscreen(w, h);
-      const cx = Math.floor(w / 2);
-      const bob = isWalking ? frameIndex % 2 === 1 ? -1 * PX : 0 : 0;
-      const cy = Math.floor(h / 2) + bob;
-      const leg = isWalking ? (frameIndex % 2 === 0 ? 1 : -1) * 2 * PX : 0;
-      const isFacingLeft = dir === 5 || dir === 6 || dir === 7;
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(cx - 3 * PX - 1, cy + 5 * PX + leg - 1, 2 * PX + 2, 5 * PX + 2);
-      ctx.fillRect(cx + 1 * PX - 1, cy + 5 * PX - leg - 1, 2 * PX + 2, 5 * PX + 2);
-      ctx.fillStyle = "#cbd5e1";
-      ctx.fillRect(cx - 3 * PX, cy + 5 * PX + leg, 2 * PX, 5 * PX);
-      ctx.fillRect(cx + 1 * PX, cy + 5 * PX - leg, 2 * PX, 5 * PX);
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(cx - 4 * PX - 1, cy - 3 * PX - 1, 8 * PX + 2, 8 * PX + 2);
-      ctx.fillStyle = "#f1f5f9";
-      ctx.fillRect(cx - 4 * PX, cy - 3 * PX, 8 * PX, 8 * PX);
-      ctx.fillStyle = "#1e293b";
-      ctx.fillRect(cx - 3 * PX, cy - 1 * PX, 6 * PX, 1 * PX);
-      ctx.fillRect(cx - 3 * PX, cy + 1 * PX, 6 * PX, 1 * PX);
-      ctx.fillRect(cx - 2 * PX, cy + 3 * PX, 4 * PX, 1 * PX);
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(cx - 4 * PX - 1, cy - 11 * PX - 1, 8 * PX + 2, 8 * PX + 2);
-      ctx.fillStyle = "#f8fafc";
-      ctx.fillRect(cx - 4 * PX, cy - 11 * PX, 8 * PX, 8 * PX);
-      ctx.fillStyle = "#475569";
-      ctx.fillRect(cx - 5 * PX, cy - 13 * PX, 10 * PX, 4 * PX);
-      ctx.fillStyle = "#94a3b8";
-      ctx.fillRect(cx - 4 * PX, cy - 12 * PX, 8 * PX, 1 * PX);
-      ctx.fillStyle = "#78350f";
-      ctx.fillRect(cx - 1 * PX, cy - 15 * PX, 2 * PX, 2 * PX);
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(cx - 3 * PX, cy - 8 * PX, 2 * PX, 2 * PX);
-      ctx.fillRect(cx + 1 * PX, cy - 8 * PX, 2 * PX, 2 * PX);
-      ctx.fillStyle = "#ef4444";
-      ctx.fillRect(cx - 2 * PX, cy - 8 * PX, 1 * PX, 1 * PX);
-      ctx.fillRect(cx + 2 * PX, cy - 8 * PX, 1 * PX, 1 * PX);
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(cx - 2 * PX, cy - 4 * PX, 4 * PX, 1 * PX);
-      const swordX = isFacingLeft ? cx - 8 * PX : cx + 6 * PX;
-      const swordY = cy - 6 * PX;
-      ctx.fillStyle = "#0f172a";
-      ctx.fillRect(swordX - 1, swordY - 1, 2 * PX + 2, 12 * PX + 2);
-      ctx.fillStyle = "#64748b";
-      ctx.fillRect(swordX, swordY, 2 * PX, 12 * PX);
-      ctx.fillStyle = "#cbd5e1";
-      ctx.fillRect(swordX, swordY, 1 * PX, 12 * PX);
-      ctx.fillStyle = "#9a3412";
-      ctx.fillRect(swordX - 2 * PX, swordY + 8 * PX, 6 * PX, 2 * PX);
-      return canvas;
+    function getSlimeSprite(type, frame) {
+      const key = `slime_${type}_${frame}`;
+      if (!cache.has(key)) {
+        cache.set(key, renderSlimeFrame(type, frame));
+      }
+      return cache.get(key);
     }
     function renderGemFrame(color = "cyan", frameIndex = 0) {
       const w = 14 * PX;
@@ -1761,27 +2075,6 @@
       ctx.fillRect(cx - 1 * PX, cy - 3 * PX, 2 * PX, 3 * PX);
       return canvas;
     }
-    function getHeroSprite(dir, isWalking, frame, weapon = "staff") {
-      const key = `hero_${weapon}_${dir}_${isWalking ? 1 : 0}_${frame}`;
-      if (!cache.has(key)) {
-        cache.set(key, renderHeroFrame(dir, isWalking, frame, weapon));
-      }
-      return cache.get(key);
-    }
-    function getSlimeSprite(type, frame) {
-      const key = `slime_${type}_${frame}`;
-      if (!cache.has(key)) {
-        cache.set(key, renderSlimeFrame(type, frame));
-      }
-      return cache.get(key);
-    }
-    function getSkeletonSprite(dir, isWalking, frame) {
-      const key = `skel_${dir}_${isWalking ? 1 : 0}_${frame}`;
-      if (!cache.has(key)) {
-        cache.set(key, renderSkeletonFrame(dir, isWalking, frame));
-      }
-      return cache.get(key);
-    }
     function getGemSprite(color, frame = 0) {
       const key = `gem_${color}_${frame}`;
       if (!cache.has(key)) {
@@ -1789,14 +2082,80 @@
       }
       return cache.get(key);
     }
+    const PALETTE = {
+      outline: "#090d16",
+      cloakDark: "#1e1b4b",
+      cloakMain: "#312e81",
+      cloakLight: "#4f46e5",
+      boots: "#0f172a",
+      skin: "#fde047",
+      skinShadow: "#d97706",
+      hair: "#e2e8f0",
+      hairShadow: "#94a3b8"
+    };
+    function renderHeroFrame(dir, isWalking, frameIndex, weapon = "staff") {
+      const w = 26 * PX;
+      const h = 28 * PX;
+      const { canvas, ctx } = createOffscreen(w, h);
+      const bob = isWalking ? Math.sin(frameIndex * Math.PI) * 1.5 * PX : 0;
+      const cx = Math.floor(w / 2);
+      const cy = Math.floor(h / 2) + bob;
+      ctx.fillStyle = PALETTE.outline;
+      ctx.fillRect(cx - 5 * PX, cy - 10 * PX, 10 * PX, 18 * PX);
+      ctx.fillStyle = PALETTE.cloakMain;
+      ctx.fillRect(cx - 4 * PX, cy - 9 * PX, 8 * PX, 16 * PX);
+      ctx.fillStyle = PALETTE.skin;
+      ctx.fillRect(cx - 3 * PX, cy - 8 * PX, 6 * PX, 5 * PX);
+      return canvas;
+    }
+    function renderSkeletonFrame(dir, isWalking, frameIndex) {
+      const w = 24 * PX;
+      const h = 28 * PX;
+      const { canvas, ctx } = createOffscreen(w, h);
+      const cx = Math.floor(w / 2);
+      const cy = Math.floor(h / 2);
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(cx - 4 * PX, cy - 10 * PX, 8 * PX, 18 * PX);
+      ctx.fillStyle = "#cbd5e1";
+      ctx.fillRect(cx - 3 * PX, cy - 9 * PX, 6 * PX, 16 * PX);
+      ctx.fillStyle = "#ef4444";
+      ctx.fillRect(cx - 2 * PX, cy - 7 * PX, 2, 2);
+      ctx.fillRect(cx + 1 * PX, cy - 7 * PX, 2, 2);
+      return canvas;
+    }
+    function getHeroSprite(dir, isWalking, frame, weapon = "staff") {
+      const key = `hero_${weapon}_${dir}_${isWalking ? 1 : 0}_${frame}`;
+      if (!cache.has(key)) {
+        const { canvas, ctx } = createOffscreen(64, 64);
+        drawHero(ctx, 32, 54, dir, isWalking, frame, weapon, 0);
+        cache.set(key, canvas);
+      }
+      return cache.get(key);
+    }
+    function getSkeletonSprite(dir, isWalking, frame) {
+      const key = `skel_${dir}_${isWalking ? 1 : 0}_${frame}`;
+      if (!cache.has(key)) {
+        const { canvas, ctx } = createOffscreen(64, 64);
+        drawSkeleton(ctx, 32, 50, dir, isWalking, frame, false, 0, 0.36, 0);
+        cache.set(key, canvas);
+      }
+      return cache.get(key);
+    }
     return {
       PX,
       dirFromAngle,
+      drawShadow,
+      drawHero,
       getHeroSprite,
-      getSlimeSprite,
+      drawSkeleton,
       getSkeletonSprite,
+      drawOrc,
+      drawBat,
+      drawBoss,
+      drawBlacksmithNPC,
+      getSlimeSprite,
       getGemSprite,
-      drawShadow
+      loadAssets
     };
   })();
 
@@ -4321,7 +4680,12 @@
           const pChunkX = Math.floor(anchorX / this.CW);
           const pChunkY = Math.floor(anchorY / this.CW);
           if (pChunkX === cx && pChunkY === cy) {
-            props.push({ type: p.type, x: anchorX, y: anchorY });
+            props.push({
+              type: p.type,
+              x: anchorX,
+              y: anchorY,
+              blacksmithId: s.blacksmith ? s.blacksmith.id : null
+            });
           }
         }
       }
@@ -4371,19 +4735,8 @@
                     ctx.fillRect(Math.round(p.x - sw / 2 + 8), Math.round(p.y - 8), sw - 16, 14);
                     ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 8), sw, sh);
                   } else if (p.type === "blacksmith_npc") {
-                    Sprites.drawShadow(ctx, p.x, p.y - 2, 16);
-                    ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
-                    ctx.save();
-                    ctx.font = "bold 10px sans-serif";
-                    ctx.textAlign = "center";
-                    ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-                    ctx.fillRect(Math.round(p.x - 38), Math.round(p.y - sh - 14), 76, 16);
-                    ctx.strokeStyle = "#f59e0b";
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(Math.round(p.x - 38), Math.round(p.y - sh - 14), 76, 16);
-                    ctx.fillStyle = "#fde047";
-                    ctx.fillText("\u{1F528} Fabbro [E]", Math.round(p.x), Math.round(p.y - sh - 2));
-                    ctx.restore();
+                    const player = entities[0] || { x: 0, y: 0 };
+                    Sprites.drawBlacksmithNPC(ctx, p.x, p.y, p.blacksmithId || "bs_citadel", player.x, player.y, Date.now() / 1e3);
                   } else if (p.type === "waypoint_portal") {
                     Sprites.drawShadow(ctx, p.x, p.y - 2, 20);
                     const pulse = Math.sin(Date.now() / 280) * 0.12 + 0.38;
@@ -4614,14 +4967,7 @@
         return;
       }
       Sprites.drawShadow(ctx, this.x, this.y + 4, 11);
-      const sprite = Sprites.getHeroSprite(this.dir, this.walking, this.frame, this.weapon);
-      const sw = sprite.width;
-      const sh = sprite.height;
-      ctx.drawImage(
-        sprite,
-        Math.round(this.x - sw / 2),
-        Math.round(this.y - sh + 8)
-      );
+      Sprites.drawHero(ctx, this.x, this.y, this.dir, this.walking, this.frame, this.weapon, this.animTimer || 0);
       if ((this.inLiquid || this.inShallowWater) && this.walking) {
         ctx.fillStyle = "rgba(56, 189, 248, 0.75)";
         const splashX = this.x + (Math.random() * 16 - 8);
@@ -4639,6 +4985,8 @@
     slime_magma: "#ef4444",
     slime_water: "#0284c7",
     skeleton: "#cbd5e1",
+    orc: "#84cc16",
+    bat: "#a855f7",
     boss_treant: "#22c55e",
     boss_golem: "#7dd3fc",
     boss_scorpion: "#f59e0b",
@@ -4744,6 +5092,26 @@
         this.r = 13;
         this.aggroRadius = 195;
         this.xpValue = 16;
+        this.gemType = "cyan";
+        this.contactDamage = 8;
+        this.goldValue = 6;
+      } else if (kind === "orc") {
+        this.name = "Orco Predone";
+        this.maxHp = 95;
+        this.baseSpd = 62;
+        this.r = 15;
+        this.aggroRadius = 220;
+        this.xpValue = 30;
+        this.gemType = "emerald";
+        this.contactDamage = 16;
+        this.goldValue = 15;
+      } else if (kind === "bat") {
+        this.name = "Pipistrello dell'Ombra";
+        this.maxHp = 30;
+        this.baseSpd = 90;
+        this.r = 12;
+        this.aggroRadius = 240;
+        this.xpValue = 14;
         this.gemType = "cyan";
         this.contactDamage = 8;
         this.goldValue = 6;
@@ -4893,8 +5261,8 @@
     draw(ctx) {
       if (this.dead) return;
       if (this.isDying) {
-        const p = 1 - this.deathTimer / this.deathMaxTimer;
         if (this.kind.startsWith("slime_")) {
+          const p = 1 - this.deathTimer / this.deathMaxTimer;
           const scaleX = 1 + p * 0.85;
           const scaleY = Math.max(0.06, 1 - p * 1.15);
           ctx.save();
@@ -4910,23 +5278,18 @@
           const sh = sprite.height;
           ctx.drawImage(sprite, Math.round(-sw / 2), Math.round(-sh + 4));
           ctx.restore();
+        } else if (this.kind === "orc") {
+          Sprites.drawOrc(ctx, this.x, this.y, this.dir, false, 0, true, this.deathTimer, this.deathMaxTimer, this.animTimer);
+        } else if (this.kind === "bat") {
+          Sprites.drawBat(ctx, this.x, this.y, this.dir, false, 0, true, this.deathTimer, this.deathMaxTimer, this.animTimer);
+        } else if (this.isBoss) {
+          Sprites.drawBoss(ctx, this);
         } else {
-          ctx.save();
-          ctx.translate(Math.round(this.x), Math.round(this.y + 4 + p * 8));
-          ctx.rotate(p * 0.65 * (this.vx >= 0 ? 1 : -1));
-          ctx.globalAlpha = Math.max(0, 1 - p);
-          if (p < 0.25) {
-            ctx.filter = "brightness(3.0)";
-          }
-          const sprite = Sprites.getSkeletonSprite(this.dir, false, 0);
-          const sw = sprite.width;
-          const sh = sprite.height;
-          ctx.drawImage(sprite, Math.round(-sw / 2), Math.round(-sh + 8));
-          ctx.restore();
+          Sprites.drawSkeleton(ctx, this.x, this.y, this.dir, false, 0, true, this.deathTimer, this.deathMaxTimer, this.animTimer);
         }
         return;
       }
-      const shadowR = this.isBoss ? this.r + 4 : this.kind.startsWith("slime") ? 9 : 10;
+      const shadowR = this.isBoss ? this.r + 6 : this.kind.startsWith("slime") ? 9 : 11;
       Sprites.drawShadow(ctx, this.x, this.y + (this.isBoss ? 8 : 4), shadowR);
       if (this.isBoss) {
         const glow = ctx.createRadialGradient(this.x, this.y - 12, 10, this.x, this.y - 12, 54);
@@ -4947,24 +5310,21 @@
       if (this.flashTimer > 0) {
         ctx.filter = "brightness(2.8)";
       }
+      const isWalking = this.state === "CHASE" || this.state === "WANDER" && this.isWanderMoving;
       if (this.isBoss) {
-        const isWalking = this.state === "CHASE" || this.state === "WANDER" && this.isWanderMoving;
-        const sprite = this.kind === "boss_treant" || this.kind === "boss_magma" ? Sprites.getSkeletonSprite(this.dir, isWalking, this.frame) : Sprites.getSlimeSprite(this.kind === "boss_golem" ? "ice" : "sand", this.frame);
-        const sw = sprite.width * 2.2;
-        const sh = sprite.height * 2.2;
-        ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 12), sw, sh);
+        Sprites.drawBoss(ctx, this);
       } else if (this.kind.startsWith("slime_")) {
         const slimeType = this.kind.replace("slime_", "");
         const sprite = Sprites.getSlimeSprite(slimeType, this.frame);
         const sw = sprite.width;
         const sh = sprite.height;
         ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 8));
+      } else if (this.kind === "orc") {
+        Sprites.drawOrc(ctx, this.x, this.y, this.dir, isWalking, this.frame, false, 0, 0, this.animTimer);
+      } else if (this.kind === "bat") {
+        Sprites.drawBat(ctx, this.x, this.y, this.dir, isWalking, this.frame, false, 0, 0, this.animTimer);
       } else {
-        const isWalking = this.state === "CHASE" || this.state === "WANDER" && this.isWanderMoving;
-        const sprite = Sprites.getSkeletonSprite(this.dir, isWalking, this.frame);
-        const sw = sprite.width;
-        const sh = sprite.height;
-        ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 8));
+        Sprites.drawSkeleton(ctx, this.x, this.y, this.dir, isWalking, this.frame, false, 0, 0, this.animTimer);
       }
       ctx.restore();
       if (this.alertTimer > 0) {
@@ -8885,12 +9245,30 @@
       const tx = world.tileOf(x);
       const ty = world.tileOf(y);
       const b = world.getBiome(tx, ty);
+      const roll = Math.random();
       let kind = "slime_forest";
-      if (b === "river") kind = "slime_water";
-      else if (b === "snow") kind = "slime_ice";
-      else if (b === "desert") kind = "slime_sand";
-      else if (b === "volcano") kind = "slime_magma";
-      else if (Math.random() < 0.28) kind = "skeleton";
+      if (b === "river") {
+        if (roll < 0.55) kind = "slime_water";
+        else if (roll < 0.85) kind = "bat";
+        else kind = "skeleton";
+      } else if (b === "snow") {
+        if (roll < 0.5) kind = "slime_ice";
+        else if (roll < 0.8) kind = "skeleton";
+        else kind = "bat";
+      } else if (b === "desert") {
+        if (roll < 0.45) kind = "slime_sand";
+        else if (roll < 0.8) kind = "orc";
+        else kind = "skeleton";
+      } else if (b === "volcano") {
+        if (roll < 0.45) kind = "slime_magma";
+        else if (roll < 0.8) kind = "orc";
+        else kind = "skeleton";
+      } else {
+        if (roll < 0.45) kind = "slime_forest";
+        else if (roll < 0.7) kind = "skeleton";
+        else if (roll < 0.9) kind = "bat";
+        else kind = "orc";
+      }
       return new Enemy(x, y, kind);
     }
     function drawCrosshairHUD(ctx2, screenX, screenY, dpr = 1) {

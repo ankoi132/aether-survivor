@@ -1026,7 +1026,12 @@ export class World {
         const pChunkX = Math.floor(anchorX / this.CW);
         const pChunkY = Math.floor(anchorY / this.CW);
         if (pChunkX === cx && pChunkY === cy) {
-          props.push({ type: p.type, x: anchorX, y: anchorY });
+          props.push({
+            type: p.type,
+            x: anchorX,
+            y: anchorY,
+            blacksmithId: s.blacksmith ? s.blacksmith.id : null
+          });
         }
       }
     }
@@ -1083,21 +1088,8 @@ export class World {
                   ctx.fillRect(Math.round(p.x - sw / 2 + 8), Math.round(p.y - 8), sw - 16, 14);
                   ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 8), sw, sh);
                 } else if (p.type === 'blacksmith_npc') {
-                  Sprites.drawShadow(ctx, p.x, p.y - 2, 16);
-                  ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 6), sw, sh);
-                  // Indicatore fluttuante sopra la testa del fabbro
-                  ctx.save();
-                  ctx.font = 'bold 10px sans-serif';
-                  ctx.textAlign = 'center';
-                  // Bagliore
-                  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-                  ctx.fillRect(Math.round(p.x - 38), Math.round(p.y - sh - 14), 76, 16);
-                  ctx.strokeStyle = '#f59e0b';
-                  ctx.lineWidth = 1;
-                  ctx.strokeRect(Math.round(p.x - 38), Math.round(p.y - sh - 14), 76, 16);
-                  ctx.fillStyle = '#fde047';
-                  ctx.fillText('🔨 Fabbro [E]', Math.round(p.x), Math.round(p.y - sh - 2));
-                  ctx.restore();
+                  const player = entities[0] || { x: 0, y: 0 };
+                  Sprites.drawBlacksmithNPC(ctx, p.x, p.y, p.blacksmithId || 'bs_citadel', player.x, player.y, Date.now() / 1000);
                 } else if (p.type === 'waypoint_portal') {
                   Sprites.drawShadow(ctx, p.x, p.y - 2, 20);
                   const pulse = Math.sin(Date.now() / 280) * 0.12 + 0.38;

@@ -12,6 +12,8 @@ export const ENEMY_COLORS = {
   slime_magma: '#ef4444',
   slime_water: '#0284c7',
   skeleton: '#cbd5e1',
+  orc: '#84cc16',
+  bat: '#a855f7',
   boss_treant: '#22c55e',
   boss_golem: '#7dd3fc',
   boss_scorpion: '#f59e0b',
@@ -120,6 +122,26 @@ export class Enemy {
       this.r = 13;
       this.aggroRadius = 195;
       this.xpValue = 16;
+      this.gemType = 'cyan';
+      this.contactDamage = 8;
+      this.goldValue = 6;
+    } else if (kind === 'orc') {
+      this.name = 'Orco Predone';
+      this.maxHp = 95;
+      this.baseSpd = 62;
+      this.r = 15;
+      this.aggroRadius = 220;
+      this.xpValue = 30;
+      this.gemType = 'emerald';
+      this.contactDamage = 16;
+      this.goldValue = 15;
+    } else if (kind === 'bat') {
+      this.name = 'Pipistrello dell\'Ombra';
+      this.maxHp = 30;
+      this.baseSpd = 90;
+      this.r = 12;
+      this.aggroRadius = 240;
+      this.xpValue = 14;
       this.gemType = 'cyan';
       this.contactDamage = 8;
       this.goldValue = 6;
@@ -315,10 +337,9 @@ export class Enemy {
 
     // 1. Animazione di Morte
     if (this.isDying) {
-      const p = 1 - (this.deathTimer / this.deathMaxTimer);
-
       if (this.kind.startsWith('slime_')) {
-        // Slime: schiacciamento sul terreno (squash) e dissolvenza con bolle
+        // Slime: schiacciamento sul terreno (squash) e dissolvenza con bolle (inalterato)
+        const p = 1 - (this.deathTimer / this.deathMaxTimer);
         const scaleX = 1 + p * 0.85;
         const scaleY = Math.max(0.06, 1 - p * 1.15);
 
@@ -332,33 +353,26 @@ export class Enemy {
         }
 
         const slimeType = this.kind.replace('slime_', '');
-        const sprite = Sprites.getSlimeSprite(slimeType, 1); // Frame schiacciato
+        const sprite = Sprites.getSlimeSprite(slimeType, 1);
         const sw = sprite.width;
         const sh = sprite.height;
         ctx.drawImage(sprite, Math.round(-sw / 2), Math.round(-sh + 4));
         ctx.restore();
+      } else if (this.kind === 'orc') {
+        Sprites.drawOrc(ctx, this.x, this.y, this.dir, false, 0, true, this.deathTimer, this.deathMaxTimer, this.animTimer);
+      } else if (this.kind === 'bat') {
+        Sprites.drawBat(ctx, this.x, this.y, this.dir, false, 0, true, this.deathTimer, this.deathMaxTimer, this.animTimer);
+      } else if (this.isBoss) {
+        Sprites.drawBoss(ctx, this);
       } else {
-        // Scheletro: crollo all'indietro, sfarfallio e dissolvenza nel fumo
-        ctx.save();
-        ctx.translate(Math.round(this.x), Math.round(this.y + 4 + p * 8));
-        ctx.rotate(p * 0.65 * (this.vx >= 0 ? 1 : -1));
-        ctx.globalAlpha = Math.max(0, 1 - p);
-
-        if (p < 0.25) {
-          ctx.filter = 'brightness(3.0)';
-        }
-
-        const sprite = Sprites.getSkeletonSprite(this.dir, false, 0);
-        const sw = sprite.width;
-        const sh = sprite.height;
-        ctx.drawImage(sprite, Math.round(-sw / 2), Math.round(-sh + 8));
-        ctx.restore();
+        // Scheletro Guardiano: sgretolamento osseo sul terreno
+        Sprites.drawSkeleton(ctx, this.x, this.y, this.dir, false, 0, true, this.deathTimer, this.deathMaxTimer, this.animTimer);
       }
       return;
     }
 
     // 2. Ombra a terra
-    const shadowR = this.isBoss ? (this.r + 4) : (this.kind.startsWith('slime') ? 9 : 10);
+    const shadowR = this.isBoss ? (this.r + 6) : (this.kind.startsWith('slime') ? 9 : 11);
     Sprites.drawShadow(ctx, this.x, this.y + (this.isBoss ? 8 : 4), shadowR);
 
     // Aura maestosa per i Boss
@@ -387,27 +401,25 @@ export class Enemy {
       ctx.filter = 'brightness(2.8)';
     }
 
-    // Render dello sprite pixel-art vivo (con scala imponente 2.2x per i Boss!)
+    // Render dello sprite pixel-art vivo (Boss dedicati, Slime, Scheletri, Orchi, Pipistrelli)
+    const isWalking = this.state === 'CHASE' || (this.state === 'WANDER' && this.isWanderMoving);
+
     if (this.isBoss) {
-      const isWalking = this.state === 'CHASE' || (this.state === 'WANDER' && this.isWanderMoving);
-      const sprite = (this.kind === 'boss_treant' || this.kind === 'boss_magma') ?
-        Sprites.getSkeletonSprite(this.dir, isWalking, this.frame) :
-        Sprites.getSlimeSprite(this.kind === 'boss_golem' ? 'ice' : 'sand', this.frame);
-      const sw = sprite.width * 2.2;
-      const sh = sprite.height * 2.2;
-      ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 12), sw, sh);
+      Sprites.drawBoss(ctx, this);
     } else if (this.kind.startsWith('slime_')) {
+      // Slime: 100% inalterati come richiesto
       const slimeType = this.kind.replace('slime_', '');
       const sprite = Sprites.getSlimeSprite(slimeType, this.frame);
       const sw = sprite.width;
       const sh = sprite.height;
       ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 8));
+    } else if (this.kind === 'orc') {
+      Sprites.drawOrc(ctx, this.x, this.y, this.dir, isWalking, this.frame, false, 0, 0, this.animTimer);
+    } else if (this.kind === 'bat') {
+      Sprites.drawBat(ctx, this.x, this.y, this.dir, isWalking, this.frame, false, 0, 0, this.animTimer);
     } else {
-      const isWalking = this.state === 'CHASE' || (this.state === 'WANDER' && this.isWanderMoving);
-      const sprite = Sprites.getSkeletonSprite(this.dir, isWalking, this.frame);
-      const sw = sprite.width;
-      const sh = sprite.height;
-      ctx.drawImage(sprite, Math.round(this.x - sw / 2), Math.round(this.y - sh + 8));
+      // Scheletro Guardiano (Skeleton01)
+      Sprites.drawSkeleton(ctx, this.x, this.y, this.dir, isWalking, this.frame, false, 0, 0, this.animTimer);
     }
 
     ctx.restore();

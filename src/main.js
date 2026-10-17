@@ -2679,12 +2679,32 @@ window.addEventListener('DOMContentLoaded', async () => {
     const tx = world.tileOf(x);
     const ty = world.tileOf(y);
     const b = world.getBiome(tx, ty);
+    const roll = Math.random();
+
     let kind = 'slime_forest';
-    if (b === 'river') kind = 'slime_water';
-    else if (b === 'snow') kind = 'slime_ice';
-    else if (b === 'desert') kind = 'slime_sand';
-    else if (b === 'volcano') kind = 'slime_magma';
-    else if (Math.random() < 0.28) kind = 'skeleton';
+    if (b === 'river') {
+      if (roll < 0.55) kind = 'slime_water';
+      else if (roll < 0.85) kind = 'bat';
+      else kind = 'skeleton';
+    } else if (b === 'snow') {
+      if (roll < 0.50) kind = 'slime_ice';
+      else if (roll < 0.80) kind = 'skeleton';
+      else kind = 'bat';
+    } else if (b === 'desert') {
+      if (roll < 0.45) kind = 'slime_sand';
+      else if (roll < 0.80) kind = 'orc';
+      else kind = 'skeleton';
+    } else if (b === 'volcano') {
+      if (roll < 0.45) kind = 'slime_magma';
+      else if (roll < 0.80) kind = 'orc';
+      else kind = 'skeleton';
+    } else {
+      // foresta / piana dell'aether
+      if (roll < 0.45) kind = 'slime_forest';
+      else if (roll < 0.70) kind = 'skeleton';
+      else if (roll < 0.90) kind = 'bat';
+      else kind = 'orc';
+    }
     return new Enemy(x, y, kind);
   }
 

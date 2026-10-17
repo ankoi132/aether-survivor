@@ -138,16 +138,8 @@ export class Player {
     // 1. Ombra proiettata sotto i piedi
     Sprites.drawShadow(ctx, this.x, this.y + 4, 11);
 
-    // 2. Sprite del personaggio (centrato sui piedi con arma equipaggiata)
-    const sprite = Sprites.getHeroSprite(this.dir, this.walking, this.frame, this.weapon);
-    const sw = sprite.width;
-    const sh = sprite.height;
-
-    ctx.drawImage(
-      sprite,
-      Math.round(this.x - sw / 2),
-      Math.round(this.y - sh + 8)
-    );
+    // 2. Sprite del personaggio 32x32 animato (con arma equipaggiata)
+    Sprites.drawHero(ctx, this.x, this.y, this.dir, this.walking, this.frame, this.weapon, this.animTimer || 0);
 
     // 3. Effetto particelle schizzo se è in acqua o guado
     if ((this.inLiquid || this.inShallowWater) && this.walking) {
