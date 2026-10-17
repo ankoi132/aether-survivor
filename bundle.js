@@ -252,22 +252,89 @@
         shore: "#78350f"
       },
       village: {
-        floor: ["#64748b", "#718096", "#526075"],
-        // Lastricato in pietra
-        dirt: ["#475569", "#334155", "#475569"],
-        // Sentieri di ciottoli
-        speck: "#334155",
-        light: "#94a3b8",
+        // Lastricato in caldo calcare Serene Village (Cittadella, Sylva)
+        floor: ["#a5907b", "#bfa892", "#8c7b6d"],
+        dirt: ["#7d6961", "#6b5851", "#5a4943"],
+        speck: "#4a3e3d",
+        light: "#d7c4a7",
         flowers: ["#fde047", "#f472b6", "#ffffff"],
-        wallTop: ["#475569", "#526075", "#334155"],
-        wallLight: "#94a3b8",
-        wallEdge: "#0f172a",
+        wallTop: ["#8c7b6d", "#a5907b", "#7d6961"],
+        wallLight: "#d7c4a7",
+        wallEdge: "#3a2e2b",
+        wallFace: ["#5a4943", "#43342f"],
+        wallFaceDark: "#2b211e",
+        liq: "#0284c7",
+        liqDeep: "#0369a1",
+        foam: "#e0f2fe",
+        shore: "#8c7b6d"
+      },
+      village_volcano: {
+        // Lastricato di basalto e ardesia scura vulcanica (Rocca di Cineris)
+        floor: ["#27272a", "#18181b", "#3f3f46"],
+        dirt: ["#18181b", "#09090b", "#27272a"],
+        speck: "#09090b",
+        light: "#52525b",
+        flowers: ["#f59e0b", "#ef4444", "#facc15"],
+        wallTop: ["#27272a", "#3f3f46", "#18181b"],
+        wallLight: "#52525b",
+        wallEdge: "#09090b",
+        wallFace: ["#18181b", "#09090b"],
+        wallFaceDark: "#020617",
+        liq: "#dc2626",
+        liqDeep: "#991b1b",
+        foam: "#facc15",
+        shore: "#27272a"
+      },
+      village_snow: {
+        // Lastricato di pietra alpina con brina e neve (Frostpeak)
+        floor: ["#94a3b8", "#cbd5e1", "#64748b"],
+        dirt: ["#64748b", "#475569", "#334155"],
+        speck: "#475569",
+        light: "#e2e8f0",
+        flowers: ["#7dd3fc", "#ffffff", "#93c5fd"],
+        wallTop: ["#64748b", "#94a3b8", "#475569"],
+        wallLight: "#e2e8f0",
+        wallEdge: "#1e293b",
         wallFace: ["#334155", "#1e293b"],
         wallFaceDark: "#0f172a",
         liq: "#0284c7",
         liqDeep: "#0369a1",
         foam: "#e0f2fe",
-        shore: "#475569"
+        shore: "#94a3b8"
+      },
+      village_desert: {
+        // Lastricato di arenaria dorata delle carovane (Oasi di Al-Zahir)
+        floor: ["#d97706", "#b45309", "#f59e0b"],
+        dirt: ["#92400e", "#78350f", "#451a03"],
+        speck: "#78350f",
+        light: "#fde047",
+        flowers: ["#facc15", "#ef4444", "#fbbf24"],
+        wallTop: ["#b45309", "#d97706", "#92400e"],
+        wallLight: "#fde047",
+        wallEdge: "#451a03",
+        wallFace: ["#78350f", "#451a03"],
+        wallFaceDark: "#291402",
+        liq: "#0284c7",
+        liqDeep: "#0369a1",
+        foam: "#e0f2fe",
+        shore: "#d97706"
+      },
+      village_river: {
+        // Lastricato di ciottoli fluviali levigati (Borgo delle Cascate)
+        floor: ["#64748b", "#718096", "#475569"],
+        dirt: ["#475569", "#334155", "#1e293b"],
+        speck: "#334155",
+        light: "#94a3b8",
+        flowers: ["#38bdf8", "#e0f2fe", "#67e8f9"],
+        wallTop: ["#475569", "#64748b", "#334155"],
+        wallLight: "#94a3b8",
+        wallEdge: "#1e293b",
+        wallFace: ["#334155", "#1e293b"],
+        wallFaceDark: "#0f172a",
+        liq: "#0284c7",
+        liqDeep: "#0369a1",
+        foam: "#ffffff",
+        shore: "#64748b"
       },
       river: {
         floor: ["#16a34a", "#22c55e", "#15803d"],
@@ -463,27 +530,85 @@
         return;
       }
       let dirtCount = 0;
-      const isVillage = biome === "village";
-      for (let y = 0; y < T; y++) {
-        for (let x = 0; x < T; x++) {
-          const gx = tx * T + x, gy = ty * T + y;
-          const lx = ox + x, ly = oy + y;
-          const isDirt = dirtAt(lx, ly);
-          if (isDirt) dirtCount++;
-          const pal = isDirt ? C.dirt : C.floor;
-          const band = hash(gx >> 2, gy >> 2, 11) * 0.7 + hash(gx, gy, 12) * 0.5;
-          let col = pal[Math.min(pal.length - 1, Math.floor(band * pal.length / 1.2))];
-          const r = hash(gx, gy, 13);
-          if (r < 0.04) col = C.speck;
-          else if (r > 0.98) col = C.light;
-          if (isVillage) {
-            if ((x % 8 === 0 || y % 8 === 0) && (x + y) % 2 === 0) {
-              col = C.speck;
+      const isVillage = biome.startsWith("village");
+      if (isVillage) {
+        let cCobbleLight, cCobbleBase, cCobbleDark, cMortar, cAccent;
+        if (biome === "village_volcano") {
+          cCobbleLight = pack("#52525b");
+          cCobbleBase = pack("#27272a");
+          cCobbleDark = pack("#18181b");
+          cMortar = pack("#09090b");
+          cAccent = pack("#ef4444");
+        } else if (biome === "village_snow") {
+          cCobbleLight = pack("#e2e8f0");
+          cCobbleBase = pack("#94a3b8");
+          cCobbleDark = pack("#64748b");
+          cMortar = pack("#475569");
+          cAccent = pack("#ffffff");
+        } else if (biome === "village_desert") {
+          cCobbleLight = pack("#fde047");
+          cCobbleBase = pack("#d97706");
+          cCobbleDark = pack("#b45309");
+          cMortar = pack("#78350f");
+          cAccent = pack("#fbbf24");
+        } else if (biome === "village_river") {
+          cCobbleLight = pack("#94a3b8");
+          cCobbleBase = pack("#64748b");
+          cCobbleDark = pack("#475569");
+          cMortar = pack("#1e293b");
+          cAccent = pack("#38bdf8");
+        } else {
+          cCobbleLight = pack("#d7c4a7");
+          cCobbleBase = pack("#a5907b");
+          cCobbleDark = pack("#7d6961");
+          cMortar = pack("#4a3e3d");
+          cAccent = pack("#bfa892");
+        }
+        for (let y = 0; y < T; y++) {
+          for (let x = 0; x < T; x++) {
+            const gx = tx * T + x, gy = ty * T + y;
+            const stoneRow = Math.floor(gy / 3);
+            const rowShift = stoneRow % 2 === 0 ? 0 : 2;
+            const stoneCol = Math.floor((gx + rowShift) / 5);
+            const lx = (gx + rowShift) % 5;
+            const ly = gy % 3;
+            const sHash = hash(stoneCol, stoneRow, 23);
+            let baseCol = cCobbleBase;
+            if (sHash > 0.68) baseCol = cCobbleLight;
+            else if (sHash < 0.28) baseCol = cCobbleDark;
+            let col;
+            if (lx === 0 || ly === 0) {
+              col = cMortar;
+              if (biome === "village_volcano" && hash(gx, gy, 31) < 0.025) {
+                col = cAccent;
+              }
+            } else if (lx === 1 && ly === 1) {
+              col = cCobbleLight;
+            } else if (lx === 4 || ly === 2) {
+              col = cCobbleDark;
+            } else {
+              col = baseCol;
             }
+            P.set(ox + x, oy + y, col);
           }
-          if (isDirt && !dirtAt(lx, ly - 1)) col = C.speck;
-          else if (!isDirt && dirtAt(lx, ly - 1) && r < 0.5) col = C.light;
-          P.set(ox + x, oy + y, col);
+        }
+      } else {
+        for (let y = 0; y < T; y++) {
+          for (let x = 0; x < T; x++) {
+            const gx = tx * T + x, gy = ty * T + y;
+            const lx = ox + x, ly = oy + y;
+            const isDirt = dirtAt(lx, ly);
+            if (isDirt) dirtCount++;
+            const pal = isDirt ? C.dirt : C.floor;
+            const band = hash(gx >> 2, gy >> 2, 11) * 0.7 + hash(gx, gy, 12) * 0.5;
+            let col = pal[Math.min(pal.length - 1, Math.floor(band * pal.length / 1.2))];
+            const r = hash(gx, gy, 13);
+            if (r < 0.04) col = C.speck;
+            else if (r > 0.98) col = C.light;
+            if (isDirt && !dirtAt(lx, ly - 1)) col = C.speck;
+            else if (!isDirt && dirtAt(lx, ly - 1) && r < 0.5) col = C.light;
+            P.set(ox + x, oy + y, col);
+          }
         }
       }
       if (at(tx, ty - 1) === "wall") {
@@ -771,40 +896,111 @@
       return P.canvas();
     }
     function paintWell() {
-      const P = Pix(28, 30);
-      const cStone = pack("#64748b");
-      const cStoneLight = pack("#94a3b8");
+      const P = Pix(32, 36);
+      const cWoodDark = pack("#382b1d");
       const cWood = pack("#5b4a34");
-      const cWater = pack("#0284c7");
-      const cEdge = pack("#0f172a");
-      for (let y = 2; y <= 9; y++) {
-        const span = Math.round((y - 2) / 7 * 11);
-        for (let x = 14 - span; x <= 14 + span; x++) P.set(x, y, cWood);
+      const cWoodLight = pack("#786245");
+      const cShingleDark = pack("#1e293b");
+      const cShingle = pack("#334155");
+      const cShingleLight = pack("#475569");
+      const cRope = pack("#d97706");
+      const cWaterDark = pack("#0284c7");
+      const cWaterLight = pack("#38bdf8");
+      const cWaterFoam = pack("#e0f2fe");
+      const cStoneDark = pack("#1e293b");
+      const cStoneMid = pack("#334155");
+      const cStoneLight = pack("#475569");
+      const cStoneRim = pack("#64748b");
+      const cEdge = pack("#090d16");
+      for (let y = 21; y <= 33; y++) {
+        for (let x = 4; x <= 27; x++) {
+          const dx = (x - 15.5) / 11.5;
+          const dyTop = (y - 21.5) / 3.5;
+          const isTopRim = dx * dx + dyTop * dyTop <= 1 && y <= 24;
+          if (isTopRim) {
+            const isWater = dx * dx * 1.5 + (y - 22.5) * (y - 22.5) <= 1;
+            if (isWater) {
+              const col = x % 3 === 0 && y === 22 ? cWaterFoam : (x + y) % 2 === 0 ? cWaterLight : cWaterDark;
+              P.set(x, y, col);
+            } else {
+              P.set(x, y, y === 21 ? cStoneRim : cStoneLight);
+            }
+          } else if (y >= 23) {
+            const isLeft = x <= 9;
+            const isRight = x >= 22;
+            const isMortar = y % 4 === 0 || (x + Math.floor(y / 4) * 3) % 5 === 0;
+            let col = isMortar ? cStoneDark : isLeft ? cStoneLight : isRight ? cStoneDark : cStoneMid;
+            if (y === 33) col = cStoneDark;
+            P.set(x, y, col);
+          }
+        }
       }
-      for (let y = 9; y <= 20; y++) {
-        P.set(5, y, cWood);
-        P.set(22, y, cWood);
+      for (let y = 11; y <= 24; y++) {
+        for (let x = 6; x <= 8; x++) {
+          P.set(x, y, x === 6 ? cWoodLight : x === 8 ? cWoodDark : cWood);
+        }
+        for (let x = 23; x <= 25; x++) {
+          P.set(x, y, x === 23 ? cWoodLight : x === 25 ? cWoodDark : cWood);
+        }
       }
-      for (let y = 18; y <= 26; y++) {
-        for (let x = 3; x <= 24; x++) {
-          P.set(x, y, y === 18 && x > 7 && x < 20 ? cWater : x % 3 === 0 ? cStoneLight : cStone);
+      for (let x = 6; x <= 25; x++) {
+        P.set(x, 12, cWoodLight);
+        P.set(x, 13, cWood);
+        P.set(x, 14, cWoodDark);
+      }
+      for (let x = 12; x <= 19; x++) {
+        P.set(x, 15, x % 2 === 0 ? pack("#fde047") : cRope);
+        P.set(x, 16, x % 2 === 0 ? cRope : pack("#92400e"));
+      }
+      for (let y = 17; y <= 21; y++) P.set(15, y, cRope);
+      for (let y = 20; y <= 23; y++) {
+        for (let x = 13; x <= 17; x++) {
+          P.set(x, y, y === 20 || x === 13 || x === 17 ? pack("#475569") : cWood);
+        }
+      }
+      for (let y = 3; y <= 11; y++) {
+        const t = (y - 3) / 8;
+        const span = Math.round(2 + t * 13);
+        for (let x = 15 - span; x <= 16 + span; x++) {
+          const isRidge = x === 15 || x === 16;
+          const isShingleEdge = y % 3 === 0;
+          let col = isRidge ? pack("#64748b") : x < 15 ? cShingleLight : cShingle;
+          if (isShingleEdge) col = cShingleLight;
+          if (y === 11) col = cShingleDark;
+          P.set(x, y, col);
         }
       }
       outline(P, cEdge);
       return P.canvas();
     }
     function paintLamppost() {
-      const P = Pix(16, 32);
+      const P = Pix(16, 34);
+      const cIronDark = pack("#020617");
       const cIron = pack("#1e293b");
+      const cIronMid = pack("#334155");
+      const cIronLight = pack("#64748b");
+      const cGlass = pack("#e0f2fe");
       const cGlow = pack("#fde047");
+      const cCore = pack("#ffffff");
       const cEdge = pack("#020617");
-      for (let y = 8; y <= 29; y++) {
-        P.set(7, y, cIron);
+      for (let x = 5; x <= 10; x++) P.set(x, 32, cIron);
+      for (let x = 6; x <= 9; x++) P.set(x, 31, cIronMid);
+      for (let y = 13; y <= 30; y++) {
+        P.set(7, y, cIronLight);
         P.set(8, y, cIron);
       }
-      for (let y = 4; y <= 10; y++) {
-        for (let x = 5; x <= 10; x++) {
-          P.set(x, y, x === 5 || x === 10 || y === 4 || y === 10 ? cIron : cGlow);
+      for (let x = 7; x <= 12; x++) P.set(x, 8, cIronMid);
+      P.set(13, 9, cIronLight);
+      P.set(13, 10, cIron);
+      for (let x = 10; x <= 14; x++) {
+        P.set(x, 11, cIronMid);
+        P.set(x, 18, cIron);
+      }
+      for (let y = 12; y <= 17; y++) {
+        P.set(10, y, cIronDark);
+        P.set(14, y, cIronDark);
+        for (let x = 11; x <= 13; x++) {
+          P.set(x, y, y === 14 && x === 12 ? cCore : y >= 13 && y <= 15 ? cGlow : cGlass);
         }
       }
       outline(P, cEdge);
@@ -990,29 +1186,110 @@
       return P.canvas();
     }
     function paintVolcanoFort() {
-      const W = 58, H = 58;
+      const W = 80, H = 64;
       const P = Pix(W, H);
-      const cBasalt = pack("#18181b");
-      const cBasaltMid = pack("#27272a");
-      const cLava = pack("#ef4444");
-      const cLavaGlow = pack("#facc15");
+      const cMortar = pack("#09090b");
+      const cBasaltShadow = pack("#14171d");
+      const cBasaltBase = pack("#1e232d");
+      const cBasaltMid = pack("#2c3240");
+      const cBasaltLight = pack("#414a5d");
+      const cBasaltRim = pack("#5a647a");
+      const cIron = pack("#52525b");
+      const cWoodDark = pack("#271b14");
+      const cWoodMid = pack("#3d281a");
+      const cLavaGlow = pack("#fef08a");
+      const cLavaMid = pack("#f59e0b");
+      const cLavaDark = pack("#ef4444");
       const cEdge = pack("#020617");
-      for (let y = 14; y <= 52; y++) {
-        for (let x = 8; x <= 50; x++) {
-          const isLavaVein = x === 18 && y > 24 || x === 40 && y > 24;
-          P.set(x, y, isLavaVein ? cLava : x % 6 === 0 || y % 6 === 0 ? cBasalt : cBasaltMid);
+      function block(x0, y0, w, h) {
+        for (let y = y0; y < y0 + h; y++) {
+          for (let x = x0; x < x0 + w; x++) {
+            if (x === x0 || y === y0) P.set(x, y, cBasaltLight);
+            else if (x === x0 + w - 1 || y === y0 + h - 1) P.set(x, y, cBasaltShadow);
+            else P.set(x, y, (x + y) % 3 === 0 ? cBasaltMid : cBasaltBase);
+          }
         }
       }
-      for (let x = 8; x <= 50; x += 10) {
-        for (let y = 8; y <= 14; y++) {
-          for (let bx = 0; bx < 6; bx++) P.set(x + bx, y, cBasalt);
+      for (let y = 20; y <= 58; y++) {
+        for (let x = 22; x <= 57; x++) P.set(x, y, cBasaltBase);
+      }
+      for (let y = 22; y <= 57; y += 5) {
+        const shift = Math.floor((y - 22) / 5) % 2 === 0 ? 0 : 4;
+        for (let x = 22; x <= 57; x += 8) {
+          if (x + shift + 7 <= 57) block(x + shift, y, 7, 4);
         }
       }
-      for (let y = 36; y <= 52; y++) {
-        for (let x = 24; x <= 34; x++) P.set(x, y, pack("#451a03"));
+      for (let y = 16; y <= 58; y++) {
+        for (let x = 4; x <= 24; x++) P.set(x, y, cBasaltBase);
+        for (let x = 55; x <= 75; x++) P.set(x, y, cBasaltBase);
       }
-      for (let x of [16, 38]) {
-        for (let y = 20; y <= 26; y++) P.set(x, y, cLavaGlow);
+      for (let y = 16; y <= 57; y += 5) {
+        const shift = Math.floor((y - 16) / 5) % 2 === 0 ? 0 : 3;
+        for (let x = 4; x <= 24; x += 7) {
+          if (x + shift + 6 <= 24) block(x + shift, y, 6, 4);
+        }
+        for (let x = 55; x <= 75; x += 7) {
+          if (x + shift + 6 <= 75) block(x + shift, y, 6, 4);
+        }
+      }
+      const merlons = [[[4, 9], [12, 16], [19, 24]], [[55, 60], [63, 67], [70, 75]]];
+      for (const group of merlons) {
+        for (const [x1, x2] of group) {
+          for (let x = x1; x <= x2; x++) {
+            P.set(x, 10, cBasaltRim);
+            P.set(x, 11, cBasaltLight);
+            for (let y = 12; y <= 16; y++) {
+              P.set(x, y, x === x1 ? cBasaltLight : x === x2 ? cBasaltShadow : cBasaltMid);
+            }
+          }
+        }
+      }
+      for (let x = 4; x <= 24; x++) P.set(x, 17, cBasaltLight);
+      for (let x = 55; x <= 75; x++) P.set(x, 17, cBasaltLight);
+      const midM = [[26, 30], [35, 40], [45, 50]];
+      for (const [x1, x2] of midM) {
+        for (let x = x1; x <= x2; x++) {
+          P.set(x, 18, cBasaltRim);
+          P.set(x, 19, cBasaltLight);
+          P.set(x, 20, cBasaltMid);
+        }
+      }
+      for (let x = 25; x <= 54; x++) P.set(x, 23, cBasaltLight);
+      function arrowslit(cx, cy, h) {
+        for (let dy = 0; dy < h; dy++) {
+          P.set(cx - 1, cy + dy, cMortar);
+          P.set(cx, cy + dy, dy === 0 ? cLavaGlow : dy === h - 1 ? cLavaDark : cLavaMid);
+          P.set(cx + 1, cy + dy, cMortar);
+        }
+      }
+      arrowslit(14, 25, 7);
+      arrowslit(14, 40, 6);
+      arrowslit(65, 25, 7);
+      arrowslit(65, 40, 6);
+      arrowslit(34, 29, 5);
+      arrowslit(45, 29, 5);
+      for (let y = 38; y <= 58; y++) {
+        for (let x = 32; x <= 47; x++) {
+          const dx = (x - 39.5) / 7.5;
+          const dy = (y - 45) / 7;
+          const isArch = y <= 45 && dx * dx + dy * dy <= 1 || y > 45 && x >= 33 && x <= 46;
+          const isDoor = y <= 45 && dx * dx * 1.5 + dy * dy * 1.5 <= 1 || y > 45 && x >= 35 && x <= 44;
+          if (isArch && !isDoor) {
+            P.set(x, y, y === 38 || x === 33 || x === 46 ? cBasaltRim : cBasaltLight);
+          } else if (isDoor) {
+            const isIronStrap = y === 44 || y === 51;
+            P.set(x, y, isIronStrap ? cIron : x % 3 === 0 ? cWoodDark : cWoodMid);
+            if (y === 58) P.set(x, y, cLavaMid);
+          }
+        }
+      }
+      for (const tx of [29, 50]) {
+        P.set(tx, 44, cIron);
+        P.set(tx, 45, cIron);
+        P.set(tx, 43, pack("#451a03"));
+        P.set(tx, 42, cLavaMid);
+        P.set(tx, 41, cLavaGlow);
+        P.set(tx, 40, pack("#ffffff"));
       }
       outline(P, cEdge);
       return P.canvas();
@@ -1080,26 +1357,59 @@
       return P.canvas();
     }
     function paintBrazier() {
-      const P = Pix(22, 28);
+      const P = Pix(24, 30);
+      const cIronDark = pack("#090d16");
       const cIron = pack("#1e293b");
-      const cFlame1 = pack("#ef4444");
+      const cIronMid = pack("#334155");
+      const cIronLight = pack("#64748b");
+      const cCoal = pack("#450a0a");
+      const cEmber = pack("#b91c1c");
+      const cFlame1 = pack("#dc2626");
       const cFlame2 = pack("#f97316");
       const cFlame3 = pack("#fde047");
-      const cEdge = pack("#090d16");
-      for (let y = 14; y <= 25; y++) {
-        P.set(5, y, cIron);
-        P.set(11, y, cIron);
-        P.set(17, y, cIron);
-      }
-      for (let y = 12; y <= 16; y++) {
-        for (let x = 3; x <= 19; x++) P.set(x, y, cIron);
-      }
-      for (let y = 2; y <= 12; y++) {
-        const span = Math.round((12 - y) / 10 * 6);
-        for (let x = 11 - span; x <= 11 + span; x++) {
-          P.set(x, y, y <= 5 ? cFlame3 : y <= 9 ? cFlame2 : cFlame1);
+      const cFlameCore = pack("#ffffff");
+      const cEdge = pack("#05070a");
+      const legs = [
+        [[5, 27], [6, 26], [7, 25], [8, 23], [9, 21], [10, 19]],
+        [[11, 27], [11, 25], [11, 23], [11, 21], [11, 19]],
+        [[18, 27], [17, 26], [16, 25], [15, 23], [14, 21], [13, 19]]
+      ];
+      for (const leg of legs) {
+        for (const [lx, ly] of leg) {
+          P.set(lx, ly, cIron);
+          P.set(lx + 1, ly, cIronMid);
         }
       }
+      for (let x = 8; x <= 15; x++) P.set(x, 22, cIronLight);
+      for (let y = 14; y <= 19; y++) {
+        const t = (y - 14) / 5;
+        const w = Math.round(8 - t * 4);
+        for (let x = 11 - w; x <= 12 + w; x++) {
+          let col = y === 14 ? cIronLight : x < 11 ? cIronMid : x > 13 ? cIronDark : cIron;
+          if (y === 15 && x >= 7 && x <= 16) col = (x + y) % 2 === 0 ? cEmber : cCoal;
+          P.set(x, y, col);
+        }
+      }
+      const flameRows = [
+        { y: 13, xMin: 6, xMax: 17, col: cFlame2 },
+        { y: 12, xMin: 7, xMax: 16, col: cFlame2 },
+        { y: 11, xMin: 8, xMax: 15, col: cFlame3 },
+        { y: 10, xMin: 8, xMax: 15, col: cFlame3 },
+        { y: 9, xMin: 9, xMax: 14, col: cFlameCore },
+        { y: 8, xMin: 9, xMax: 14, col: cFlameCore },
+        { y: 7, xMin: 10, xMax: 13, col: cFlame3 },
+        { y: 6, xMin: 10, xMax: 13, col: cFlame2 },
+        { y: 5, xMin: 11, xMax: 12, col: cFlame1 }
+      ];
+      for (const row of flameRows) {
+        for (let x = row.xMin; x <= row.xMax; x++) {
+          P.set(x, row.y, row.col);
+        }
+      }
+      P.set(7, 10, cFlame1);
+      P.set(16, 10, cFlame1);
+      P.set(8, 7, cFlame2);
+      P.set(15, 7, cFlame2);
       outline(P, cEdge);
       return P.canvas();
     }
@@ -1542,6 +1852,8 @@
       palm_tree: "assets/sprites/world/tree_palm.png",
       house_red: "assets/sprites/world/house_red.png",
       house_red_small: "assets/sprites/world/house_red_small.png",
+      house_dark_volcano: "assets/sprites/world/house_dark_volcano.png",
+      house_dark_volcano_small: "assets/sprites/world/house_dark_volcano_small.png",
       house_blue: "assets/sprites/world/house_blue.png",
       house_blue_small: "assets/sprites/world/house_blue_small.png",
       cabin_wood: "assets/sprites/world/cabin_wood.png",
@@ -1553,7 +1865,11 @@
       rock: "assets/sprites/world/rock.png",
       sand_rock: "assets/sprites/world/sand_rock.png",
       volcano_rock: "assets/sprites/world/volcano_rock.png",
-      glowing_mushrooms: "assets/sprites/world/glowing_mushrooms.png"
+      glowing_mushrooms: "assets/sprites/world/glowing_mushrooms.png",
+      well: "assets/sprites/world/well.png",
+      brazier_fire: "assets/sprites/world/brazier_fire.png",
+      lamppost: "assets/sprites/world/lamppost.png",
+      fountain: "assets/sprites/world/fountain.png"
     };
     const worldImages = {};
     if (typeof Image !== "undefined") {
@@ -1601,6 +1917,7 @@
           else if (type === "rock") propCache.set(type, paintRock("slate"));
           else if (type === "house_red" || type === "house_red_small") propCache.set(type, paintHouse("red"));
           else if (type === "house_blue" || type === "house_blue_small") propCache.set(type, paintHouse("blue"));
+          else if (type === "house_dark_volcano" || type === "house_dark_volcano_small") propCache.set(type, paintHouse("blue"));
           else if (type === "well") propCache.set(type, paintWell());
           else if (type === "lamppost") propCache.set(type, paintLamppost());
           else if (type === "blacksmith_npc") propCache.set(type, paintBlacksmith());
@@ -4217,8 +4534,8 @@
         ty: 46
       },
       buildings: [
-        { type: "fort_volcano", tx: 66, ty: 40, wTiles: 4, hTiles: 4, name: "Bastione di Basalto" },
-        { type: "house_red", tx: 73, ty: 40, wTiles: 5, hTiles: 3, name: "Caserma delle Ceneri" }
+        { type: "fort_volcano", tx: 66, ty: 40, wTiles: 5, hTiles: 4, name: "Bastione di Basalto" },
+        { type: "house_dark_volcano", tx: 73, ty: 40, wTiles: 5, hTiles: 3, name: "Caserma delle Ceneri" }
       ],
       props: [
         { type: "waypoint_portal", tx: 70, ty: 43 },
@@ -4660,7 +4977,12 @@
     getBiome(tx, ty) {
       const wx = tx * this.TS;
       const wy = ty * this.TS;
-      if (this.isSafeZone(wx, wy)) {
+      const sz = this.getSafeZone(wx, wy);
+      if (sz) {
+        if (sz.id === "cineris") return "village_volcano";
+        if (sz.id === "frostpeak") return "village_snow";
+        if (sz.id === "oasis") return "village_desert";
+        if (sz.id === "waterfall_village") return "village_river";
         return "village";
       }
       const riverCx = this.getRiverCenterX(ty);
@@ -4843,7 +5165,7 @@
                 return { x: px, y: py };
               }
             } else {
-              if (currentBiome !== "village") {
+              if (!currentBiome.startsWith("village")) {
                 return { x: px, y: py };
               }
             }
@@ -5043,7 +5365,7 @@
                   if (!sprite) return;
                   const sw = sprite.width * this.PX;
                   const sh = sprite.height * this.PX;
-                  const isBuilding = p.type === "house_red" || p.type === "house_red_small" || p.type === "house_blue" || p.type === "house_blue_small" || p.type === "water_mill" || p.type === "tent_desert" || p.type === "cabin_snow" || p.type === "cabin_wood" || p.type === "cabin_wood_small" || p.type === "fort_volcano";
+                  const isBuilding = p.type === "house_red" || p.type === "house_red_small" || p.type === "house_blue" || p.type === "house_blue_small" || p.type === "house_dark_volcano" || p.type === "house_dark_volcano_small" || p.type === "water_mill" || p.type === "tent_desert" || p.type === "cabin_snow" || p.type === "cabin_wood" || p.type === "cabin_wood_small" || p.type === "fort_volcano";
                   if (isBuilding) {
                     ctx.fillStyle = "rgba(6, 8, 14, 0.45)";
                     ctx.fillRect(Math.round(p.x - sw / 2 + 8), Math.round(p.y - 8), sw - 16, 14);

@@ -158,8 +158,8 @@ export const SETTLEMENTS = [
       ty: 46
     },
     buildings: [
-      { type: 'fort_volcano', tx: 66, ty: 40, wTiles: 4, hTiles: 4, name: 'Bastione di Basalto' },
-      { type: 'house_red', tx: 73, ty: 40, wTiles: 5, hTiles: 3, name: 'Caserma delle Ceneri' }
+      { type: 'fort_volcano', tx: 66, ty: 40, wTiles: 5, hTiles: 4, name: 'Bastione di Basalto' },
+      { type: 'house_dark_volcano', tx: 73, ty: 40, wTiles: 5, hTiles: 3, name: 'Caserma delle Ceneri' }
     ],
     props: [
       { type: 'waypoint_portal', tx: 70, ty: 43 },
@@ -655,7 +655,12 @@ export class World {
     const wy = ty * this.TS;
 
     // 1. Safe Zone di qualsiasi insediamento
-    if (this.isSafeZone(wx, wy)) {
+    const sz = this.getSafeZone(wx, wy);
+    if (sz) {
+      if (sz.id === 'cineris') return 'village_volcano';
+      if (sz.id === 'frostpeak') return 'village_snow';
+      if (sz.id === 'oasis') return 'village_desert';
+      if (sz.id === 'waterfall_village') return 'village_river';
       return 'village';
     }
 
@@ -904,7 +909,7 @@ export class World {
               return { x: px, y: py };
             }
           } else {
-            if (currentBiome !== 'village') {
+            if (!currentBiome.startsWith('village')) {
               return { x: px, y: py };
             }
           }
@@ -1135,6 +1140,7 @@ export class World {
                 const isBuilding = (
                   p.type === 'house_red' || p.type === 'house_red_small' ||
                   p.type === 'house_blue' || p.type === 'house_blue_small' ||
+                  p.type === 'house_dark_volcano' || p.type === 'house_dark_volcano_small' ||
                   p.type === 'water_mill' || p.type === 'tent_desert' ||
                   p.type === 'cabin_snow' || p.type === 'cabin_wood' ||
                   p.type === 'cabin_wood_small' || p.type === 'fort_volcano'
