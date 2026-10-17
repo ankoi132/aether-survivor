@@ -1506,6 +1506,38 @@ export const Tiles = (() => {
     return P.canvas();
   }
 
+  const WORLD_ASSET_PATHS = {
+    tree: 'assets/sprites/world/tree_oak.png',
+    tree_gold: 'assets/sprites/world/tree_oak_gold.png',
+    tree_teal: 'assets/sprites/world/tree_oak_teal.png',
+    pine: 'assets/sprites/world/tree_pine.png',
+    cactus: 'assets/sprites/world/tree_cactus.png',
+    palm_tree: 'assets/sprites/world/tree_palm.png',
+    house_red: 'assets/sprites/world/house_red.png',
+    house_red_small: 'assets/sprites/world/house_red_small.png',
+    house_blue: 'assets/sprites/world/house_blue.png',
+    house_blue_small: 'assets/sprites/world/house_blue_small.png',
+    cabin_wood: 'assets/sprites/world/cabin_wood.png',
+    cabin_wood_small: 'assets/sprites/world/cabin_wood_small.png',
+    cabin_snow: 'assets/sprites/world/cabin_snow.png',
+    water_mill: 'assets/sprites/world/water_mill.png',
+    fort_volcano: 'assets/sprites/world/fort_volcano.png',
+    tent_desert: 'assets/sprites/world/tent_desert.png',
+    rock: 'assets/sprites/world/rock.png',
+    sand_rock: 'assets/sprites/world/sand_rock.png',
+    volcano_rock: 'assets/sprites/world/volcano_rock.png',
+    glowing_mushrooms: 'assets/sprites/world/glowing_mushrooms.png'
+  };
+
+  const worldImages = {};
+  if (typeof Image !== 'undefined') {
+    for (const [k, src] of Object.entries(WORLD_ASSET_PATHS)) {
+      const img = new Image();
+      img.src = src;
+      worldImages[k] = img;
+    }
+  }
+
   const propCache = new Map();
 
   return {
@@ -1539,22 +1571,29 @@ export const Tiles = (() => {
     },
 
     getPropSprite(type) {
+      // 1. Risorsa nativa pre-renderizzata da Serene Village / Tileset
+      const img = worldImages[type];
+      if (img && img.complete && img.naturalWidth > 0) {
+        return img;
+      }
+
+      // 2. Fallback procedurale per retrocompatibilità e avvio istantaneo
       if (!propCache.has(type)) {
-        if (type === 'tree') propCache.set(type, paintTree());
+        if (type === 'tree' || type === 'tree_gold' || type === 'tree_teal') propCache.set(type, paintTree());
         else if (type === 'pine') propCache.set(type, paintPine());
         else if (type === 'cactus') propCache.set(type, paintCactus());
         else if (type === 'volcano_rock') propCache.set(type, paintVolcanoRock());
         else if (type === 'sand_rock') propCache.set(type, paintRock('sand'));
         else if (type === 'rock') propCache.set(type, paintRock('slate'));
-        else if (type === 'house_red') propCache.set(type, paintHouse('red'));
-        else if (type === 'house_blue') propCache.set(type, paintHouse('blue'));
+        else if (type === 'house_red' || type === 'house_red_small') propCache.set(type, paintHouse('red'));
+        else if (type === 'house_blue' || type === 'house_blue_small') propCache.set(type, paintHouse('blue'));
         else if (type === 'well') propCache.set(type, paintWell());
         else if (type === 'lamppost') propCache.set(type, paintLamppost());
         else if (type === 'blacksmith_npc') propCache.set(type, paintBlacksmith());
         else if (type === 'water_mill') propCache.set(type, paintWaterMill());
         else if (type === 'tent_desert') propCache.set(type, paintDesertTent());
         else if (type === 'cabin_snow') propCache.set(type, paintSnowCabin());
-        else if (type === 'cabin_wood') propCache.set(type, paintWoodCabin());
+        else if (type === 'cabin_wood' || type === 'cabin_wood_small') propCache.set(type, paintWoodCabin());
         else if (type === 'fort_volcano') propCache.set(type, paintVolcanoFort());
         else if (type === 'aether_obelisk') propCache.set(type, paintAetherObelisk());
         else if (type === 'brazier_fire') propCache.set(type, paintBrazier());

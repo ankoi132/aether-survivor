@@ -1461,6 +1461,36 @@
       outline(P, cEdge);
       return P.canvas();
     }
+    const WORLD_ASSET_PATHS = {
+      tree: "assets/sprites/world/tree_oak.png",
+      tree_gold: "assets/sprites/world/tree_oak_gold.png",
+      tree_teal: "assets/sprites/world/tree_oak_teal.png",
+      pine: "assets/sprites/world/tree_pine.png",
+      cactus: "assets/sprites/world/tree_cactus.png",
+      palm_tree: "assets/sprites/world/tree_palm.png",
+      house_red: "assets/sprites/world/house_red.png",
+      house_red_small: "assets/sprites/world/house_red_small.png",
+      house_blue: "assets/sprites/world/house_blue.png",
+      house_blue_small: "assets/sprites/world/house_blue_small.png",
+      cabin_wood: "assets/sprites/world/cabin_wood.png",
+      cabin_wood_small: "assets/sprites/world/cabin_wood_small.png",
+      cabin_snow: "assets/sprites/world/cabin_snow.png",
+      water_mill: "assets/sprites/world/water_mill.png",
+      fort_volcano: "assets/sprites/world/fort_volcano.png",
+      tent_desert: "assets/sprites/world/tent_desert.png",
+      rock: "assets/sprites/world/rock.png",
+      sand_rock: "assets/sprites/world/sand_rock.png",
+      volcano_rock: "assets/sprites/world/volcano_rock.png",
+      glowing_mushrooms: "assets/sprites/world/glowing_mushrooms.png"
+    };
+    const worldImages = {};
+    if (typeof Image !== "undefined") {
+      for (const [k, src] of Object.entries(WORLD_ASSET_PATHS)) {
+        const img = new Image();
+        img.src = src;
+        worldImages[k] = img;
+      }
+    }
     const propCache = /* @__PURE__ */ new Map();
     return {
       T,
@@ -1486,22 +1516,26 @@
         return P.canvas();
       },
       getPropSprite(type) {
+        const img = worldImages[type];
+        if (img && img.complete && img.naturalWidth > 0) {
+          return img;
+        }
         if (!propCache.has(type)) {
-          if (type === "tree") propCache.set(type, paintTree());
+          if (type === "tree" || type === "tree_gold" || type === "tree_teal") propCache.set(type, paintTree());
           else if (type === "pine") propCache.set(type, paintPine());
           else if (type === "cactus") propCache.set(type, paintCactus());
           else if (type === "volcano_rock") propCache.set(type, paintVolcanoRock());
           else if (type === "sand_rock") propCache.set(type, paintRock("sand"));
           else if (type === "rock") propCache.set(type, paintRock("slate"));
-          else if (type === "house_red") propCache.set(type, paintHouse("red"));
-          else if (type === "house_blue") propCache.set(type, paintHouse("blue"));
+          else if (type === "house_red" || type === "house_red_small") propCache.set(type, paintHouse("red"));
+          else if (type === "house_blue" || type === "house_blue_small") propCache.set(type, paintHouse("blue"));
           else if (type === "well") propCache.set(type, paintWell());
           else if (type === "lamppost") propCache.set(type, paintLamppost());
           else if (type === "blacksmith_npc") propCache.set(type, paintBlacksmith());
           else if (type === "water_mill") propCache.set(type, paintWaterMill());
           else if (type === "tent_desert") propCache.set(type, paintDesertTent());
           else if (type === "cabin_snow") propCache.set(type, paintSnowCabin());
-          else if (type === "cabin_wood") propCache.set(type, paintWoodCabin());
+          else if (type === "cabin_wood" || type === "cabin_wood_small") propCache.set(type, paintWoodCabin());
           else if (type === "fort_volcano") propCache.set(type, paintVolcanoFort());
           else if (type === "aether_obelisk") propCache.set(type, paintAetherObelisk());
           else if (type === "brazier_fire") propCache.set(type, paintBrazier());
@@ -3906,10 +3940,10 @@
       },
       buildings: [
         { type: "aether_obelisk", tx: 0, ty: -3, wTiles: 2, hTiles: 4, name: "Obelisco dell'Aether" },
-        { type: "house_blue", tx: -8, ty: -7, wTiles: 4, hTiles: 3, name: "Torre dell'Arcimago" },
-        { type: "house_red", tx: 4, ty: -7, wTiles: 4, hTiles: 3, name: "Taverna della Corona" },
+        { type: "house_blue", tx: -8, ty: -7, wTiles: 5, hTiles: 3, name: "Torre dell'Arcimago" },
+        { type: "house_red", tx: 4, ty: -7, wTiles: 5, hTiles: 3, name: "Taverna della Corona" },
         { type: "fountain", tx: -4, ty: 3, wTiles: 3, hTiles: 2, name: "Fontana delle Stelle" },
-        { type: "house_blue", tx: -8, ty: 3, wTiles: 4, hTiles: 3, name: "Bottega degli Elisir" }
+        { type: "house_blue_small", tx: -8, ty: 3, wTiles: 3, hTiles: 3, name: "Bottega degli Elisir" }
       ],
       props: [
         { type: "waypoint_portal", tx: -1, ty: 1 },
@@ -3941,8 +3975,8 @@
       },
       buildings: [
         { type: "water_mill", tx: -42, ty: 25, wTiles: 4, hTiles: 3, name: "Mulino della Cascata" },
-        { type: "house_blue", tx: -45, ty: 17, wTiles: 4, hTiles: 3, name: "Locanda dei Pescatori" },
-        { type: "house_red", tx: -36, ty: 17, wTiles: 4, hTiles: 3, name: "Bottega delle Reti" }
+        { type: "house_blue", tx: -46, ty: 17, wTiles: 5, hTiles: 3, name: "Locanda dei Pescatori" },
+        { type: "house_red_small", tx: -36, ty: 17, wTiles: 3, hTiles: 3, name: "Bottega delle Reti" }
       ],
       props: [
         { type: "waypoint_portal", tx: -38, ty: 22 },
@@ -3972,8 +4006,8 @@
         ty: -73
       },
       buildings: [
-        { type: "cabin_snow", tx: 15, ty: -80, wTiles: 4, hTiles: 3, name: "Rifugio del Permafrost" },
-        { type: "cabin_snow", tx: 23, ty: -80, wTiles: 4, hTiles: 3, name: "Osservatorio del Nord" }
+        { type: "cabin_snow", tx: 15, ty: -80, wTiles: 3, hTiles: 3, name: "Rifugio del Permafrost" },
+        { type: "cabin_snow", tx: 23, ty: -80, wTiles: 3, hTiles: 3, name: "Osservatorio del Nord" }
       ],
       props: [
         { type: "waypoint_portal", tx: 20, ty: -73 },
@@ -4034,7 +4068,7 @@
       },
       buildings: [
         { type: "fort_volcano", tx: 66, ty: 40, wTiles: 4, hTiles: 4, name: "Bastione di Basalto" },
-        { type: "house_red", tx: 73, ty: 40, wTiles: 4, hTiles: 3, name: "Caserma delle Ceneri" }
+        { type: "house_red", tx: 73, ty: 40, wTiles: 5, hTiles: 3, name: "Caserma delle Ceneri" }
       ],
       props: [
         { type: "waypoint_portal", tx: 70, ty: 43 },
@@ -4063,8 +4097,8 @@
         ty: -34
       },
       buildings: [
-        { type: "cabin_wood", tx: -80, ty: -40, wTiles: 4, hTiles: 3, name: "Santuario della Quercia" },
-        { type: "cabin_wood", tx: -72, ty: -40, wTiles: 4, hTiles: 3, name: "Erboristeria di Sylva" }
+        { type: "cabin_wood", tx: -81, ty: -40, wTiles: 5, hTiles: 3, name: "Santuario della Quercia" },
+        { type: "cabin_wood_small", tx: -71, ty: -40, wTiles: 3, hTiles: 3, name: "Erboristeria di Sylva" }
       ],
       props: [
         { type: "waypoint_portal", tx: -75, ty: -33 },
@@ -4754,7 +4788,17 @@
           const ty = cy * this.N + lty;
           const t = this.getTileType(tx, ty);
           if (t === this.TILE_TREE) {
-            props.push({ type: "tree", x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
+            const b = this.getBiome(tx, ty);
+            let treeType = "tree";
+            const treeVar = this.hash2D(tx, ty, 314);
+            if (b === "river") {
+              treeType = treeVar > 0.4 ? "tree_teal" : "tree";
+            } else if (treeVar > 0.65) {
+              treeType = "tree_gold";
+            } else if (treeVar < 0.15) {
+              treeType = "tree_teal";
+            }
+            props.push({ type: treeType, x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
           } else if (t === this.TILE_PINE) {
             props.push({ type: "pine", x: tx * this.TS + this.TS / 2, y: ty * this.TS + this.TS });
           } else if (t === this.TILE_CACTUS) {
@@ -4834,7 +4878,8 @@
                   if (!sprite) return;
                   const sw = sprite.width * this.PX;
                   const sh = sprite.height * this.PX;
-                  if (p.type === "house_red" || p.type === "house_blue" || p.type === "water_mill" || p.type === "tent_desert" || p.type === "cabin_snow" || p.type === "cabin_wood" || p.type === "fort_volcano") {
+                  const isBuilding = p.type === "house_red" || p.type === "house_red_small" || p.type === "house_blue" || p.type === "house_blue_small" || p.type === "water_mill" || p.type === "tent_desert" || p.type === "cabin_snow" || p.type === "cabin_wood" || p.type === "cabin_wood_small" || p.type === "fort_volcano";
+                  if (isBuilding) {
                     ctx.fillStyle = "rgba(6, 8, 14, 0.45)";
                     ctx.fillRect(Math.round(p.x - sw / 2 + 8), Math.round(p.y - 8), sw - 16, 14);
                     ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 8), sw, sh);
@@ -4918,9 +4963,10 @@
                     ctx.fill();
                     ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + 4), sw, sh);
                   } else {
-                    const rad = p.type === "tree" || p.type === "pine" || p.type === "palm_tree" ? 14 : p.type === "cactus" ? 10 : 12;
+                    const isTree = p.type === "tree" || p.type === "tree_gold" || p.type === "tree_teal" || p.type === "pine" || p.type === "palm_tree";
+                    const rad = isTree ? 14 : p.type === "cactus" ? 10 : 12;
                     Sprites.drawShadow(ctx, p.x, p.y - 2, rad);
-                    const yOff = p.type === "tree" || p.type === "pine" || p.type === "palm_tree" ? 8 : 4;
+                    const yOff = isTree ? 8 : 4;
                     ctx.drawImage(sprite, Math.round(p.x - sw / 2), Math.round(p.y - sh + yOff), sw, sh);
                   }
                 }

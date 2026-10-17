@@ -21,7 +21,8 @@
   "author": "ANK",
   "license": "MIT",
   "devDependencies": {
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "pngjs": "^7.0.0"
   },
   "dependencies": {
     "cors": "^2.8.6",
